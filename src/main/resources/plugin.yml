@@ -1,0 +1,7 @@
+name: PluginUpdater
+version: ${project.version}
+main: com.gamerking195.dev.pluginupdater.Main
+prefix: UPDATER
+authors: [GamerKing195]
+description: Updater util for Spigot.
+website: http://gamerking195.com

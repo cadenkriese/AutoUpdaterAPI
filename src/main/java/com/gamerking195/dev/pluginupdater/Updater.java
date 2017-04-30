@@ -12,6 +12,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredListener;
@@ -42,7 +43,9 @@ public class Updater {
 
     private UpdateLocale locale;
 
-    public Updater(Player initiater, JavaPlugin plugin, int spigotId, UpdateLocale locale) {
+    private boolean delete;
+
+    public Updater(Player initiater, JavaPlugin plugin, int spigotId, UpdateLocale locale, boolean delete) {
         dataFolderPath = Main.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = plugin.getName();
@@ -50,9 +53,10 @@ public class Updater {
         this.plugin = plugin;
         this.initiater = initiater;
         this.locale = locale;
+        this.delete = delete;
     }
 
-    public Updater(JavaPlugin plugin, int spigotId, String fileName) {
+    public Updater(JavaPlugin plugin, int spigotId, String fileName, boolean delete) {
         dataFolderPath = Main.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = plugin.getName();
@@ -61,6 +65,7 @@ public class Updater {
 
         locale = new UpdateLocale();
         locale.fileName = fileName;
+        this.delete = delete;
     }
 
     public String getLatestVersion() {
@@ -133,9 +138,12 @@ public class Updater {
 
                 sendActionBar(initiater, locale.updateComplete.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
 
-                if (!new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
-                    Main.getInstance().printPluginError("Error occured while updating "+pluginName+".", "Could not delete updater jar.");
-                unload(Main.getInstance());
+                if (delete) {
+                    if (!new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
+                        Main.getInstance().printPluginError("Error occured while updating "+pluginName+".", "Could not delete updater jar.");
+
+                    unload(Main.getInstance());
+                }
 
             } catch (Exception e) {
                 Main.getInstance().printError(e, "Error occured while updating "+pluginName+".");
@@ -144,9 +152,9 @@ public class Updater {
         }
     }
 
-    /*
-     * UTILITIES
-     */
+   /*
+    * UTILITIES
+    */
 
     //Fairly long method to call repetadly ¯\_(ツ)_/¯
     private void sendActionBar(Player player, String message) {
@@ -172,7 +180,7 @@ public class Updater {
      * Method taken from PlugMan, developed by Ryan Clancy "rylinaux"
      * @param plugin The plugin that needs to be unloaded.
      */
-    public void unload(Plugin plugin) {
+    private void unload(Plugin plugin) {
 
         String name = plugin.getName();
 

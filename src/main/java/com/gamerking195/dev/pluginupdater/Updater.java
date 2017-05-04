@@ -6,31 +6,16 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.*;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.ClickType;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.awt.*;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.Charset;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
 
 public class Updater {
     private Player initiater;
@@ -152,9 +137,9 @@ public class Updater {
         }
     }
 
-    /*
-     * UTILITIES
-     */
+   /*
+    * UTILITIES
+    */
 
     //Fairly long method to call repetadly ¯\_(ツ)_/¯
     private void sendActionBar(Player player, String message) {

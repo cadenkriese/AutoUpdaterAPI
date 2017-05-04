@@ -1,5 +1,6 @@
 package com.gamerking195.dev.pluginupdater;
 
+import com.gamerking195.dev.pluginupdater.util.UtilPlugin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -12,6 +13,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredListener;
@@ -42,7 +44,9 @@ public class Updater {
 
     private UpdateLocale locale;
 
-    public Updater(Player initiater, JavaPlugin plugin, int spigotId, UpdateLocale locale) {
+    private boolean delete;
+
+    public Updater(Player initiater, JavaPlugin plugin, int spigotId, UpdateLocale locale, boolean delete) {
         dataFolderPath = Main.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = plugin.getName();
@@ -50,9 +54,10 @@ public class Updater {
         this.plugin = plugin;
         this.initiater = initiater;
         this.locale = locale;
+        this.delete = delete;
     }
 
-    public Updater(JavaPlugin plugin, int spigotId, String fileName) {
+    public Updater(JavaPlugin plugin, int spigotId, String fileName, boolean delete) {
         dataFolderPath = Main.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = plugin.getName();
@@ -61,6 +66,7 @@ public class Updater {
 
         locale = new UpdateLocale();
         locale.fileName = fileName;
+        this.delete = delete;
     }
 
     public String getLatestVersion() {
@@ -88,11 +94,10 @@ public class Updater {
 
             sendActionBar(initiater, locale.updating.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion)+" &8[RETREIVING FILES]");
             try {
-                //Delete old plugin
-                if (!new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
-                    Main.getInstance().printPluginError("Error occured while updating "+pluginName+".", "Could not delete old plugin jar.");
+                    if (!new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
+                        Main.getInstance().printPluginError("Error occured while updating " + pluginName + ".", "Could not delete old plugin jar.");
 
-                unload(plugin);
+                    UtilPlugin.unload(plugin);
 
                 //Download new plugin
                 URL url = new URL(this.url+"/download");
@@ -133,9 +138,12 @@ public class Updater {
 
                 sendActionBar(initiater, locale.updateComplete.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
 
-                if (!new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
-                    Main.getInstance().printPluginError("Error occured while updating "+pluginName+".", "Could not delete updater jar.");
-                unload(Main.getInstance());
+                if (delete) {
+                    if (!new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
+                        Main.getInstance().printPluginError("Error occured while updating "+pluginName+".", "Could not delete updater jar.");
+
+                    UtilPlugin.unload(Main.getInstance());
+                }
 
             } catch (Exception e) {
                 Main.getInstance().printError(e, "Error occured while updating "+pluginName+".");
@@ -166,109 +174,5 @@ public class Updater {
             }
             return sb.toString();
         }
-    }
-
-    /**
-     * Method taken from PlugMan, developed by Ryan Clancy "rylinaux"
-     * @param plugin The plugin that needs to be unloaded.
-     */
-    public void unload(Plugin plugin) {
-
-        String name = plugin.getName();
-
-        PluginManager pluginManager = Bukkit.getPluginManager();
-
-        SimpleCommandMap commandMap = null;
-
-        List<Plugin> plugins = null;
-
-        Map<String, Plugin> names = null;
-        Map<String, Command> commands = null;
-        Map<Event, SortedSet<RegisteredListener>> listeners = null;
-
-        boolean reloadlisteners = true;
-
-        if (pluginManager != null) {
-
-            pluginManager.disablePlugin(plugin);
-
-            try {
-
-                Field pluginsField = Bukkit.getPluginManager().getClass().getDeclaredField("plugins");
-                pluginsField.setAccessible(true);
-                plugins = (List<Plugin>) pluginsField.get(pluginManager);
-
-                Field lookupNamesField = Bukkit.getPluginManager().getClass().getDeclaredField("lookupNames");
-                lookupNamesField.setAccessible(true);
-                names = (Map<String, Plugin>) lookupNamesField.get(pluginManager);
-
-                try {
-                    Field listenersField = Bukkit.getPluginManager().getClass().getDeclaredField("listeners");
-                    listenersField.setAccessible(true);
-                    listeners = (Map<Event, SortedSet<RegisteredListener>>) listenersField.get(pluginManager);
-                } catch (Exception e) {
-                    reloadlisteners = false;
-                }
-
-                Field commandMapField = Bukkit.getPluginManager().getClass().getDeclaredField("commandMap");
-                commandMapField.setAccessible(true);
-                commandMap = (SimpleCommandMap) commandMapField.get(pluginManager);
-
-                Field knownCommandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
-                knownCommandsField.setAccessible(true);
-                commands = (Map<String, Command>) knownCommandsField.get(commandMap);
-
-            } catch (NoSuchFieldException e) {
-                Main.getInstance().printError(e);
-                sendActionBar(initiater, locale.updateFailed.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", getLatestVersion()));
-            } catch (IllegalAccessException e) {
-                Main.getInstance().printError(e);
-                sendActionBar(initiater, locale.updateFailed.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", getLatestVersion()));
-            }
-        }
-
-        pluginManager.disablePlugin(plugin);
-
-        if (plugins != null && plugins.contains(plugin))
-            plugins.remove(plugin);
-
-        if (names != null && names.containsKey(name))
-            names.remove(name);
-
-        if (listeners != null && reloadlisteners) {
-            for (SortedSet<RegisteredListener> set : listeners.values()) {
-                for (Iterator<RegisteredListener> it = set.iterator(); it.hasNext(); ) {
-                    RegisteredListener value = it.next();
-                    if (value.getPlugin() == plugin) {
-                        it.remove();
-                    }
-                }
-            }
-        }
-
-        if (commandMap != null) {
-            for (Iterator<Map.Entry<String, Command>> it = commands.entrySet().iterator(); it.hasNext(); ) {
-                Map.Entry<String, Command> entry = it.next();
-                if (entry.getValue() instanceof PluginCommand) {
-                    PluginCommand c = (PluginCommand) entry.getValue();
-                    if (c.getPlugin() == plugin) {
-                        c.unregister(commandMap);
-                        it.remove();
-                    }
-                }
-            }
-        }
-
-        ClassLoader cl = plugin.getClass().getClassLoader();
-
-        if (cl instanceof URLClassLoader) {
-            try {
-                ((URLClassLoader) cl).close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
-
-        System.gc();
     }
 }

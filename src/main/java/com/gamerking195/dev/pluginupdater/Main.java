@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 public final class Main extends JavaPlugin {
 
     private static Main instance;
-    static Main getInstance() {
+    public static Main getInstance() {
         return instance;
     }
 
@@ -20,7 +20,6 @@ public final class Main extends JavaPlugin {
 
         log = getLogger();
         log.info("Updater enabled!");
-
     }
 
     public void printError(Exception ex) {

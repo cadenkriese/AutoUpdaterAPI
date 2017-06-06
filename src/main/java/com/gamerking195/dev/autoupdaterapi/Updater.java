@@ -1,6 +1,6 @@
-package com.gamerking195.dev.pluginupdater;
+package com.gamerking195.dev.autoupdaterapi;
 
-import com.gamerking195.dev.pluginupdater.util.UtilPlugin;
+import com.gamerking195.dev.autoupdaterapi.util.UtilPlugin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;

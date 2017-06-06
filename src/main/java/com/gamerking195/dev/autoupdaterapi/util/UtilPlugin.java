@@ -1,6 +1,6 @@
-package com.gamerking195.dev.pluginupdater.util;
+package com.gamerking195.dev.autoupdaterapi.util;
 
-import com.gamerking195.dev.pluginupdater.Main;
+import com.gamerking195.dev.autoupdaterapi.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;

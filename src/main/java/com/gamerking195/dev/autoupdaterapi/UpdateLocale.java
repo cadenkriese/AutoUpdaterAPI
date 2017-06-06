@@ -1,4 +1,4 @@
-package com.gamerking195.dev.pluginupdater;
+package com.gamerking195.dev.autoupdaterapi;
 
 public class UpdateLocale {
     public String fileName = "plugin";

@@ -17,6 +17,6 @@ dependency-reduced-pom.xml
 # I dont want it
 bin/
 #Not for people to see -.-
-src/main/java/com/gamerking195/dev/pluginupdater/util/UtilEncryption.java
-src/main/java/com/gamerking195/dev/pluginupdater/util/UtilSpigotCreds.java
+src/main/java/com/gamerking195/dev/autoupdaterapi/util/UtilEncryption.java
+src/main/java/com/gamerking195/dev/autoupdaterapi/util/UtilSpigotCreds.java
 src/test/

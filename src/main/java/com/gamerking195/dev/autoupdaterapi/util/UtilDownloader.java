@@ -1,7 +1,7 @@
-package com.gamerking195.dev.pluginupdater.util;
+package com.gamerking195.dev.autoupdaterapi.util;
 
 
-import com.gamerking195.dev.pluginupdater.Main;
+import com.gamerking195.dev.autoupdaterapi.Main;
 
 import java.io.File;
 import java.io.IOException;

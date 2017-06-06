@@ -1,4 +1,4 @@
-package com.gamerking195.dev.pluginupdater;
+package com.gamerking195.dev.autoupdaterapi;
 
 import be.maximvdw.spigotsite.api.exceptions.ConnectionFailedException;
 import be.maximvdw.spigotsite.api.resource.Resource;
@@ -6,8 +6,8 @@ import be.maximvdw.spigotsite.api.user.User;
 import be.maximvdw.spigotsite.api.user.exceptions.InvalidCredentialsException;
 import be.maximvdw.spigotsite.api.user.exceptions.TwoFactorAuthenticationException;
 import be.maximvdw.spigotsite.user.SpigotUser;
-import com.gamerking195.dev.pluginupdater.util.UtilPlugin;
-import com.gamerking195.dev.pluginupdater.util.UtilSpigotCreds;
+import com.gamerking195.dev.autoupdaterapi.util.UtilPlugin;
+import com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;

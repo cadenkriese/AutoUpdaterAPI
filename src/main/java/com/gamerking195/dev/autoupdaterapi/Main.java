@@ -1,4 +1,4 @@
-package com.gamerking195.dev.pluginupdater;
+package com.gamerking195.dev.autoupdaterapi;
 
 import java.io.File;
 import java.util.logging.Level;
@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 
 import be.maximvdw.spigotsite.SpigotSiteCore;
 import be.maximvdw.spigotsite.api.SpigotSiteAPI;
-import com.gamerking195.dev.pluginupdater.util.UtilDownloader;
+import com.gamerking195.dev.autoupdaterapi.util.UtilDownloader;
 import org.apache.commons.logging.LogFactory;
 import org.bukkit.plugin.java.JavaPlugin;
 

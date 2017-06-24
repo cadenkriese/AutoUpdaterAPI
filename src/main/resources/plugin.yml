@@ -1,7 +1,7 @@
-name: PluginUpdater
+name: AutoUpdaterAPI
 version: ${project.version}
-main: com.gamerking195.dev.pluginupdater.Main
-prefix: UPDATER
+main: com.gamerking195.dev.autoupdaterapi.Main
+prefix: UPDATERAPI
 authors: [GamerKing195]
 description: Updater util for Spigot.
 website: http://gamerking195.com

@@ -7,6 +7,9 @@ import java.util.logging.Logger;
 import be.maximvdw.spigotsite.SpigotSiteCore;
 import be.maximvdw.spigotsite.api.SpigotSiteAPI;
 import com.gamerking195.dev.autoupdaterapi.util.UtilDownloader;
+import com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds;
+import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.WebClient;
 import org.apache.commons.logging.LogFactory;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -21,6 +24,10 @@ public final class Main
     }
 
     private SpigotSiteAPI api;
+
+    private boolean ipWhitelisted = false;
+
+    private WebClient webClient;
 
     public void onEnable()
     {
@@ -47,22 +54,35 @@ public final class Main
             return;
         }
 
-        getConfig().options().copyHeader(true);
+        webClient = new WebClient(BrowserVersion.CHROME);
+        webClient.getOptions().setJavaScriptEnabled(true);
+        webClient.getOptions().setTimeout(15000);
+        webClient.getOptions().setCssEnabled(false);
+        webClient.getOptions().setRedirectEnabled(true);
+        webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+        webClient.getOptions().setThrowExceptionOnScriptError(false);
+        webClient.getOptions().setPrintContentOnFailingStatusCode(false);
+        java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
 
-        try {
-            new File(getDataFolder().getPath() + "/info.yml").getParentFile().mkdirs();
-            new File(getDataFolder().getPath() + "/info.yml").createNewFile();
-
-            getConfig().load(new File(getDataFolder().getPath() + "/info.yml"));
-        } catch (Exception ex) {
-            printError(ex, "Error occured while loading config.");
-        }
+        UtilSpigotCreds.getInstance().init();
 
         log.info("Updater enabled!");
     }
 
     SpigotSiteAPI getApi() {
         return api;
+    }
+
+    boolean isIpWhitelisted() {
+        return ipWhitelisted;
+    }
+
+    void setIpWhitelisted(boolean ipWhitelisted) {
+        this.ipWhitelisted = ipWhitelisted;
+    }
+
+    public WebClient getClient() {
+        return webClient;
     }
 
     public void printError(Exception ex)

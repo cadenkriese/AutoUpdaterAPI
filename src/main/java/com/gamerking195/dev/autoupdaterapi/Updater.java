@@ -131,7 +131,7 @@ public class Updater {
                 }
 
             } catch (Exception e) {
-                Main.getInstance().printError(e, "Error occured while updating "+pluginName+".");
+                Main.getInstance().printError(e, "Error occurred while updating "+pluginName+".");
                 sendActionBar(initiater, locale.updateFailed.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
             }
         }

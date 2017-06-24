@@ -51,6 +51,11 @@
                                     <mainClass>com.gamerking195.dev.autoupdaterapi.Main</mainClass>
                                 </transformer>
                             </transformers>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>com.gargoylesoftware</exclude>
+                                </excludes>
+                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
@@ -84,6 +89,12 @@
             <name>GamerKing195-Resources</name>
             <url>http://api.gamerking195.com/archiva/repository/GK195-res/</url>
         </repository>
+        <!-- MVdW Resources -->
+        <repository>
+            <id>public</id>
+            <name>Public Repositories</name>
+            <url>http://repo.mvdw-software.com/content/groups/public/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -103,7 +114,6 @@
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
             <version>1.1.1</version>
-            <scope>provided</scope>
         </dependency>
         <!-- AnvilGUI -->
         <dependency>
@@ -129,6 +139,13 @@
             <groupId>be.maximvdw</groupId>
             <artifactId>spigotsite</artifactId>
             <version>0.1.2-SNAPSHOT</version>
+        </dependency>
+        <!-- HTML Unit -->
+        <dependency>
+            <groupId>com.gargoylesoftware</groupId>
+            <artifactId>HTMLUnit</artifactId>
+            <version>2.15</version>
+            <classifier>OSGi</classifier>
         </dependency>
     </dependencies>
 </project>

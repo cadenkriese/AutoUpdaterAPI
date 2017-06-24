@@ -8,6 +8,9 @@ import be.maximvdw.spigotsite.api.user.exceptions.TwoFactorAuthenticationExcepti
 import be.maximvdw.spigotsite.user.SpigotUser;
 import com.gamerking195.dev.autoupdaterapi.util.UtilPlugin;
 import com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.util.Cookie;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -19,8 +22,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Map;
 
 public class PremiumUpdater {
@@ -30,7 +31,6 @@ public class PremiumUpdater {
 
     private String dataFolderPath;
     private String currentVersion;
-    private String newVersion;
     private String pluginName;
 
     private User spigotUser;
@@ -44,7 +44,7 @@ public class PremiumUpdater {
     public PremiumUpdater(Player initiater, JavaPlugin plugin, int resourceId, UpdateLocale locale, boolean delete) {
         dataFolderPath = Main.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
-        pluginName = plugin.getName();
+        pluginName = locale.fileName;
         this.resourceId = resourceId;
         this.plugin = plugin;
         this.initiater = initiater;
@@ -54,24 +54,12 @@ public class PremiumUpdater {
 
     public void update() {
         try {
+            Bukkit.broadcastMessage("UPDATING");
             if (spigotUser == null) {
                 authenticate();
-                sendActionBar(initiater, locale.updatingNoVar+" &8[AUTHENTICATING SPIGOT ACCOUNT]");
+                sendActionBar(initiater, locale.updatingNoVar + " &8[AUTHENTICATING SPIGOT ACCOUNT]");
+                return;
             }
-
-//            for (Resource res : spigotUser.getPurchasedResources()) {
-//                if (res.getResourceId() == resourceId) {
-//                    resource = res;
-//                    newVersion = resource.getLastVersion();
-//
-//                    if (newVersion.equals(currentVersion)) {
-//                        sendActionBar(initiater, locale.updateFailed.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion)+" &8[NO UPDATE AVAILABLE]");
-//                        delete();
-//                        return;
-//                    }
-//                }
-//            }
-
 
             for (Resource resource : Main.getInstance().getApi().getResourceManager().getPurchasedResources(spigotUser)) {
                 if (resource.getResourceId() == resourceId) {
@@ -80,62 +68,55 @@ public class PremiumUpdater {
             }
 
             if (resource == null) {
-                sendActionBar(initiater, locale.updateFailedNoVar+" &8[COULD NOT FIND RESOURCE]");
+                sendActionBar(initiater, locale.updateFailedNoVar + " &8[COULD NOT FIND RESOURCE]");
                 delete();
                 return;
             }
 
-            newVersion = resource.getLastVersion();
+            String newVersion = Main.getInstance().getApi().getResourceManager().getResourceById(resourceId, spigotUser).getLastVersion();
 
             if (newVersion.equals(currentVersion)) {
-                sendActionBar(initiater, locale.updateFailed.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion)+" &8[NO UPDATE AVAILABLE]");
+                sendActionBar(initiater, locale.updateFailed.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[NO UPDATE AVAILABLE]");
                 delete();
                 return;
             }
 
-            sendActionBar(initiater, locale.updating.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion)+" &8[RETREIVING FILES]");
+            sendActionBar(initiater, locale.updating.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[RETRIEVING FILES]");
 
             if (!new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
                 Main.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
 
-            Bukkit.broadcastMessage("RESOURCE INFO \n NAME: "+resource.getResourceName()+ " \n ID: "+resource.getResourceId()+" \n URL: "+ resource.getDownloadURL());
-
-            resource.downloadResource(spigotUser, new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/"+locale.fileName+".jar"));
-
-            HttpURLConnection httpConnection = (HttpURLConnection) new URL(Main.getInstance().getApi().getResourceManager().getResourceById(resourceId, spigotUser).getDownloadURL()).openConnection();
+//            new BukkitRunnable() {
+//                @Override public void run() {
+            sendActionBar(initiater, locale.updating.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[ATTEMPTING DOWNLOAD]");
 
             Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
 
-            StringBuilder sb = new StringBuilder();
+            WebClient webClient = Main.getInstance().getClient();
 
-            for (String string : cookies.keySet()) {
-                sb.append(string).append("=").append(cookies.get(string)).append("; ");
-            }
+            for (Map.Entry<String, String> entry : cookies.entrySet())
+                webClient.getCookieManager().addCookie(new Cookie("spigotmc.org", entry.getKey(), entry.getValue()));
 
-            String cookieString = sb.toString();
+            webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 
-            cookieString = cookieString.substring(0, cookieString.length()-2);
+            try {
+                HtmlPage htmlPage = webClient.getPage(Main.getInstance().getApi().getResourceManager().getResourceById(resourceId, spigotUser).getDownloadURL());
 
-            Bukkit.broadcastMessage(cookieString);
+                webClient.waitForBackgroundJavaScript(10_000);
 
-            httpConnection.setRequestProperty("Cookie", cookieString);
+                Integer completeFileSize = Integer.valueOf(htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaderValue("Content-Length"));
 
-            httpConnection.connect();
+                BufferedInputStream in = new java.io.BufferedInputStream(htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getContentAsStream());
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.fileName + ".jar"));
+                java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
 
-            long completeFileSize = httpConnection.getContentLength();
+                byte[] data = new byte[1024];
+                long downloadedFileSize = 0;
+                int x;
+                while ((x = in.read(data, 0, 1024)) >= 0) {
+                    downloadedFileSize += x;
 
-            BufferedInputStream in = new java.io.BufferedInputStream(httpConnection.getInputStream());
-            java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/"+locale.fileName+".jar"));
-            java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
-
-            byte[] data = new byte[1024];
-            long downloadedFileSize = 0;
-            int x = 0;
-            while ((x = in.read(data, 0, 1024)) >= 0) {
-                downloadedFileSize += x;
-
-                //Don't send action bar for every byte of data we're not trying to crash any clients here.
-                if (x % 500 == 0) {
+                    //Don't send action bar for every byte of data we're not trying to crash any clients here.
                     final int currentProgress = (int) ((((double) downloadedFileSize) / ((double) completeFileSize)) * 15);
 
                     final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
@@ -144,25 +125,31 @@ public class PremiumUpdater {
 
                     bar = bar.substring(0, currentProgress + 2) + "&c" + bar.substring(currentProgress + 2);
 
-                    sendActionBar(initiater, locale.updatingDownload.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING]");
+                    sendActionBar(initiater, locale.updatingDownload.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING RESOURCE]");
+
+                    bout.write(data, 0, x);
                 }
 
-                bout.write(data, 0, x);
+                bout.close();
+                in.close();
+
+                UtilPlugin.unload(plugin);
+
+                sendActionBar(initiater, locale.updating.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
+
+                Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.fileName + ".jar"));
+                Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
+
+                sendActionBar(initiater, locale.updateComplete.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+
+                delete();
+            } catch (Exception ex) {
+                sendActionBar(initiater, locale.updateFailedNoVar);
+                Main.getInstance().printError(ex, "Error occurred while updating premium resource.");
+                delete();
             }
-
-            bout.close();
-            in.close();
-
-            UtilPlugin.unload(plugin);
-
-            sendActionBar(initiater, locale.updating.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
-
-            Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/"+locale.fileName+".jar"));
-            Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
-
-            sendActionBar(initiater, locale.updateComplete.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
-
-            delete();
+//                }
+//            }.runTaskAsynchronously(Main.getInstance());
         } catch(Exception ex) {
             sendActionBar(initiater, locale.updateFailedNoVar);
             Main.getInstance().printError(ex, "Error occurred while updating premium resource.");
@@ -170,7 +157,8 @@ public class PremiumUpdater {
         }
     }
 
-    public void authenticate() {
+    private void authenticate() {
+        Bukkit.broadcastMessage("AUTHENTICATING");
         sendActionBar(initiater, locale.updatingNoVar+" &8[ATTEMPTING DECRYPT]");
 
         String username = UtilSpigotCreds.getInstance().getUsername();
@@ -179,6 +167,7 @@ public class PremiumUpdater {
 
         if (username == null || password == null) {
             runGuis();
+            return;
         }
 
         try {
@@ -187,25 +176,33 @@ public class PremiumUpdater {
         } catch (TwoFactorAuthenticationException ex) {
             try {
                 sendActionBar(initiater, locale.updatingNoVar+" &8[ATTEMPTING AUTHENTICATION]");
-                if (twoFactor == null)
+                if (twoFactor == null) {
                     runGuis();
-
-                Bukkit.broadcastMessage("#1 = " + twoFactor);
+                    return;
+                }
 
                 spigotUser = Main.getInstance().getApi().getUserManager().authenticate(username, password, twoFactor);
             } catch (Exception exception) {
                 runGuis();
+                return;
             }
         } catch (InvalidCredentialsException ex) {
+            sendActionBar(initiater, locale.updatingNoVar+" &c[INVALID CACHED CREDENTIALS]");
             runGuis();
+            return;
         } catch (ConnectionFailedException ex) {
             sendActionBar(initiater, locale.updateFailedNoVar);
             Main.getInstance().printError(ex, "Error occurred while connecting to spigot during authentication.");
             delete();
+            return;
         }
+
+        Bukkit.broadcastMessage("CALLING UPDATE");
+        update();
     }
 
     private void runGuis() {
+        Bukkit.broadcastMessage("RETRIEVING CREDS");
         sendActionBar(initiater, locale.updatingNoVar+" &8[RETRIEVING USERNAME]");
         new AnvilGUI(Main.getInstance(), initiater, "Spigot username", (Player player1, String usernameInput) -> {
             try {
@@ -218,7 +215,7 @@ public class PremiumUpdater {
                             sendActionBar(initiater, locale.updatingNoVar+" &8[ENCRYPTING CREDENTIALS]");
                             UtilSpigotCreds.getInstance().setUsername(usernameInput);
                             UtilSpigotCreds.getInstance().setPassword(passwordInput);
-                            UtilSpigotCreds.getInstance().saveConfig();
+                            UtilSpigotCreds.getInstance().saveFile();
 
                             authenticate();
                             player2.closeInventory();
@@ -227,7 +224,6 @@ public class PremiumUpdater {
                             new AnvilGUI(Main.getInstance(), initiater, "Spigot two factor secret", (Player player3, String twoFactorInput) -> {
                                 try {
                                     final String twoFactorSecret = twoFactorInput;
-                                    Bukkit.broadcastMessage("#2 = " +  twoFactorSecret);
                                     spigotUser = Main.getInstance().getApi().getUserManager().authenticate(usernameInput, passwordInput, twoFactorSecret);
 
                                     sendActionBar(initiater, locale.updatingNoVar+" &8[ENCRYPTING CREDENTIALS]");
@@ -235,7 +231,7 @@ public class PremiumUpdater {
                                     UtilSpigotCreds.getInstance().setUsername(usernameInput);
                                     UtilSpigotCreds.getInstance().setPassword(passwordInput);
                                     UtilSpigotCreds.getInstance().setTwoFactor(twoFactorSecret);
-                                    UtilSpigotCreds.getInstance().saveConfig();
+                                    UtilSpigotCreds.getInstance().saveFile();
 
                                     authenticate();
                                     player3.closeInventory();
@@ -249,7 +245,7 @@ public class PremiumUpdater {
                             });
                         } catch (ConnectionFailedException ex) {
                             sendActionBar(initiater, locale.updateFailedNoVar);
-                            Main.getInstance().printError(ex, "Error occured while authenticating spigot user");
+                            Main.getInstance().printError(ex, "Error occurred while authenticating spigot user");
                             delete();
                             return "Could not connect to Spigot";
                         } catch (InvalidCredentialsException ex) {
@@ -266,7 +262,7 @@ public class PremiumUpdater {
                     return "Invalid username!";
                 }
             } catch (Exception ex) {
-                Main.getInstance().printError(ex, "Error occured while authenticating spigot username.");
+                Main.getInstance().printError(ex, "Error occurred while authenticating spigot username.");
                 sendActionBar(initiater, locale.updateFailedNoVar);
                 delete();
             }
@@ -279,8 +275,13 @@ public class PremiumUpdater {
      * Utilities
      */
     private void sendActionBar(Player player, String message) {
+//        new BukkitRunnable() {
+//            @Override
+//            public void run() {
         if (player != null)
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
+//            }
+//        }.runTaskLater(Main.getInstance(), 0L);
     }
 
     private void delete() {

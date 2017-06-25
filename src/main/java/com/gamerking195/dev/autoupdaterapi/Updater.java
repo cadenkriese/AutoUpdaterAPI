@@ -50,7 +50,7 @@ public class Updater {
         this.plugin = plugin;
 
         locale = new UpdateLocale();
-        locale.fileName = fileName;
+        locale.setFileName(fileName);
         this.delete = delete;
     }
 
@@ -66,7 +66,7 @@ public class Updater {
             return object.get("name").getAsString();
         } catch (Exception exception) {
             Main.getInstance().printError(exception);
-            sendActionBar(initiater, locale.updateFailed.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", getLatestVersion()));
+            sendActionBar(initiater, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", getLatestVersion()));
         }
 
         return "";
@@ -77,7 +77,7 @@ public class Updater {
 
             String newVersion = getLatestVersion();
 
-            sendActionBar(initiater, locale.updating.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion)+" &8[RETREIVING FILES]");
+            sendActionBar(initiater, locale.getUpdating().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion)+" &8[RETRIEVING FILES]");
             try {
                     if (!new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
                         Main.getInstance().printPluginError("Error occured while updating " + pluginName + ".", "Could not delete old plugin jar.");
@@ -91,7 +91,7 @@ public class Updater {
                 long completeFileSize = httpConnection.getContentLength();
 
                 java.io.BufferedInputStream in = new java.io.BufferedInputStream(httpConnection.getInputStream());
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/"+locale.fileName+".jar"));
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/"+locale.getFileName()+".jar"));
                 java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
 
                 byte[] data = new byte[1024];
@@ -108,7 +108,7 @@ public class Updater {
 
                     bar = bar.substring(0, currentProgress + 2) + "&c" + bar.substring(currentProgress + 2);
 
-                    sendActionBar(initiater, locale.updatingDownload.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent+"%")+" &8[DOWNLOADING]");
+                    sendActionBar(initiater, locale.getUpdatingDownload().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent+"%")+" &8[DOWNLOADING]");
 
                     bout.write(data, 0, x);
                 }
@@ -116,23 +116,23 @@ public class Updater {
                 bout.close();
                 in.close();
 
-                sendActionBar(initiater, locale.updating.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
+                sendActionBar(initiater, locale.getUpdating().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
 
-                Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/"+locale.fileName+".jar"));
+                Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/"+locale.getFileName()+".jar"));
                 Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
-                sendActionBar(initiater, locale.updateComplete.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+                sendActionBar(initiater, locale.getUpdateComplete().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
 
                 if (delete) {
                     if (!new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
-                        Main.getInstance().printPluginError("Error occured while updating "+pluginName+".", "Could not delete updater jar.");
+                        Main.getInstance().printPluginError("Error occurred while updating "+pluginName+".", "Could not delete updater jar.");
 
                     UtilPlugin.unload(Main.getInstance());
                 }
 
             } catch (Exception e) {
                 Main.getInstance().printError(e, "Error occurred while updating "+pluginName+".");
-                sendActionBar(initiater, locale.updateFailed.replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+                sendActionBar(initiater, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
             }
         }
     }
@@ -145,6 +145,8 @@ public class Updater {
     private void sendActionBar(Player player, String message) {
         if (player != null)
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
+        if (Main.getInstance().isDebug())
+            Main.getInstance().getLogger().info(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', message)));
     }
 
     private String readFrom(String url) throws IOException

@@ -1,15 +1,18 @@
 package com.gamerking195.dev.autoupdaterapi;
 
-import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import be.maximvdw.spigotsite.SpigotSiteCore;
 import be.maximvdw.spigotsite.api.SpigotSiteAPI;
+import be.maximvdw.spigotsite.api.user.User;
+import be.maximvdw.spigotsite.user.SpigotUser;
 import com.gamerking195.dev.autoupdaterapi.util.UtilDownloader;
 import com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.logging.LogFactory;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -23,16 +26,32 @@ public final class Main
         return instance;
     }
 
+    @Getter
     private SpigotSiteAPI api;
 
-    private boolean ipWhitelisted = false;
-
+    @Getter
+    @Setter
     private WebClient webClient;
+
+    @Getter
+    @Setter
+    private User currentUser;
+
+    @Getter
+    private boolean debug = true;
 
     public void onEnable()
     {
+        /*
+         * General setup.
+         */
+
         instance = this;
         log = getLogger();
+
+        /*
+         * HTML Unit (Using the OSGi classifier as to be compatible with MaximVdW's spigot site api)
+         */
 
         UtilDownloader.downloadLib(UtilDownloader.Library.HTMMLUNIT);
 
@@ -45,15 +64,7 @@ public final class Main
             printError(ex, "Unable to turn off HTML unit logging!.");
         }
 
-        log.info("Initializing connection with spigot, this may take a while...");
-
-        try {
-            api = new SpigotSiteCore();
-        } catch (Exception ex) {
-            printError(ex, "Error occurred while initializing the spigot site API.");
-            return;
-        }
-
+        //Setup web client
         webClient = new WebClient(BrowserVersion.CHROME);
         webClient.getOptions().setJavaScriptEnabled(true);
         webClient.getOptions().setTimeout(15000);
@@ -64,26 +75,29 @@ public final class Main
         webClient.getOptions().setPrintContentOnFailingStatusCode(false);
         java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
 
+        log.info("Initializing connection with spigot, this may take a while...");
+
+        /*
+         * Spigot Site API
+         */
+
+        try {
+            api = new SpigotSiteCore();
+        } catch (Exception ex) {
+            printError(ex, "Error occurred while initializing the spigot site API.");
+            return;
+        }
+
+        /*
+         * Setup local files
+         */
+
         UtilSpigotCreds.getInstance().init();
 
-        log.info("Updater enabled!");
+        log.info("AutoUpdaterAPI V"+getDescription().getVersion()+" enabled.!");
     }
 
-    SpigotSiteAPI getApi() {
-        return api;
-    }
 
-    boolean isIpWhitelisted() {
-        return ipWhitelisted;
-    }
-
-    void setIpWhitelisted(boolean ipWhitelisted) {
-        this.ipWhitelisted = ipWhitelisted;
-    }
-
-    public WebClient getClient() {
-        return webClient;
-    }
 
     public void printError(Exception ex)
     {

@@ -59,7 +59,7 @@ public class PremiumUpdater {
         spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
-        pluginName = locale.getFileName();
+        pluginName = locale.getPluginName();
         this.resourceId = resourceId;
         this.plugin = plugin;
         this.initiator = initiator;

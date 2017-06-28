@@ -46,7 +46,7 @@ public class Updater {
     public Updater(Player initiator, JavaPlugin plugin, int resourceId, UpdateLocale locale, boolean deleteUpdater, boolean deleteOld) {
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
-        pluginName = locale.getFileName();
+        pluginName = locale.getPluginName();
         url = "https://api.spiget.org/v2/resources/" + resourceId;
         this.plugin = plugin;
         this.initiator = initiator;

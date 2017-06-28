@@ -1,7 +1,7 @@
 package com.gamerking195.dev.autoupdaterapi.util;
 
 
-import com.gamerking195.dev.autoupdaterapi.Main;
+import com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,10 +14,14 @@ import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
+/*
+ * Class is from MVdWUpdater in order to make this api work with the SpigotSiteAPI also made by Maxim Van de Wynckel "Maximvdw"
+ *
+ * MVdWUpdater https://www.spigotmc.org/resources/mvdwupdater.14803/
+ * SpigotSiteAPI https://github.com/Maximvdw/SpigotSite-API
+ */
 public class UtilDownloader {
     private static final Class[] parameters = new Class[]{URL.class};
-
-    //taken from mvdw updater
 
     public enum Library {
         HTMMLUNIT("http://repo.mvdw-software.be/content/groups/public/com/gargoylesoftware/HTMLUnit/2.15/HTMLUnit-2.15-OSGi.jar",
@@ -86,7 +90,7 @@ public class UtilDownloader {
      * @param fileName    filename to save it as
      */
     public static void downloadLib(String url, String name, String description, String fileName) {
-        Logger SendConsole = Main.getInstance().getLogger();
+        Logger SendConsole = AutoUpdaterAPI.getInstance().getLogger();
 
         String localPath = "./plugins/MVdWPlugin/lib/" + fileName + ".jar";
         if (!(new File(localPath).exists())) {
@@ -95,7 +99,7 @@ public class UtilDownloader {
             try {
                 downloadFile(url, localPath);
             } catch (IOException e) {
-                SendConsole.severe("An error occured while downloading a required lib.");
+                SendConsole.severe("An error occurred while downloading a required lib.");
                 e.printStackTrace();
             }
         }

@@ -1,6 +1,6 @@
 package com.gamerking195.dev.autoupdaterapi.util;
 
-import com.gamerking195.dev.autoupdaterapi.Main;
+import com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
@@ -20,7 +20,10 @@ import java.util.SortedSet;
 
 public class UtilPlugin {
     /**
-     * Method taken from PlugMan, developed by Ryan Clancy "rylinaux"
+     * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
+     *
+     * PlugMan https://dev.bukkit.org/projects/plugman
+     *
      * @param plugin The plugin that needs to be unloaded.
      */
     public static void unload(Plugin plugin) {
@@ -70,9 +73,9 @@ public class UtilPlugin {
                 commands = (Map<String, Command>) knownCommandsField.get(commandMap);
 
             } catch (NoSuchFieldException e) {
-                Main.getInstance().printError(e);
+                AutoUpdaterAPI.getInstance().printError(e);
             } catch (IllegalAccessException e) {
-                Main.getInstance().printError(e);
+                AutoUpdaterAPI.getInstance().printError(e);
             }
         }
 

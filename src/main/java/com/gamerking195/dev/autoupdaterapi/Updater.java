@@ -69,10 +69,16 @@ public class Updater {
             }.getType();
             JsonObject object = gson.fromJson(latestVersion, type);
 
+            if (object.get("error") != null) {
+                AutoUpdaterAPI.getInstance().printPluginError("Error occurred while retrieving resource info from Spiget.", object.get("error").getAsString());
+                sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
+                delete();
+            }
+
             return object.get("name").getAsString();
         } catch (Exception exception) {
             AutoUpdaterAPI.getInstance().printError(exception);
-            sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", getLatestVersion()));
+            sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
         }
 
         return "";
@@ -140,6 +146,8 @@ public class Updater {
                                         sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
 
                                         delete();
+
+                                        AutoUpdaterAPI.getInstance().resourceUpdated();
                                     } catch(Exception ex) {
                                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while initializing " + pluginName + ".");
                                         sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));

@@ -179,6 +179,8 @@ public class PremiumUpdater {
 
                                 sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
 
+                                AutoUpdaterAPI.getInstance().resourceUpdated();
+
                                 delete();
                             } catch (Exception ex) {
                                 sendActionBar(initiator, locale.getUpdateFailedNoVar());
@@ -214,6 +216,14 @@ public class PremiumUpdater {
                 try {
                     sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING AUTHENTICATION]");
                     spigotUser = AutoUpdaterAPI.getInstance().getApi().getUserManager().authenticate(username, password);
+
+                    if (spigotUser == null) {
+                        sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]");
+                        UtilSpigotCreds.getInstance().clearFile();
+                        runGuis();
+                        return;
+                    }
+
                     AutoUpdaterAPI.getInstance().setCurrentUser(spigotUser);
 
 
@@ -228,38 +238,60 @@ public class PremiumUpdater {
                         }
                     }.runTaskLater(AutoUpdaterAPI.getInstance(), 40L);
 
-                } catch (TwoFactorAuthenticationException ex) {
-                    try {
-                        sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
-                        if (twoFactor == null) {
-                            runGuis();
-                            return;
-                        }
-
-                        spigotUser = AutoUpdaterAPI.getInstance().getApi().getUserManager().authenticate(username, password, twoFactor);
-                        AutoUpdaterAPI.getInstance().setCurrentUser(spigotUser);
-
-
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    update();
-                                } catch (Exception ex) {
-                                    AutoUpdaterAPI.getInstance().printError(ex);
-                                }
+                } catch(Exception ex) {
+                    if (ex instanceof TwoFactorAuthenticationException) {
+                        try {
+                            sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
+                            if (twoFactor == null) {
+                                runGuis();
+                                return;
                             }
-                        }.runTask(AutoUpdaterAPI.getInstance());
-                    } catch (Exception exception) {
+
+                            spigotUser = AutoUpdaterAPI.getInstance().getApi().getUserManager().authenticate(username, password, twoFactor);
+
+                            if (spigotUser == null) {
+                                sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                                UtilSpigotCreds.getInstance().clearFile();
+                                runGuis();
+                                return;
+                            }
+
+                            AutoUpdaterAPI.getInstance().setCurrentUser(spigotUser);
+
+                            new BukkitRunnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        update();
+                                    } catch (Exception ex) {
+                                        AutoUpdaterAPI.getInstance().printError(ex);
+                                    }
+                                }
+                            }.runTask(AutoUpdaterAPI.getInstance());
+                        } catch (Exception otherException) {
+                            if (otherException instanceof InvalidCredentialsException) {
+                                sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                                UtilSpigotCreds.getInstance().clearFile();
+                                runGuis();
+                            } else if (otherException instanceof  ConnectionFailedException) {
+                                sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                                AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#6)");
+                                delete();
+                            } else {
+                                AutoUpdaterAPI.getInstance().printError(otherException);
+                            }
+                        }
+                    } else if (ex instanceof InvalidCredentialsException) {
+                        sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                        UtilSpigotCreds.getInstance().clearFile();
                         runGuis();
+                    } else if (ex instanceof ConnectionFailedException) {
+                        sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                        AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#2)");
+                        delete();
+                    } else {
+                        AutoUpdaterAPI.getInstance().printError(ex);
                     }
-                } catch (InvalidCredentialsException ex) {
-                    sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
-                    runGuis();
-                } catch (ConnectionFailedException ex) {
-                    sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                    AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#2)");
-                    delete();
                 }
             }
         }.runTaskAsynchronously(AutoUpdaterAPI.getInstance());
@@ -288,7 +320,7 @@ public class PremiumUpdater {
                                         public void run() {
                                             authenticate();
                                         }
-                                    }.runTaskLater(AutoUpdaterAPI.getInstance(), 100L);
+                                    }.runTaskLater(AutoUpdaterAPI.getInstance(), 200L);
                                     player2.closeInventory();
 
                                 } catch (TwoFactorAuthenticationException ex) {
@@ -311,7 +343,7 @@ public class PremiumUpdater {
                                                 public void run() {
                                                     authenticate();
                                                 }
-                                            }.runTaskLater(AutoUpdaterAPI.getInstance(), 100L);
+                                            }.runTaskLater(AutoUpdaterAPI.getInstance(), 200L);
                                             player3.closeInventory();
 
                                             return "Retrieved credentials you may now close this GUI.";

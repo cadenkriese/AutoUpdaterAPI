@@ -13,6 +13,7 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.logging.LogFactory;
+import org.bstats.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -57,6 +58,10 @@ extends JavaPlugin {
     @Getter
     @Setter
     private boolean debug = false;
+
+    private int resourcesUpdated = 0;
+
+    private Metrics metrics;
 
     public void onEnable() {
         /*
@@ -114,9 +119,21 @@ extends JavaPlugin {
 
         UtilSpigotCreds.getInstance().init();
 
+        metrics = new Metrics(instance);
+
+        metrics.addCustomChart(new Metrics.SingleLineChart("resources_updated") {
+            @Override
+            public int getValue() {
+                return resourcesUpdated;
+            }
+        });
+
         log.info("AutoUpdaterAPI V" + getDescription().getVersion() + " enabled!");
     }
 
+    public void resourceUpdated() {
+        resourcesUpdated += 1;
+    }
 
     public void printError(Exception ex) {
         this.log.severe("A severe error has occurred with AutoUpdaterAPI.");

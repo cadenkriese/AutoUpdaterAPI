@@ -1,6 +1,7 @@
 package com.gamerking195.dev.autoupdaterapi;
 
 import com.gamerking195.dev.autoupdaterapi.util.UtilPlugin;
+import com.gamerking195.dev.autoupdaterapi.util.UtilReader;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -26,12 +27,15 @@ public class Updater {
     private String dataFolderPath;
     private String currentVersion;
     private String url;
+    private String resourceId;
     private String pluginName;
 
     private UpdateLocale locale;
 
     private boolean deleteUpdater;
     private boolean deleteOld;
+
+    private long startingTime;
 
     /**
      * Instantiate the updater for a regular resource.
@@ -53,6 +57,7 @@ public class Updater {
         this.locale = locale;
         this.deleteUpdater = deleteUpdater;
         this.deleteOld = deleteOld;
+        this.resourceId = String.valueOf(resourceId);
     }
 
     /**
@@ -61,21 +66,8 @@ public class Updater {
      * @return The latest version of the plugin as a string.
      */
     public String getLatestVersion() {
-        Gson gson = new Gson();
-
         try {
-            String latestVersion = readFrom(url + "/versions/latest");
-            Type type = new TypeToken<JsonObject>() {
-            }.getType();
-            JsonObject object = gson.fromJson(latestVersion, type);
-
-            if (object.get("error") != null) {
-                AutoUpdaterAPI.getInstance().printPluginError("Error occurred while retrieving resource info from Spiget.", object.get("error").getAsString());
-                sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
-                delete();
-            }
-
-            return object.get("name").getAsString();
+            return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource="+resourceId);
         } catch (Exception exception) {
             AutoUpdaterAPI.getInstance().printError(exception);
             sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
@@ -85,6 +77,7 @@ public class Updater {
     }
 
     public void update() {
+        startingTime = System.currentTimeMillis();
         String newVersion = getLatestVersion();
 
         if (!newVersion.equalsIgnoreCase(currentVersion)) {
@@ -143,7 +136,8 @@ public class Updater {
                                         Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
                                         Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
-                                        sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+                                        double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
+                                        sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
                                         delete();
 
@@ -201,19 +195,6 @@ public class Updater {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
         if (AutoUpdaterAPI.getInstance().isDebug())
             AutoUpdaterAPI.getInstance().getLogger().info(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', message)));
-    }
-
-    private String readFrom(String url) throws IOException {
-        try (InputStream is = new URL(url).openStream()) {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-
-            StringBuilder sb = new StringBuilder();
-            int cp;
-            while ((cp = rd.read()) != -1) {
-                sb.append((char) cp);
-            }
-            return sb.toString();
-        }
     }
 
     void delete() {

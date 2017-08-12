@@ -7,6 +7,7 @@ import be.maximvdw.spigotsite.api.user.exceptions.InvalidCredentialsException;
 import be.maximvdw.spigotsite.api.user.exceptions.TwoFactorAuthenticationException;
 import be.maximvdw.spigotsite.user.SpigotUser;
 import com.gamerking195.dev.autoupdaterapi.util.UtilPlugin;
+import com.gamerking195.dev.autoupdaterapi.util.UtilReader;
 import com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -21,9 +22,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
+import java.io.*;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 public class PremiumUpdater {
@@ -44,6 +45,9 @@ public class PremiumUpdater {
     private boolean deleteOld;
 
     private int resourceId;
+    private int loginAttempts;
+
+    private long startingTime;
 
     /**
      * Instantiate PremiumUpdater
@@ -60,6 +64,7 @@ public class PremiumUpdater {
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = locale.getPluginName();
+        loginAttempts = 0;
         this.resourceId = resourceId;
         this.plugin = plugin;
         this.initiator = initiator;
@@ -68,11 +73,32 @@ public class PremiumUpdater {
         this.deleteOld = deleteOld;
     }
 
+    public String getLatestVersion() {
+        try {
+            return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource="+resourceId);
+        } catch (Exception exception) {
+            AutoUpdaterAPI.getInstance().printError(exception);
+            sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
+        }
+
+        return "";
+    }
+
     /**
      * Updates the plugin.
      */
     public void update() {
+        startingTime = System.currentTimeMillis();
+
         sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PLUGIN INFO]");
+
+        String newVersion = getLatestVersion();
+
+        if (currentVersion.equals(newVersion)) {
+            sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[NO UPDATES AVAILABLE]");
+            delete();
+            return;
+        }
 
         spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
 
@@ -105,14 +131,6 @@ public class PremiumUpdater {
             @Override
             public void run() {
                 try {
-                    String newVersion = AutoUpdaterAPI.getInstance().getApi().getResourceManager().getResourceById(resourceId, spigotUser).getLastVersion();
-
-                    if (newVersion.equals(currentVersion)) {
-                        sendActionBar(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[NO UPDATE AVAILABLE]");
-                        delete();
-                        return;
-                    }
-
                     sendActionBar(initiator, locale.getUpdating().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[ATTEMPTING DOWNLOAD]");
 
                     Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
@@ -177,7 +195,8 @@ public class PremiumUpdater {
                                 Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
                                 Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
-                                sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+                                double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
+                                sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
                                 AutoUpdaterAPI.getInstance().resourceUpdated();
 
@@ -277,6 +296,20 @@ public class PremiumUpdater {
                                 sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#6)");
                                 delete();
+                            } else if (otherException instanceof TwoFactorAuthenticationException) {
+                                if (loginAttempts < 4) {
+                                    sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #"+loginAttempts+"]");
+                                    loginAttempts++;
+                                    new BukkitRunnable() {
+                                        @Override
+                                        public void run() {
+                                            authenticate();
+                                        }
+                                    }.runTaskLater(AutoUpdaterAPI.getInstance(), 100L);
+                                } else {
+                                    loginAttempts = 0;
+                                    AutoUpdaterAPI.getInstance().printError(otherException);
+                                }
                             } else {
                                 AutoUpdaterAPI.getInstance().printError(otherException);
                             }
@@ -286,7 +319,7 @@ public class PremiumUpdater {
                         UtilSpigotCreds.getInstance().clearFile();
                         runGuis();
                     } else if (ex instanceof ConnectionFailedException) {
-                        sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                        sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#2)");
                         delete();
                     } else {

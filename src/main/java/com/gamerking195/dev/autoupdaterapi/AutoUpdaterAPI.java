@@ -137,7 +137,7 @@ extends JavaPlugin {
 
     public void printError(Exception ex) {
         this.log.severe("A severe error has occurred with AutoUpdaterAPI.");
-        this.log.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at https://github.com/GamerKing195/PluginUpdater/issues.");
+        this.log.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at https://github.com/GamerKing195/AutoUpdaterAPI/issues.");
         this.log.severe("");
         this.log.severe("============== BEGIN ERROR ==============");
         this.log.severe("PLUGIN VERSION: AutoUpdaterAPI V" + getDescription().getVersion());
@@ -152,7 +152,7 @@ extends JavaPlugin {
 
     public void printError(Exception ex, String extraInfo) {
         this.log.severe("A severe error has occurred with AutoUpdaterAPI.");
-        this.log.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at https://github.com/GamerKing195/PluginUpdater/issues.");
+        this.log.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at https://github.com/GamerKing195/AutoUpdaterAPI/issues.");
         this.log.severe("");
         this.log.severe("============== BEGIN ERROR ==============");
         this.log.severe("PLUGIN VERSION: AutoUpdaterAPI V" + getDescription().getVersion());

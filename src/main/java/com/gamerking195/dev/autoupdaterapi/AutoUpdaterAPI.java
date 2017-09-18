@@ -72,6 +72,12 @@ extends JavaPlugin {
         log = getLogger();
 
         /*
+         * Setup local files
+         */
+
+        UtilSpigotCreds.getInstance().init();
+
+        /*
          * HTML Unit (Using the OSGi classifier as to be compatible with MaximVdW's spigot site api)
          */
 
@@ -108,16 +114,27 @@ extends JavaPlugin {
             public void run() {
                 try {
                     api = new SpigotSiteCore();
+
+                    if (UtilSpigotCreds.getInstance().getUsername() != null && UtilSpigotCreds.getInstance().getPassword() != null) {
+                        log.info("Stored credentials detected, attempting login.");
+                        new PremiumUpdater(null, instance, 1, new UpdateLocale(), false, false).authenticate(false);
+                    }
+//
+//                    new BukkitRunnable() {
+//                        @Override
+//                        public void run() {
+//
+//                        }
+//                    }.runTaskLater(instance, 100L);
                 } catch (Exception ex) {
                     printError(ex, "Error occurred while initializing the spigot site API.");
                 }
             }
         }.runTaskAsynchronously(instance);
-        /*
-         * Setup local files
-         */
 
-        UtilSpigotCreds.getInstance().init();
+        /*
+         * Statistics
+         */
 
         metrics = new Metrics(instance);
 

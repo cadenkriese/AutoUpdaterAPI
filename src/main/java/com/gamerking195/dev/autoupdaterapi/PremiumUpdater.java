@@ -23,8 +23,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.Map;
 
 public class PremiumUpdater {
@@ -64,7 +62,7 @@ public class PremiumUpdater {
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = locale.getPluginName();
-        loginAttempts = 0;
+        loginAttempts = 1;
         this.resourceId = resourceId;
         this.plugin = plugin;
         this.initiator = initiator;
@@ -103,7 +101,7 @@ public class PremiumUpdater {
         spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
 
         if (spigotUser == null) {
-            authenticate();
+            authenticate(true);
             sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATING SPIGOT ACCOUNT]");
             return;
         }
@@ -217,7 +215,7 @@ public class PremiumUpdater {
         }.runTaskAsynchronously(AutoUpdaterAPI.getInstance());
     }
 
-    private void authenticate() {
+    public void authenticate(boolean recall) {
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -228,7 +226,7 @@ public class PremiumUpdater {
                 String twoFactor = UtilSpigotCreds.getInstance().getTwoFactor();
 
                 if (username == null || password == null) {
-                    runGuis();
+                    runGuis(recall);
                     return;
                 }
 
@@ -239,18 +237,18 @@ public class PremiumUpdater {
                     if (spigotUser == null) {
                         sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]");
                         UtilSpigotCreds.getInstance().clearFile();
-                        runGuis();
+                        runGuis(recall);
                         return;
                     }
 
                     AutoUpdaterAPI.getInstance().setCurrentUser(spigotUser);
 
-
                     new BukkitRunnable() {
                         @Override
                         public void run() {
                             try {
-                                update();
+                                if (recall)
+                                    update();
                             } catch (Exception ex) {
                                 AutoUpdaterAPI.getInstance().printError(ex);
                             }
@@ -262,7 +260,7 @@ public class PremiumUpdater {
                         try {
                             sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
                             if (twoFactor == null) {
-                                runGuis();
+                                runGuis(recall);
                                 return;
                             }
 
@@ -271,7 +269,7 @@ public class PremiumUpdater {
                             if (spigotUser == null) {
                                 sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                                 UtilSpigotCreds.getInstance().clearFile();
-                                runGuis();
+                                runGuis(recall);
                                 return;
                             }
 
@@ -281,7 +279,8 @@ public class PremiumUpdater {
                                 @Override
                                 public void run() {
                                     try {
-                                        update();
+                                        if (recall)
+                                            update();
                                     } catch (Exception ex) {
                                         AutoUpdaterAPI.getInstance().printError(ex);
                                     }
@@ -291,8 +290,8 @@ public class PremiumUpdater {
                             if (otherException instanceof InvalidCredentialsException) {
                                 sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                                 UtilSpigotCreds.getInstance().clearFile();
-                                runGuis();
-                            } else if (otherException instanceof  ConnectionFailedException) {
+                                runGuis(recall);
+                            } else if (otherException instanceof ConnectionFailedException) {
                                 sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#6)");
                                 delete();
@@ -303,11 +302,11 @@ public class PremiumUpdater {
                                     new BukkitRunnable() {
                                         @Override
                                         public void run() {
-                                            authenticate();
+                                            authenticate(recall);
                                         }
                                     }.runTaskLater(AutoUpdaterAPI.getInstance(), 100L);
                                 } else {
-                                    loginAttempts = 0;
+                                    loginAttempts = 1;
                                     AutoUpdaterAPI.getInstance().printError(otherException);
                                 }
                             } else {
@@ -317,7 +316,7 @@ public class PremiumUpdater {
                     } else if (ex instanceof InvalidCredentialsException) {
                         sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                         UtilSpigotCreds.getInstance().clearFile();
-                        runGuis();
+                        runGuis(recall);
                     } else if (ex instanceof ConnectionFailedException) {
                         sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#2)");
@@ -330,7 +329,7 @@ public class PremiumUpdater {
         }.runTaskAsynchronously(AutoUpdaterAPI.getInstance());
     }
 
-    private void runGuis() {
+    private void runGuis(boolean recall) {
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -351,7 +350,7 @@ public class PremiumUpdater {
                                     new BukkitRunnable() {
                                         @Override
                                         public void run() {
-                                            authenticate();
+                                            authenticate(recall);
                                         }
                                     }.runTaskLater(AutoUpdaterAPI.getInstance(), 200L);
                                     player2.closeInventory();
@@ -374,7 +373,7 @@ public class PremiumUpdater {
                                             new BukkitRunnable() {
                                                 @Override
                                                 public void run() {
-                                                    authenticate();
+                                                    authenticate(recall);
                                                 }
                                             }.runTaskLater(AutoUpdaterAPI.getInstance(), 200L);
                                             player3.closeInventory();

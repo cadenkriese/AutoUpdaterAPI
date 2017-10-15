@@ -19,7 +19,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
@@ -28,7 +28,7 @@ import java.util.Map;
 public class PremiumUpdater {
     private Player initiator;
 
-    private JavaPlugin plugin;
+    private Plugin plugin;
 
     private String dataFolderPath;
     private String currentVersion;
@@ -47,6 +47,8 @@ public class PremiumUpdater {
 
     private long startingTime;
 
+    private UpdaterRunnable endTask;
+
     /**
      * Instantiate PremiumUpdater
      *
@@ -57,7 +59,7 @@ public class PremiumUpdater {
      * @param deleteUpdater Should the updater delete itself after the update fails / succeeds.
      * @param deleteOld     Should the old version of the plugin be deleted & disabled.
      */
-    public PremiumUpdater(Player initiator, JavaPlugin plugin, int resourceId, UpdateLocale locale, boolean deleteUpdater, boolean deleteOld) {
+    public PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean deleteUpdater, boolean deleteOld) {
         spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
@@ -69,6 +71,33 @@ public class PremiumUpdater {
         this.locale = locale;
         this.deleteUpdater = deleteUpdater;
         this.deleteOld = deleteOld;
+        endTask = successful -> {};
+    }
+
+    /**
+     * Instantiate PremiumUpdater
+     *
+     * @param initiator     The player that started this action (if there is none set to null).
+     * @param plugin        The instance of the outdated plugin.
+     * @param resourceId    The ID of the plugin on Spigot found in the url after the name.
+     * @param locale        The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param deleteUpdater Should the updater delete itself after the update fails / succeeds.
+     * @param deleteOld     Should the old version of the plugin be deleted & disabled.
+     * @param endTask       Runnable that will run once the update has completed.
+     */
+    public PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean deleteUpdater, boolean deleteOld, UpdaterRunnable endTask) {
+        spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
+        dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
+        currentVersion = plugin.getDescription().getVersion();
+        pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion);
+        loginAttempts = 1;
+        this.resourceId = resourceId;
+        this.plugin = plugin;
+        this.initiator = initiator;
+        this.locale = locale;
+        this.deleteUpdater = deleteUpdater;
+        this.deleteOld = deleteOld;
+        this.endTask = endTask;
     }
 
     public String getLatestVersion() {
@@ -76,7 +105,7 @@ public class PremiumUpdater {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource="+resourceId);
         } catch (Exception exception) {
             AutoUpdaterAPI.getInstance().printError(exception);
-            sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
+            sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
         }
 
         return "";
@@ -94,11 +123,14 @@ public class PremiumUpdater {
 
         if (currentVersion.equals(newVersion)) {
             sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[NO UPDATES AVAILABLE]");
+            endTask.run(false);
             delete();
             return;
         }
 
         spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
+        pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion);
+        locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
 
         if (spigotUser == null) {
             authenticate(true);
@@ -115,12 +147,14 @@ public class PremiumUpdater {
         } catch (ConnectionFailedException ex) {
             sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
             AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#1)");
+            endTask.run(false);
             delete();
         }
 
         if (resource == null) {
             AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + "!", "That plugin has not been bought by the current user!");
             sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[YOU HAVE NOT BOUGHT THAT PLUGIN]");
+            endTask.run(false);
             delete();
             return;
         }
@@ -129,7 +163,7 @@ public class PremiumUpdater {
             @Override
             public void run() {
                 try {
-                    sendActionBar(initiator, locale.getUpdating().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[ATTEMPTING DOWNLOAD]");
+                    sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[ATTEMPTING DOWNLOAD]");
 
                     Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
 
@@ -166,7 +200,7 @@ public class PremiumUpdater {
 
                             bar = bar.substring(0, currentProgress + 2) + "&c" + bar.substring(currentProgress + 2);
 
-                            sendActionBar(initiator, locale.getUpdatingDownload().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING RESOURCE]");
+                            sendActionBar(initiator, locale.getUpdatingDownload().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING RESOURCE]");
                         }
 
                         bout.write(data, 0, x);
@@ -185,23 +219,25 @@ public class PremiumUpdater {
                                     UtilPlugin.unload(plugin);
 
                                     if (!new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
-                                        AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not deleteUpdater old plugin jar.");
+                                        AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete Updater old plugin jar.");
                                 }
 
-                                sendActionBar(initiator, locale.getUpdating().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
+                                sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
 
                                 Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
                                 Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
                                 double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
-                                sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", pluginName).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
+                                sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
                                 AutoUpdaterAPI.getInstance().resourceUpdated();
 
+                                endTask.run(true);
                                 delete();
                             } catch (Exception ex) {
                                 sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
+                                endTask.run(false);
                                 delete();
                             }
                         }
@@ -209,6 +245,7 @@ public class PremiumUpdater {
                 } catch (Exception ex) {
                     sendActionBar(initiator, locale.getUpdateFailedNoVar());
                     AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
+                    endTask.run(false);
                     delete();
                 }
             }
@@ -294,6 +331,7 @@ public class PremiumUpdater {
                             } else if (otherException instanceof ConnectionFailedException) {
                                 sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#6)");
+                                endTask.run(false);
                                 delete();
                             } else if (otherException instanceof TwoFactorAuthenticationException) {
                                 if (loginAttempts < 4) {
@@ -320,6 +358,7 @@ public class PremiumUpdater {
                     } else if (ex instanceof ConnectionFailedException) {
                         sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#2)");
+                        endTask.run(false);
                         delete();
                     } else {
                         AutoUpdaterAPI.getInstance().printError(ex);
@@ -382,6 +421,7 @@ public class PremiumUpdater {
                                         } catch (Exception exception) {
                                             sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                                             AutoUpdaterAPI.getInstance().printError(exception, "Error occurred while authenticating Spigot user.");
+                                            endTask.run(false);
                                             delete();
                                             return "Authentication failed";
                                         }
@@ -389,10 +429,12 @@ public class PremiumUpdater {
                                 } catch (ConnectionFailedException ex) {
                                     sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                                     AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to Spigot. (#3)");
+                                    endTask.run(false);
                                     delete();
                                     return "Could not connect to Spigot";
                                 } catch (InvalidCredentialsException ex) {
                                     sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+                                    endTask.run(false);
                                     delete();
                                     return "Invalid credentials";
                                 }
@@ -401,12 +443,14 @@ public class PremiumUpdater {
                             });
                         } else {
                             sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+                            endTask.run(false);
                             delete();
                             return "Invalid username!";
                         }
                     } catch (Exception ex) {
                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while authenticating Spigot username.");
                         sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+                        endTask.run(false);
                         delete();
                     }
 

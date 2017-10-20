@@ -71,7 +71,7 @@ public class PremiumUpdater {
         this.locale = locale;
         this.deleteUpdater = deleteUpdater;
         this.deleteOld = deleteOld;
-        endTask = successful -> {};
+        endTask = (successful, ex) -> {};
     }
 
     /**
@@ -123,14 +123,14 @@ public class PremiumUpdater {
 
         if (currentVersion.equals(newVersion)) {
             sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[NO UPDATES AVAILABLE]");
-            endTask.run(false);
+            endTask.run(false, null);
             delete();
             return;
         }
 
         spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
         pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion);
-        locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+        locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "\\ "));
 
         if (spigotUser == null) {
             authenticate(true);
@@ -147,14 +147,14 @@ public class PremiumUpdater {
         } catch (ConnectionFailedException ex) {
             sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
             AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#1)");
-            endTask.run(false);
+            endTask.run(false, ex);
             delete();
         }
 
         if (resource == null) {
             AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + "!", "That plugin has not been bought by the current user!");
             sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[YOU HAVE NOT BOUGHT THAT PLUGIN]");
-            endTask.run(false);
+            endTask.run(false, null);
             delete();
             return;
         }
@@ -232,12 +232,12 @@ public class PremiumUpdater {
 
                                 AutoUpdaterAPI.getInstance().resourceUpdated();
 
-                                endTask.run(true);
+                                endTask.run(true, null);
                                 delete();
                             } catch (Exception ex) {
                                 sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
-                                endTask.run(false);
+                                endTask.run(false, ex);
                                 delete();
                             }
                         }
@@ -245,7 +245,7 @@ public class PremiumUpdater {
                 } catch (Exception ex) {
                     sendActionBar(initiator, locale.getUpdateFailedNoVar());
                     AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
-                    endTask.run(false);
+                    endTask.run(false, ex);
                     delete();
                 }
             }
@@ -331,7 +331,7 @@ public class PremiumUpdater {
                             } else if (otherException instanceof ConnectionFailedException) {
                                 sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#6)");
-                                endTask.run(false);
+                                endTask.run(false, otherException);
                                 delete();
                             } else if (otherException instanceof TwoFactorAuthenticationException) {
                                 if (loginAttempts < 4) {
@@ -358,7 +358,7 @@ public class PremiumUpdater {
                     } else if (ex instanceof ConnectionFailedException) {
                         sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#2)");
-                        endTask.run(false);
+                        endTask.run(false, ex);
                         delete();
                     } else {
                         AutoUpdaterAPI.getInstance().printError(ex);
@@ -421,7 +421,7 @@ public class PremiumUpdater {
                                         } catch (Exception exception) {
                                             sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                                             AutoUpdaterAPI.getInstance().printError(exception, "Error occurred while authenticating Spigot user.");
-                                            endTask.run(false);
+                                            endTask.run(false, exception);
                                             delete();
                                             return "Authentication failed";
                                         }
@@ -429,12 +429,12 @@ public class PremiumUpdater {
                                 } catch (ConnectionFailedException ex) {
                                     sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                                     AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to Spigot. (#3)");
-                                    endTask.run(false);
+                                    endTask.run(false, ex);
                                     delete();
                                     return "Could not connect to Spigot";
                                 } catch (InvalidCredentialsException ex) {
                                     sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
-                                    endTask.run(false);
+                                    endTask.run(false, ex);
                                     delete();
                                     return "Invalid credentials";
                                 }
@@ -443,14 +443,14 @@ public class PremiumUpdater {
                             });
                         } else {
                             sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
-                            endTask.run(false);
+                            endTask.run(false, null);
                             delete();
                             return "Invalid username!";
                         }
                     } catch (Exception ex) {
                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while authenticating Spigot username.");
                         sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
-                        endTask.run(false);
+                        endTask.run(false, ex);
                         delete();
                     }
 

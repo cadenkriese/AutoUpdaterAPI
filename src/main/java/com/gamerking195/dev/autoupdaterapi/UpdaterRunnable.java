@@ -9,5 +9,5 @@ package com.gamerking195.dev.autoupdaterapi;
  * and you must contact me before using it IN ANY WAY.
  */
 public interface UpdaterRunnable {
-    void run(boolean successful);
+    void run(boolean successful, Exception ex);
 }

@@ -32,7 +32,7 @@ public class Updater {
 
     private long startingTime;
 
-    private UpdaterRunnable endTask = successful -> {};
+    private UpdaterRunnable endTask = (successful, ex) -> {};
 
     /**
      * Instantiate the updater for a regular resource.
@@ -105,7 +105,7 @@ public class Updater {
         if (!newVersion.equalsIgnoreCase(currentVersion)) {
 
             pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion);
-            locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+            locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "\\ "));
 
             sendActionBarSync(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[RETRIEVING FILES]");
             try {
@@ -162,7 +162,7 @@ public class Updater {
                                         Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
                                         Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
-                                        endTask.run(true);
+                                        endTask.run(true, null);
                                         double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
                                         sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
@@ -172,7 +172,7 @@ public class Updater {
                                     } catch(Exception ex) {
                                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while initializing " + pluginName + ".");
                                         sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
-                                        endTask.run(true);
+                                        endTask.run(false, ex);
                                         delete();
                                     }
                                 }
@@ -181,7 +181,7 @@ public class Updater {
                         } catch (Exception ex) {
                             AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating " + pluginName + ".");
                             sendActionBar(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
-                            endTask.run(false);
+                            endTask.run(false, ex);
                             delete();
                         }
                     }
@@ -190,13 +190,13 @@ public class Updater {
             } catch (Exception ex) {
                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating " + pluginName + ".");
                 sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
-                endTask.run(false);
+                endTask.run(false, ex);
                 delete();
             }
         } else {
             AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + "!", "Plugin is up to date!");
             sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " [PLUGIN IS UP TO DATE]");
-            endTask.run(false);
+            endTask.run(false, null);
             delete();
         }
     }

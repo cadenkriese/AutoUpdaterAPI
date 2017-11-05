@@ -109,23 +109,16 @@ extends JavaPlugin {
          * Spigot Site API
          */
 
+        api = new SpigotSiteCore();
+
         new BukkitRunnable() {
             @Override
             public void run() {
                 try {
-                    api = new SpigotSiteCore();
-
                     if (UtilSpigotCreds.getInstance().getUsername() != null && UtilSpigotCreds.getInstance().getPassword() != null) {
                         log.info("Stored credentials detected, attempting login.");
                         new PremiumUpdater(null, instance, 1, new UpdateLocale(), false, false).authenticate(false);
                     }
-//
-//                    new BukkitRunnable() {
-//                        @Override
-//                        public void run() {
-//
-//                        }
-//                    }.runTaskLater(instance, 100L);
                 } catch (Exception ex) {
                     printError(ex, "Error occurred while initializing the spigot site API.");
                 }

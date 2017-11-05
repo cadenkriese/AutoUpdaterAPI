@@ -6,7 +6,7 @@
 
     <groupId>com.gamerking195.dev</groupId>
     <artifactId>AutoUpdaterAPI</artifactId>
-    <version>2.1.4</version>
+    <version>2.1.5</version>
     <packaging>jar</packaging>
 
     <name>AutoUpdaterAPI</name>
@@ -120,14 +120,12 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.9</version>
-            <scope>provided</scope>
         </dependency>
         <!-- Apache Commons Logging -->
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
             <version>1.1.1</version>
-            <scope>provided</scope>
         </dependency>
         <!-- AnvilGUI -->
         <dependency>
@@ -140,7 +138,6 @@
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>1.8.3</version>
-            <scope>provided</scope>
         </dependency>
         <!-- SpigotSite-API -->
         <dependency>
@@ -152,7 +149,7 @@
         <dependency>
             <groupId>be.maximvdw</groupId>
             <artifactId>spigotsite</artifactId>
-            <version>0.1.2</version>
+            <version>0.1.2-SNAPSHOT</version>
         </dependency>
         <!-- HTML Unit -->
         <dependency>

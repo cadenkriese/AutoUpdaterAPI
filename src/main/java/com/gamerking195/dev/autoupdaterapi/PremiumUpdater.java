@@ -130,7 +130,7 @@ public class PremiumUpdater {
 
         spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
         pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion);
-        locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "\\ "));
+        locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "_"));
 
         if (spigotUser == null) {
             authenticate(true);

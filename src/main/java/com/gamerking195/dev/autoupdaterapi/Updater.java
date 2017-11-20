@@ -116,6 +116,8 @@ public class Updater {
                     UtilPlugin.unload(plugin);
                 }
 
+                String s = AutoUpdaterAPI.getFileSeperator();
+
                 new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -126,7 +128,7 @@ public class Updater {
                             long completeFileSize = httpConnection.getContentLength();
 
                             java.io.BufferedInputStream in = new java.io.BufferedInputStream(httpConnection.getInputStream());
-                            java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
+                            java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
                             java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
 
                             byte[] data = new byte[1024];
@@ -159,7 +161,7 @@ public class Updater {
                                     try {
                                         sendActionBarSync(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
 
-                                        Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
+                                        Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
                                         Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
                                         endTask.run(true, null);

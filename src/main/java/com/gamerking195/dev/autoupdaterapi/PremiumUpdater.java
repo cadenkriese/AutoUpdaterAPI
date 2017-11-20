@@ -178,10 +178,15 @@ public class PremiumUpdater {
 
                     webClient.waitForBackgroundJavaScript(10_000);
 
-                    Integer completeFileSize = Integer.valueOf(htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaderValue("Content-Length"));
+                    String contentLength = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaderValue("Content-Length");
+
+                    Integer completeFileSize = 0;
+
+                    if (contentLength != null)
+                        completeFileSize = Integer.valueOf(contentLength);
 
                     BufferedInputStream in = new java.io.BufferedInputStream(htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getContentAsStream());
-                    java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(AutoUpdaterAPI.getFileSeperator())) + AutoUpdaterAPI.getFileSeperator() + locale.getFileName() + ".jar"));
                     java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
 
                     byte[] data = new byte[1024];
@@ -191,7 +196,7 @@ public class PremiumUpdater {
                         downloadedFileSize += x;
 
                         //Don't send action bar for every byte of data we're not trying to crash any clients (or servers) here.
-                        if (downloadedFileSize % 10000 == 0) {
+                        if (downloadedFileSize % 10000 == 0 && completeFileSize > 0) {
                             final int currentProgress = (int) ((((double) downloadedFileSize) / ((double) completeFileSize)) * 15);
 
                             final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
@@ -224,7 +229,7 @@ public class PremiumUpdater {
 
                                 sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
 
-                                Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
+                                Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(AutoUpdaterAPI.getFileSeperator())) + AutoUpdaterAPI.getFileSeperator() + locale.getFileName() + ".jar"));
                                 Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
                                 double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;

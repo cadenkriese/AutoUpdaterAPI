@@ -1,6 +1,7 @@
 package com.gamerking195.dev.autoupdaterapi;
 
 import java.io.File;
+import java.nio.file.FileSystems;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,9 +16,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.logging.LogFactory;
 import org.bstats.Metrics;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+
 
 /*
  * AutoUpdaterAPI
@@ -61,6 +62,9 @@ extends JavaPlugin {
     @Setter
     private boolean debug = false;
 
+    @Getter
+    private static String fileSeperator;
+
     private int resourcesUpdated = 0;
 
     private Metrics metrics;
@@ -71,6 +75,7 @@ extends JavaPlugin {
          */
 
         instance = this;
+        fileSeperator = FileSystems.getDefault().getSeparator();
         log = getLogger();
 
         /*
@@ -85,7 +90,7 @@ extends JavaPlugin {
 
         UtilDownloader.downloadLib(UtilDownloader.Library.HTMMLUNIT);
 
-        File htmlUnit = new File(getDataFolder().getParentFile().getPath()+"/MVdWPlugin/lib/htmlunit_2_15.jar");
+        File htmlUnit = new File(getDataFolder().getParentFile().getPath()+fileSeperator+"MVdWPlugin"+fileSeperator+"lib"+fileSeperator+"htmlunit_2_15.jar");
         if (htmlUnit.exists()) {
             if (htmlUnit.length() < 11000000) {
                 printPluginError("Error occurred while enabling the plugin.", "Error occurred while locating dependencies, it is likely that the dependency download has failed.\nTry deleting the MVdWPlugin directory (if it exists) and trying again.\nIf it fails again try contacting me via spigot @GamerKing195, and/or contacting your hosting provider about internet speed/ram.");

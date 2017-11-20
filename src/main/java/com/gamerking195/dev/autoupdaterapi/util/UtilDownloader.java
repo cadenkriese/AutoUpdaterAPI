@@ -92,7 +92,7 @@ public class UtilDownloader {
     public static void downloadLib(String url, String name, String description, String fileName) {
         Logger SendConsole = AutoUpdaterAPI.getInstance().getLogger();
 
-        String localPath = "./plugins/MVdWPlugin/lib/" + fileName + ".jar";
+        String localPath = "." + AutoUpdaterAPI.getFileSeperator() + "plugins" + AutoUpdaterAPI.getFileSeperator() + "MVdWPlugin" + AutoUpdaterAPI.getFileSeperator() + "lib" + AutoUpdaterAPI.getFileSeperator() + fileName + ".jar";
         if (!(new File(localPath).exists())) {
             SendConsole.info("Downloading " + name + " ...");
             SendConsole.info("Description: " + description);

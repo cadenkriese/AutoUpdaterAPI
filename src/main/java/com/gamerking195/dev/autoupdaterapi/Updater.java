@@ -48,6 +48,7 @@ public class Updater {
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion);
+        locale.setPluginName(locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion));
         url = "https://api.spiget.org/v2/resources/" + resourceId;
         this.plugin = plugin;
         this.initiator = initiator;
@@ -72,6 +73,7 @@ public class Updater {
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion);
+        locale.setPluginName(locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion));
         url = "https://api.spiget.org/v2/resources/" + resourceId;
         this.plugin = plugin;
         this.initiator = initiator;

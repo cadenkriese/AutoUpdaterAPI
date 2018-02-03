@@ -153,13 +153,6 @@ extends JavaPlugin {
 
         metrics = new Metrics(instance);
 
-        metrics.addCustomChart(new Metrics.SingleLineChart("resources_updated") {
-            @Override
-            public int getValue() {
-                return resourcesUpdated;
-            }
-        });
-
         log.info("AutoUpdaterAPI V" + getDescription().getVersion() + " enabled!");
     }
 

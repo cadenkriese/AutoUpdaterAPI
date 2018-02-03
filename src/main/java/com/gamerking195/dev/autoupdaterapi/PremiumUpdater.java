@@ -63,7 +63,8 @@ public class PremiumUpdater {
         spigotUser = AutoUpdaterAPI.getInstance().getCurrentUser();
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
-        pluginName = locale.getPluginName();
+        pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion);
+        locale.setPluginName(locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion));
         loginAttempts = 1;
         this.resourceId = resourceId;
         this.plugin = plugin;
@@ -90,6 +91,7 @@ public class PremiumUpdater {
         dataFolderPath = AutoUpdaterAPI.getInstance().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion);
+        locale.setPluginName(locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion));
         loginAttempts = 1;
         this.resourceId = resourceId;
         this.plugin = plugin;

@@ -1,7 +1,7 @@
-name: AutoUpdaterAPI
+name: ${project.name}
 version: ${project.version}
 main: com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI
-prefix: AutoUpdaterAPI
+prefix: ${project.name}
 authors: [GamerKing195]
-description: API for automatically updating and installing Spigot plugins.
-website: https://www.spigotmc.org/resources/auto-updater-api.39719/
+description: ${project.description}
+website: ${project.url}

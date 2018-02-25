@@ -1,5 +1,7 @@
 package com.gamerking195.dev.autoupdaterapi;
 
+import org.bukkit.plugin.Plugin;
+
 /**
  * Created by Caden Kriese (GamerKing195) on 10/12/17.
  * <p>
@@ -9,5 +11,5 @@ package com.gamerking195.dev.autoupdaterapi;
  * and you must contact me before using it IN ANY WAY.
  */
 public interface UpdaterRunnable {
-    void run(boolean successful, Exception ex);
+    void run(boolean successful, Exception ex, Plugin plugin);
 }

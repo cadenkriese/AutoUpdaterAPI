@@ -2,15 +2,14 @@ package com.gamerking195.dev.autoupdaterapi;
 
 import com.gamerking195.dev.autoupdaterapi.util.UtilPlugin;
 import com.gamerking195.dev.autoupdaterapi.util.UtilReader;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import com.gamerking195.dev.autoupdaterapi.util.UtilUI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -107,7 +106,7 @@ public class Updater {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource="+resourceId);
         } catch (Exception exception) {
             AutoUpdaterAPI.getInstance().printError(exception);
-            sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
+            UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
         }
 
         return "";
@@ -120,13 +119,13 @@ public class Updater {
         if (!newVersion.equalsIgnoreCase(currentVersion)) {
 
             if (pluginName == null) {
-                locale.setFileName(locale.getFileName().replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "_").replace(".", "-"));
+                locale.setFileName(locale.getFileName().replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "_"));
             } else {
                 pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion);
-                locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "_").replace(".", "-"));
+                locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "_"));
             }
 
-            sendActionBarSync(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[RETRIEVING FILES]");
+            UtilUI.sendActionBarSync(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[RETRIEVING FILES]");
             try {
                 if (deleteOld) {
                     if (!new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
@@ -165,7 +164,7 @@ public class Updater {
 
                                     bar = bar.substring(0, currentProgress + 2) + "&c" + bar.substring(currentProgress + 2);
 
-                                    sendActionBar(initiator, locale.getUpdatingDownload().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING]");
+                                    UtilUI.sendActionBar(initiator, locale.getUpdatingDownload().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING]");
                                 }
 
                                 bout.write(data, 0, x);
@@ -178,8 +177,7 @@ public class Updater {
                                 @Override
                                 public void run() {
                                     try {
-                                        sendActionBarSync(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
-
+                                        UtilUI.sendActionBarSync(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
 
                                         List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
 
@@ -195,15 +193,16 @@ public class Updater {
 
                                         endTask.run(true, null, Bukkit.getPluginManager().getPlugin(pluginName));
                                         double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
-                                        sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
+                                        UtilUI.sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
                                         AutoUpdaterAPI.getInstance().resourceUpdated();
 
                                         delete();
                                     } catch(Exception ex) {
                                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while initializing " + pluginName + ".");
-                                        sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
-                                        endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
+                                        UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+                                        if (pluginName != null)
+                                            endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
                                         delete();
                                     }
                                 }
@@ -211,8 +210,9 @@ public class Updater {
 
                         } catch (Exception ex) {
                             AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating " + pluginName + ".");
-                            sendActionBar(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
-                            endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
+                            UtilUI.sendActionBar(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+                            if (pluginName != null)
+                                endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
                             delete();
                         }
                     }
@@ -220,44 +220,22 @@ public class Updater {
 
             } catch (Exception ex) {
                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating " + pluginName + ".");
-                sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
-                endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
+                UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
+                if (pluginName != null)
+                    endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
                 delete();
             }
         } else {
             AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + "!", "Plugin is up to date!");
-            sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " [PLUGIN IS UP TO DATE]");
+            UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " [PLUGIN IS UP TO DATE]");
             endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName));
             delete();
         }
     }
 
-   /*
-    * UTILITIES
-    */
-
-    //Fairly long method to call repetadly ¯\_(ツ)_/¯
-    private void sendActionBar(Player player, String message) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (player != null) {
-                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
-                }
-                if (AutoUpdaterAPI.getInstance().isDebug()) {
-                    AutoUpdaterAPI.getInstance().getLogger().info(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', message)));
-                }
-
-            }
-        }.runTask(AutoUpdaterAPI.getInstance());
-    }
-
-    private void sendActionBarSync(Player player, String message) {
-        if (player != null)
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
-        if (AutoUpdaterAPI.getInstance().isDebug())
-            AutoUpdaterAPI.getInstance().getLogger().info(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', message)));
-    }
+    /*
+     * UTILITIES
+     */
 
     void delete() {
         if (deleteUpdater) {

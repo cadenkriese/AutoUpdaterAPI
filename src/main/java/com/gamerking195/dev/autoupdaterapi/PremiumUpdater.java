@@ -9,20 +9,20 @@ import be.maximvdw.spigotsite.user.SpigotUser;
 import com.gamerking195.dev.autoupdaterapi.util.UtilPlugin;
 import com.gamerking195.dev.autoupdaterapi.util.UtilReader;
 import com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds;
+import com.gamerking195.dev.autoupdaterapi.util.UtilUI;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.util.Cookie;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -121,7 +121,7 @@ public class PremiumUpdater {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource="+resourceId);
         } catch (Exception exception) {
             AutoUpdaterAPI.getInstance().printError(exception);
-            sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
+            UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
         }
 
         return "";
@@ -133,12 +133,12 @@ public class PremiumUpdater {
     public void update() {
         startingTime = System.currentTimeMillis();
 
-        sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PLUGIN INFO]");
+        UtilUI.sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PLUGIN INFO]");
 
         String newVersion = getLatestVersion();
 
         if (currentVersion.equals(newVersion)) {
-            sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[NO UPDATES AVAILABLE]");
+            UtilUI.sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[NO UPDATES AVAILABLE]");
             endTask.run(false, null , Bukkit.getPluginManager().getPlugin(pluginName));
             delete();
             return;
@@ -149,11 +149,11 @@ public class PremiumUpdater {
         if (locale.getPluginName() != null)
             pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion);
 
-        locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "_").replace(".", "-"));
+        locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "_"));
 
         if (spigotUser == null) {
             authenticate(true);
-            sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATING SPIGOT ACCOUNT]");
+            UtilUI.sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATING SPIGOT ACCOUNT]");
             return;
         }
 
@@ -164,7 +164,7 @@ public class PremiumUpdater {
                 }
             }
         } catch (ConnectionFailedException ex) {
-            sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+            UtilUI.sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
             AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#1)");
             endTask.run(false, ex, null);
             delete();
@@ -172,7 +172,7 @@ public class PremiumUpdater {
 
         if (resource == null) {
             AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + "!", "That plugin has not been bought by the current user!");
-            sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[YOU HAVE NOT BOUGHT THAT PLUGIN]");
+            UtilUI.sendActionBarSync(initiator, "&c&lUPDATE FAILED &8[YOU HAVE NOT BOUGHT THAT PLUGIN]");
             endTask.run(false, null , Bukkit.getPluginManager().getPlugin(pluginName));
             delete();
             return;
@@ -182,7 +182,7 @@ public class PremiumUpdater {
             @Override
             public void run() {
                 try {
-                    sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[ATTEMPTING DOWNLOAD]");
+                    UtilUI.sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[ATTEMPTING DOWNLOAD]");
 
                     Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
 
@@ -224,7 +224,7 @@ public class PremiumUpdater {
 
                             bar = bar.substring(0, currentProgress + 2) + "&c" + bar.substring(currentProgress + 2);
 
-                            sendActionBar(initiator, locale.getUpdatingDownload().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING RESOURCE]");
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingDownload().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING RESOURCE]");
                         }
 
                         bout.write(data, 0, x);
@@ -246,7 +246,7 @@ public class PremiumUpdater {
                                         AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete Updater old plugin jar.");
                                 }
 
-                                sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
+                                UtilUI.sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
 
                                 List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
 
@@ -261,24 +261,26 @@ public class PremiumUpdater {
                                 Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
                                 double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
-                                sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
+                                UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
                                 AutoUpdaterAPI.getInstance().resourceUpdated();
 
                                 endTask.run(true, null, Bukkit.getPluginManager().getPlugin(pluginName));
                                 delete();
                             } catch (Exception ex) {
-                                sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                                UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
-                                endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
+                                if (pluginName != null)
+                                    endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
                                 delete();
                             }
                         }
                     }.runTask(AutoUpdaterAPI.getInstance());
                 } catch (Exception ex) {
-                    sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                    UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
                     AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
-                    endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
+                    if (pluginName != null)
+                        endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
                     delete();
                 }
             }
@@ -289,7 +291,7 @@ public class PremiumUpdater {
         new BukkitRunnable() {
             @Override
             public void run() {
-                sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING DECRYPT]");
+                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING DECRYPT]");
 
                 String username = UtilSpigotCreds.getInstance().getUsername();
                 String password = UtilSpigotCreds.getInstance().getPassword();
@@ -301,11 +303,11 @@ public class PremiumUpdater {
                 }
 
                 try {
-                    sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING AUTHENTICATION]");
+                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING AUTHENTICATION]");
                     spigotUser = AutoUpdaterAPI.getInstance().getApi().getUserManager().authenticate(username, password);
 
                     if (spigotUser == null) {
-                        sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]");
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]");
                         UtilSpigotCreds.getInstance().clearFile();
                         runGuis(recall);
                         return;
@@ -328,7 +330,7 @@ public class PremiumUpdater {
                 } catch(Exception ex) {
                     if (ex instanceof TwoFactorAuthenticationException) {
                         try {
-                            sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
                             if (twoFactor == null) {
                                 runGuis(recall);
                                 return;
@@ -337,7 +339,7 @@ public class PremiumUpdater {
                             spigotUser = AutoUpdaterAPI.getInstance().getApi().getUserManager().authenticate(username, password, twoFactor);
 
                             if (spigotUser == null) {
-                                sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                                 UtilSpigotCreds.getInstance().clearFile();
                                 runGuis(recall);
                                 return;
@@ -358,17 +360,17 @@ public class PremiumUpdater {
                             }.runTask(AutoUpdaterAPI.getInstance());
                         } catch (Exception otherException) {
                             if (otherException instanceof InvalidCredentialsException) {
-                                sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                                 UtilSpigotCreds.getInstance().clearFile();
                                 runGuis(recall);
                             } else if (otherException instanceof ConnectionFailedException) {
-                                sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                                UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#6)");
                                 endTask.run(false, otherException, null);
                                 delete();
                             } else if (otherException instanceof TwoFactorAuthenticationException) {
                                 if (loginAttempts < 4) {
-                                    sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #"+loginAttempts+"]");
+                                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #"+loginAttempts+"]");
                                     loginAttempts++;
                                     new BukkitRunnable() {
                                         @Override
@@ -385,11 +387,11 @@ public class PremiumUpdater {
                             }
                         }
                     } else if (ex instanceof InvalidCredentialsException) {
-                        sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                         UtilSpigotCreds.getInstance().clearFile();
                         runGuis(recall);
                     } else if (ex instanceof ConnectionFailedException) {
-                        sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to spigot. (#2)");
                         endTask.run(false, ex, null);
                         delete();
@@ -405,16 +407,16 @@ public class PremiumUpdater {
         new BukkitRunnable() {
             @Override
             public void run() {
-                sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]");
+                UtilUI.sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]");
                 new AnvilGUI(AutoUpdaterAPI.getInstance(), initiator, "Spigot username", (Player player1, String usernameInput) -> {
                     try {
                         if (AutoUpdaterAPI.getInstance().getApi().getUserManager().getUserByName(usernameInput) != null) {
-                            sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]");
+                            UtilUI.sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]");
                             new AnvilGUI(AutoUpdaterAPI.getInstance(), initiator, "Spigot password", (Player player2, String passwordInput) -> {
                                 try {
                                     spigotUser = AutoUpdaterAPI.getInstance().getApi().getUserManager().authenticate(usernameInput, passwordInput);
 
-                                    sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
+                                    UtilUI.sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
                                     UtilSpigotCreds.getInstance().setUsername(usernameInput);
                                     UtilSpigotCreds.getInstance().setPassword(passwordInput);
                                     UtilSpigotCreds.getInstance().saveFile();
@@ -428,14 +430,14 @@ public class PremiumUpdater {
                                     player2.closeInventory();
 
                                 } catch (TwoFactorAuthenticationException ex) {
-                                    sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]");
+                                    UtilUI.sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]");
                                     new AnvilGUI(AutoUpdaterAPI.getInstance(), initiator, "Spigot two factor secret", (Player player3, String twoFactorInput) -> {
                                         try {
                                             //Make extra string because the input seems to change for some reason.
                                             final String twoFactorSecret = twoFactorInput;
                                             spigotUser = AutoUpdaterAPI.getInstance().getApi().getUserManager().authenticate(usernameInput, passwordInput, twoFactorSecret);
 
-                                            sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
+                                            UtilUI.sendActionBarSync(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
 
                                             UtilSpigotCreds.getInstance().setUsername(usernameInput);
                                             UtilSpigotCreds.getInstance().setPassword(passwordInput);
@@ -452,7 +454,7 @@ public class PremiumUpdater {
 
                                             return "Retrieved credentials you may now close this GUI.";
                                         } catch (Exception exception) {
-                                            sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+                                            UtilUI.sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                                             AutoUpdaterAPI.getInstance().printError(exception, "Error occurred while authenticating Spigot user.");
                                             endTask.run(false, exception, null);
                                             delete();
@@ -460,13 +462,13 @@ public class PremiumUpdater {
                                         }
                                     });
                                 } catch (ConnectionFailedException ex) {
-                                    sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+                                    UtilUI.sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                                     AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while connecting to Spigot. (#3)");
                                     endTask.run(false, ex, null);
                                     delete();
                                     return "Could not connect to Spigot";
                                 } catch (InvalidCredentialsException ex) {
-                                    sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+                                    UtilUI.sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                                     endTask.run(false, ex, null);
                                     delete();
                                     return "Invalid credentials";
@@ -475,14 +477,14 @@ public class PremiumUpdater {
                                 return null;
                             });
                         } else {
-                            sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+                            UtilUI.sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                             endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName));
                             delete();
                             return "Invalid username!";
                         }
                     } catch (Exception ex) {
                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while authenticating Spigot username.");
-                        sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
+                        UtilUI.sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                         endTask.run(false, ex, null);
                         delete();
                     }
@@ -496,28 +498,6 @@ public class PremiumUpdater {
     /*
      * Utilities
      */
-
-    private void sendActionBar(Player player, String message) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (player != null)
-                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
-                if (AutoUpdaterAPI.getInstance().isDebug())
-                    AutoUpdaterAPI.getInstance().getLogger().info(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', message)));
-
-            }
-        }.runTask(AutoUpdaterAPI.getInstance());
-    }
-
-    //Don't switch threads & schedule a task if you don't have to.
-    private void sendActionBarSync(Player player, String message) {
-        if (player != null)
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
-        if (AutoUpdaterAPI.getInstance().isDebug())
-            AutoUpdaterAPI.getInstance().getLogger().info(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', message)));
-
-    }
 
     private void delete() {
         new BukkitRunnable() {

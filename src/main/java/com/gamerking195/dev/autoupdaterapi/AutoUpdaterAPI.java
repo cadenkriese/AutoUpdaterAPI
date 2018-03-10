@@ -131,11 +131,11 @@ extends JavaPlugin {
          * Spigot Site API
          */
 
-        api = new SpigotSiteCore();
-
         new BukkitRunnable() {
             @Override
             public void run() {
+                api = new SpigotSiteCore();
+
                 try {
                     if (UtilSpigotCreds.getInstance().getUsername() != null && UtilSpigotCreds.getInstance().getPassword() != null) {
                         log.info("Stored credentials detected, attempting login.");

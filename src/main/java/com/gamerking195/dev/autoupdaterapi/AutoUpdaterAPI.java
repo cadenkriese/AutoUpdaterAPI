@@ -156,6 +156,11 @@ extends JavaPlugin {
         log.info("AutoUpdaterAPI V" + getDescription().getVersion() + " enabled!");
     }
 
+    public void resetUser() {
+        AutoUpdaterAPI.getInstance().setCurrentUser(null);
+        UtilSpigotCreds.getInstance().reset();
+    }
+
     public void resourceUpdated() {
         resourcesUpdated += 1;
     }
@@ -192,7 +197,7 @@ extends JavaPlugin {
         this.log.severe("============== END ERROR ==============");
     }
 
-    void printPluginError(String header, String message) {
+    public void printPluginError(String header, String message) {
         this.log.severe("============== BEGIN ERROR ==============");
         this.log.severe(header);
         this.log.severe("");

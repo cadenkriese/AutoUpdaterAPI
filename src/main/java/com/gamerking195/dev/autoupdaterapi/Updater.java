@@ -8,8 +8,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -145,9 +147,9 @@ public class Updater {
                             httpConnection.setRequestProperty("User-Agent", "SpigetResourceUpdater");
                             long completeFileSize = httpConnection.getContentLength();
 
-                            java.io.BufferedInputStream in = new java.io.BufferedInputStream(httpConnection.getInputStream());
-                            java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
-                            java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
+                            BufferedInputStream in = new BufferedInputStream(httpConnection.getInputStream());
+                            FileOutputStream fos = new FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
+                            BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
 
                             byte[] data = new byte[1024];
                             long downloadedFileSize = 0;
@@ -181,7 +183,7 @@ public class Updater {
 
                                         List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
 
-                                        Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
+                                        Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
 
                                         if (pluginName == null) {
                                             List<Plugin> afterPlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
@@ -189,9 +191,9 @@ public class Updater {
                                             pluginName = afterPlugins.get(0).getName();
                                         }
 
-                                        Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
+                                        Bukkit.getPluginManager().enablePlugin(updated);
 
-                                        endTask.run(true, null, Bukkit.getPluginManager().getPlugin(pluginName));
+                                        endTask.run(true, null, updated);
                                         double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
                                         UtilUI.sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 

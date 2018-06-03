@@ -22,10 +22,15 @@ public class UtilPlugin {
     /**
      * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
      *
+     * Copyright (c) 2014 Ryan Clancy
+     *
+     * Licensed under the MIT License
+     *
      * PlugMan https://dev.bukkit.org/projects/plugman
      *
      * @param plugin The plugin that needs to be unloaded.
      */
+
     public static void unload(Plugin plugin) {
 
         String name = plugin.getName();
@@ -39,8 +44,6 @@ public class UtilPlugin {
         Map<String, Plugin> names = null;
         Map<String, Command> commands = null;
         Map<Event, SortedSet<RegisteredListener>> listeners = null;
-
-        boolean reloadlisteners = true;
 
         if (pluginManager != null) {
 
@@ -60,9 +63,7 @@ public class UtilPlugin {
                     Field listenersField = Bukkit.getPluginManager().getClass().getDeclaredField("listeners");
                     listenersField.setAccessible(true);
                     listeners = (Map<Event, SortedSet<RegisteredListener>>) listenersField.get(pluginManager);
-                } catch (Exception e) {
-                    reloadlisteners = false;
-                }
+                } catch (Exception ignored) {}
 
                 Field commandMapField = Bukkit.getPluginManager().getClass().getDeclaredField("commandMap");
                 commandMapField.setAccessible(true);
@@ -72,29 +73,24 @@ public class UtilPlugin {
                 knownCommandsField.setAccessible(true);
                 commands = (Map<String, Command>) knownCommandsField.get(commandMap);
 
-            } catch (NoSuchFieldException e) {
-                AutoUpdaterAPI.getInstance().printError(e);
-            } catch (IllegalAccessException e) {
-                AutoUpdaterAPI.getInstance().printError(e);
+            } catch (NoSuchFieldException | IllegalAccessException ex) {
+                AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while clearing plugin fields.");
             }
+
         }
 
-        pluginManager.disablePlugin(plugin);
+        if (pluginManager != null)
+            pluginManager.disablePlugin(plugin);
 
-        if (plugins != null && plugins.contains(plugin))
+        if (plugins != null)
             plugins.remove(plugin);
 
-        if (names != null && names.containsKey(name))
+        if (names != null)
             names.remove(name);
 
-        if (listeners != null && reloadlisteners) {
+        if (listeners != null) {
             for (SortedSet<RegisteredListener> set : listeners.values()) {
-                for (Iterator<RegisteredListener> it = set.iterator(); it.hasNext(); ) {
-                    RegisteredListener value = it.next();
-                    if (value.getPlugin() == plugin) {
-                        it.remove();
-                    }
-                }
+                set.removeIf(value -> value.getPlugin() == plugin);
             }
         }
 
@@ -111,16 +107,37 @@ public class UtilPlugin {
             }
         }
 
+        // Attempt to close the classloader to unlock any handles on the plugin's jar file.
         ClassLoader cl = plugin.getClass().getClassLoader();
 
         if (cl instanceof URLClassLoader) {
+
             try {
+
+                Field pluginField = cl.getClass().getDeclaredField("plugin");
+                pluginField.setAccessible(true);
+                pluginField.set(cl, null);
+
+                Field pluginInitField = cl.getClass().getDeclaredField("pluginInit");
+                pluginInitField.setAccessible(true);
+                pluginInitField.set(cl, null);
+
+            } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
+                AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while clearing plugin & plugininit fields.");
+            }
+
+            try {
+
                 ((URLClassLoader) cl).close();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while closing URLClassLoader.");
             }
+
         }
 
+        // Will not work on processes started with the -XX:+DisableExplicitGC flag, but lets try it anyway.
+        // This tries to get around the issue where Windows refuses to unlock jar files that were previously loaded into the JVM.
         System.gc();
+
     }
 }

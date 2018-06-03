@@ -25,13 +25,10 @@ import org.bukkit.scheduler.BukkitRunnable;
  *
  * Author: GamerKing195
  *
- * This resource is licensed under the GNU General Public License Version 3.
+ * This resource is licensed under the Apache License Version 2.0.
  * Full license information in the LICENSE file.
  *
- * Basically, you can do whatever you want with this code however the end result must be open-sourced and licensed under the same license.
- * Unless the code you are using was taken from a different resource in that case you must listen to the license (if any) specified by the original author.
- *
- * This resource uses code from resources developed by Ryan Clancy (rylinaux) and Maxim Van de Wynckel (Maximvdw).
+ * This resource uses code from resources developed by Ryan "rylinaux" Clancy (UtilPlugin.java) and Maxim Van de Wynckel (Maximvdw).
  * Any other dependencies used can be found in the pom.xml.
  *
  */

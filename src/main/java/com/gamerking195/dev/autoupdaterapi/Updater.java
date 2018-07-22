@@ -130,10 +130,12 @@ public class Updater {
             UtilUI.sendActionBarSync(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[RETRIEVING FILES]");
             try {
                 if (deleteOld) {
-                    if (!new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
-                        AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
+                    File pluginFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
 
                     UtilPlugin.unload(plugin);
+
+                    if (!pluginFile.delete())
+                        AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
                 }
 
                 String s = AutoUpdaterAPI.getFileSeperator();
@@ -196,8 +198,6 @@ public class Updater {
                                         endTask.run(true, null, updated);
                                         double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
                                         UtilUI.sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
-
-                                        AutoUpdaterAPI.getInstance().resourceUpdated();
 
                                         delete();
                                     } catch(Exception ex) {

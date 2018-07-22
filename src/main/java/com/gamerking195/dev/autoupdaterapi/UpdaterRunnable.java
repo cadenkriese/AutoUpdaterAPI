@@ -3,7 +3,7 @@ package com.gamerking195.dev.autoupdaterapi;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Created by Caden Kriese (GamerKing195) on 10/12/17.
+ * Created by Caden Kriese (flogic) on 10/12/17.
  * <p>
  * License is specified by the distributor which this
  * file was written for. Otherwise it can be found in the LICENSE file.

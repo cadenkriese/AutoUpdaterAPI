@@ -23,7 +23,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 /*
  * AutoUpdaterAPI
  *
- * Author: GamerKing195
+ * Author: flogic
  *
  * This resource is licensed under the Apache License Version 2.0.
  * Full license information in the LICENSE file.
@@ -35,7 +35,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 
 public final class AutoUpdaterAPI
-extends JavaPlugin {
+        extends JavaPlugin {
 
     private static AutoUpdaterAPI instance;
     private Logger log;
@@ -61,8 +61,6 @@ extends JavaPlugin {
 
     @Getter
     private static String fileSeperator;
-
-    private int resourcesUpdated = 0;
 
     private Metrics metrics;
 
@@ -90,13 +88,13 @@ extends JavaPlugin {
         File htmlUnit = new File(getDataFolder().getParentFile().getPath()+fileSeperator+"MVdWPlugin"+fileSeperator+"lib"+fileSeperator+"htmlunit_2_15.jar");
         if (htmlUnit.exists()) {
             if (htmlUnit.length() < 11000000) {
-                printPluginError("Error occurred while enabling the plugin.", "Error occurred while locating dependencies, it is likely that the dependency download has failed.\nTry deleting the MVdWPlugin directory (if it exists) and trying again.\nIf it fails again try contacting me via spigot @GamerKing195, and/or contacting your hosting provider about internet speed/ram.");
+                printPluginError("Error occurred while enabling the plugin.", "Error occurred while locating dependencies, it is likely that the dependency download has failed.\nTry deleting the MVdWPlugin directory (if it exists) and trying again.\nIf it fails again try contacting me via spigot @flogic, and/or contacting your hosting provider about internet speed/ram.");
                 log.severe("DISABLING AUTOUPDATERAPI!!!");
                 this.setEnabled(false);
                 return;
             }
         } else {
-            printPluginError("Error occurred while enabling the plugin.", "Error occurred while locating dependencies, it is likely that the dependency download has failed.\nTry deleting the MVdWPlugin directory (if it exists) and trying again.\nIf it fails again try contacting me via spigot @GamerKing195, and/or contacting your hosting provider about internet speed/ram.");
+            printPluginError("Error occurred while enabling the plugin.", "Error occurred while locating dependencies, it is likely that the dependency download has failed.\nTry deleting the MVdWPlugin directory (if it exists) and trying again.\nIf it fails again try contacting me via spigot @flogic, and/or contacting your hosting provider about internet speed/ram.");
             log.severe("DISABLING AUTOUPDATERAPI!!!");
             this.setEnabled(false);
             return;
@@ -133,6 +131,8 @@ extends JavaPlugin {
             public void run() {
                 api = new SpigotSiteCore();
 
+                UtilSpigotCreds.getInstance().updateKeys();
+
                 try {
                     if (UtilSpigotCreds.getInstance().getUsername() != null && UtilSpigotCreds.getInstance().getPassword() != null) {
                         log.info("Stored credentials detected, attempting login.");
@@ -158,13 +158,9 @@ extends JavaPlugin {
         UtilSpigotCreds.getInstance().reset();
     }
 
-    public void resourceUpdated() {
-        resourcesUpdated += 1;
-    }
-
     public void printError(Exception ex) {
         this.log.severe("A severe error has occurred with AutoUpdaterAPI.");
-        this.log.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at https://github.com/GamerKing195/AutoUpdaterAPI/issues.");
+        this.log.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at https://github.com/fl0gic/AutoUpdaterAPI/issues.");
         this.log.severe("");
         this.log.severe("============== BEGIN ERROR ==============");
         this.log.severe("PLUGIN VERSION: AutoUpdaterAPI V" + getDescription().getVersion());
@@ -179,7 +175,7 @@ extends JavaPlugin {
 
     public void printError(Exception ex, String extraInfo) {
         this.log.severe("A severe error has occurred with AutoUpdaterAPI.");
-        this.log.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at https://github.com/GamerKing195/AutoUpdaterAPI/issues.");
+        this.log.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at https://github.com/fl0gic/AutoUpdaterAPI/issues.");
         this.log.severe("");
         this.log.severe("============== BEGIN ERROR ==============");
         this.log.severe("PLUGIN VERSION: AutoUpdaterAPI V" + getDescription().getVersion());

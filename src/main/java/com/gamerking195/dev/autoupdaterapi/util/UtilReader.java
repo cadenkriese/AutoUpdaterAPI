@@ -5,7 +5,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 
 /**
- * Created by GamerKing195 on 8/12/17.
+ * Created by Caden Kriese (flogic) on 8/12/17.
  * <p>
  * License is specified by the distributor which this
  * file was written for. Otherwise it can be found in the LICENSE file.

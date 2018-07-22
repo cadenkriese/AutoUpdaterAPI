@@ -240,10 +240,12 @@ public class PremiumUpdater {
                                 AutoUpdaterAPI.getInstance().setWebClient(new WebClient(BrowserVersion.CHROME));
 
                                 if (deleteOld) {
+                                    File pluginFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+
                                     UtilPlugin.unload(plugin);
 
-                                    if (!new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).delete())
-                                        AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete Updater old plugin jar.");
+                                    if (!pluginFile.delete())
+                                        AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
                                 }
 
                                 UtilUI.sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
@@ -262,8 +264,6 @@ public class PremiumUpdater {
 
                                 double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
                                 UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
-
-                                AutoUpdaterAPI.getInstance().resourceUpdated();
 
                                 endTask.run(true, null, Bukkit.getPluginManager().getPlugin(pluginName));
                                 delete();
@@ -314,6 +314,8 @@ public class PremiumUpdater {
                     }
 
                     AutoUpdaterAPI.getInstance().setCurrentUser(spigotUser);
+                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
+                    AutoUpdaterAPI.getInstance().getLogger().info("Successfully logged in to Spigot as user '"+username+"'.");
 
                     new BukkitRunnable() {
                         @Override
@@ -346,6 +348,8 @@ public class PremiumUpdater {
                             }
 
                             AutoUpdaterAPI.getInstance().setCurrentUser(spigotUser);
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
+                            AutoUpdaterAPI.getInstance().getLogger().info("Successfully logged in to Spigot as user '"+username+"'.");
 
                             new BukkitRunnable() {
                                 @Override
@@ -476,6 +480,14 @@ public class PremiumUpdater {
 
                                 return null;
                             });
+                        } else if (usernameInput.contains("@") && usernameInput.contains(".")) {
+                            initiator.closeInventory();
+
+                            UtilUI.sendActionBarSync(initiator, "&cEmails are not supported!");
+
+                            endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName));
+                            delete();
+                            return "Emails are not supported!";
                         } else {
                             UtilUI.sendActionBarSync(initiator, locale.getUpdateFailedNoVar());
                             endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName));

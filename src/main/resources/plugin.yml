@@ -2,6 +2,6 @@ name: ${project.name}
 version: ${project.version}
 main: com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI
 prefix: ${project.name}
-authors: [GamerKing195]
+authors: [flogic]
 description: ${project.description}
 website: ${project.url}

@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-echo $(pwd)
 PROJECT_DIRECTORY=$(pwd)
 cd build
-echo $(pwd)
-echo $PROJECT_DIRECTORY
+
+echo "Working directory is $PROJECT_DIRECTORY"
 
 echo "Running proguard..."
 java -jar $PROJECT_DIRECTORY/build/proguard.jar @$PROJECT_DIRECTORY/build/autoupdater-obfuscation.pro

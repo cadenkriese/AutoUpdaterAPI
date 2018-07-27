@@ -11,5 +11,13 @@ import org.bukkit.plugin.Plugin;
  * and you must contact me before using it IN ANY WAY.
  */
 public interface UpdaterRunnable {
-    void run(boolean successful, Exception ex, Plugin plugin);
+    /**
+     * Runs the runnable.
+     *
+     * @param successful Was the update a success (true) or failure (false).
+     * @param ex If the update was a failure, the exception that was created.
+     * @param plugin The plugin that was updated, this will be null if the update failed.
+     * @param pluginName The name of the plugin updated, this should never be null.
+     */
+    void run(boolean successful, Exception ex, Plugin plugin, String pluginName);
 }

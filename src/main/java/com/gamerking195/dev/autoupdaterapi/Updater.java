@@ -176,6 +176,7 @@ public class Updater {
 
                             bout.close();
                             in.close();
+                            fos.close();
 
                             new BukkitRunnable() {
                                 @Override

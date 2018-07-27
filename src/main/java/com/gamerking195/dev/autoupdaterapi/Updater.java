@@ -36,7 +36,7 @@ public class Updater {
 
     private long startingTime;
 
-    private UpdaterRunnable endTask = (successful, ex, updatedPlugin) -> {};
+    private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {};
 
     /**
      * Instantiate the updater for a regular resource.
@@ -196,7 +196,7 @@ public class Updater {
 
                                         Bukkit.getPluginManager().enablePlugin(updated);
 
-                                        endTask.run(true, null, updated);
+                                        endTask.run(true, null, updated, pluginName);
                                         double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
                                         UtilUI.sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
@@ -205,7 +205,7 @@ public class Updater {
                                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while initializing " + pluginName + ".");
                                         UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
                                         if (pluginName != null)
-                                            endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
+                                            endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
                                         delete();
                                     }
                                 }
@@ -215,7 +215,7 @@ public class Updater {
                             AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating " + pluginName + ".");
                             UtilUI.sendActionBar(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
                             if (pluginName != null)
-                                endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
+                                endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
                             delete();
                         }
                     }
@@ -225,13 +225,13 @@ public class Updater {
                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating " + pluginName + ".");
                 UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
                 if (pluginName != null)
-                    endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName));
+                    endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
                 delete();
             }
         } else {
             AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + "!", "Plugin is up to date!");
             UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " [PLUGIN IS UP TO DATE]");
-            endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName));
+            endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
             delete();
         }
     }

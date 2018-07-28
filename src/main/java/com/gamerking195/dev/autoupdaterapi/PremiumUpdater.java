@@ -203,11 +203,12 @@ public class PremiumUpdater {
 
                     if (contentLength != null) {
                         completeFileSize = Integer.parseInt(contentLength);
-                        Bukkit.broadcastMessage(contentLength);
-                    } else
+                        if (AutoUpdaterAPI.getInstance().isDebug())
+                            Bukkit.broadcastMessage(contentLength);
+                    } else if (AutoUpdaterAPI.getInstance().isDebug())
                         Bukkit.broadcastMessage("0");
 
-                    int grabSize = 512;
+                    int grabSize = 2048;
 
                     BufferedInputStream in = new java.io.BufferedInputStream(htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getContentAsStream());
                     java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(AutoUpdaterAPI.getFileSeperator())) + AutoUpdaterAPI.getFileSeperator() + locale.getFileName() + ".jar"));
@@ -221,12 +222,13 @@ public class PremiumUpdater {
                     int grabbed;
                     while ((grabbed = in.read(data, 0, grabSize)) >= 0) {
 
-                        if (AutoUpdaterAPI.getInstance().isDebug())
-                            AutoUpdaterAPI.getInstance().getLogger().info(System.currentTimeMillis()+" - GRABBED "+grabbed+"/"+grabSize+" ("+String.format("%.2f", (((double) grabbed) / ((double) grabSize)) * 100)+"%)");
+                        //if (AutoUpdaterAPI.getInstance().isDebug())
+                            //AutoUpdaterAPI.getInstance().getLogger().info(System.currentTimeMillis()+" - GRABBED "+grabbed+"/"+grabSize+" ("+String.format("%.2f", (((double) grabbed) / ((double) grabSize)) * 100)+"%)");
+
                         downloadedFileSize += grabbed;
 
                         //Don't send action bar for every byte of data we're not trying to crash any clients (or servers) here.
-                        if (downloadedFileSize % 5120 == 0 && completeFileSize > 0) {
+                        if (downloadedFileSize % (grabSize*10) == 0 && completeFileSize > 0) {
                             final int currentProgress = (int) ((((double) downloadedFileSize) / ((double) completeFileSize)) * 15);
 
                             final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
@@ -286,13 +288,15 @@ public class PremiumUpdater {
                                 UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
                                 if (pluginName != null) {
-                                    Bukkit.broadcastMessage(pluginName);
+                                    if (AutoUpdaterAPI.getInstance().isDebug())
+                                        Bukkit.broadcastMessage(pluginName);
+
                                     endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
                                 }
                                 delete();
                             }
                         }
-                    }.runTaskLater(AutoUpdaterAPI.getInstance(), 5L);
+                    }.runTask(AutoUpdaterAPI.getInstance());
                 } catch (Exception ex) {
                     UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
                     AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");

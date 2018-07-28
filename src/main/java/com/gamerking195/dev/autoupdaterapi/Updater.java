@@ -144,22 +144,25 @@ public class Updater {
                     @Override
                     public void run() {
                         try {
+
                             URL downloadUrl = new URL(url + "/download");
                             HttpURLConnection httpConnection = (HttpURLConnection) downloadUrl.openConnection();
                             httpConnection.setRequestProperty("User-Agent", "SpigetResourceUpdater");
                             long completeFileSize = httpConnection.getContentLength();
 
+                            int grabSize = 2048;
+
                             BufferedInputStream in = new BufferedInputStream(httpConnection.getInputStream());
                             FileOutputStream fos = new FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
-                            BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
+                            BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
 
-                            byte[] data = new byte[1024];
+                            byte[] data = new byte[grabSize];
                             long downloadedFileSize = 0;
-                            int x;
-                            while ((x = in.read(data, 0, 1024)) >= 0) {
-                                downloadedFileSize += x;
+                            int grab;
+                            while ((grab = in.read(data, 0, grabSize)) >= 0) {
+                                downloadedFileSize += grab;
 
-                                if (downloadedFileSize % 5000 == 0) {
+                                if (downloadedFileSize % (grabSize*5) == 0) {
                                     final int currentProgress = (int) ((((double) downloadedFileSize) / ((double) completeFileSize)) * 15);
 
                                     final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
@@ -171,7 +174,7 @@ public class Updater {
                                     UtilUI.sendActionBar(initiator, locale.getUpdatingDownload().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING]");
                                 }
 
-                                bout.write(data, 0, x);
+                                bout.write(data, 0, grab);
                             }
 
                             bout.close();

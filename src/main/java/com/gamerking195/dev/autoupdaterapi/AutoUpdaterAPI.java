@@ -34,8 +34,7 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 
 
-public final class AutoUpdaterAPI
-        extends JavaPlugin {
+public final class AutoUpdaterAPI extends JavaPlugin {
 
     private static AutoUpdaterAPI instance;
     private Logger log;

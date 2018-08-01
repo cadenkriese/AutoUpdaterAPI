@@ -12,6 +12,7 @@ import com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds;
 import com.gamerking195.dev.autoupdaterapi.util.UtilUI;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.util.Cookie;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -197,20 +198,45 @@ public class PremiumUpdater {
 
                     webClient.waitForBackgroundJavaScript(10_000);
 
-                    String contentLength = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaderValue("Content-Length");
+                    WebResponse response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
+
+                    String contentLength = response.getResponseHeaderValue("Content-Length");
 
                     int completeFileSize = 0;
 
                     if (contentLength != null) {
                         completeFileSize = Integer.parseInt(contentLength);
                         if (AutoUpdaterAPI.getInstance().isDebug())
-                            Bukkit.broadcastMessage(contentLength);
+                            AutoUpdaterAPI.getInstance().getLogger().info(contentLength);
                     } else if (AutoUpdaterAPI.getInstance().isDebug())
-                        Bukkit.broadcastMessage("0");
+                        AutoUpdaterAPI.getInstance().getLogger().info("0");
+
+                    if (AutoUpdaterAPI.getInstance().isDebug()) {
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("============== BEGIN PREMIUM PLUGIN DEBUG ==============");
+                        AutoUpdaterAPI.getInstance().getLogger().info("HISTORY = "+ htmlPage.getEnclosingWindow().getHistory().toString());
+                        AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = "+ htmlPage.getWebResponse().getStatusCode());
+                        AutoUpdaterAPI.getInstance().getLogger().info("LOAD TIME = "+response.getLoadTime());
+                        AutoUpdaterAPI.getInstance().getLogger().info("STATUS CODE = "+response.getStatusCode());
+                        AutoUpdaterAPI.getInstance().getLogger().info("CURRENT URL = " + webClient.getCurrentWindow().getEnclosedPage().getUrl());
+
+                        AutoUpdaterAPI.getInstance().getLogger().info("NAME | VALUE");
+                        response.getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.getInstance().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
+                        AutoUpdaterAPI.getInstance().getLogger().info("============== END PREMIUM PLUGIN DEBUG =======");
+                    }
+
 
                     int grabSize = 2048;
 
-                    BufferedInputStream in = new java.io.BufferedInputStream(htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getContentAsStream());
+                    BufferedInputStream in = new java.io.BufferedInputStream(response.getContentAsStream());
                     java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(AutoUpdaterAPI.getFileSeperator())) + AutoUpdaterAPI.getFileSeperator() + locale.getFileName() + ".jar"));
                     java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
 
@@ -289,7 +315,7 @@ public class PremiumUpdater {
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
                                 if (pluginName != null) {
                                     if (AutoUpdaterAPI.getInstance().isDebug())
-                                        Bukkit.broadcastMessage(pluginName);
+                                        AutoUpdaterAPI.getInstance().getLogger().info(pluginName);
 
                                     endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
                                 }

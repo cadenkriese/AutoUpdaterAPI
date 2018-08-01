@@ -10,9 +10,7 @@ import com.gamerking195.dev.autoupdaterapi.util.UtilPlugin;
 import com.gamerking195.dev.autoupdaterapi.util.UtilReader;
 import com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds;
 import com.gamerking195.dev.autoupdaterapi.util.UtilUI;
-import com.gargoylesoftware.htmlunit.BrowserVersion;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.WebResponse;
+import com.gargoylesoftware.htmlunit.*;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.util.Cookie;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -194,22 +192,35 @@ public class PremiumUpdater {
 
                     webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 
-                    HtmlPage htmlPage = webClient.getPage(AutoUpdaterAPI.getInstance().getApi().getResourceManager().getResourceById(resourceId, spigotUser).getDownloadURL());
+                    Page page = webClient.getPage(AutoUpdaterAPI.getInstance().getApi().getResourceManager().getResourceById(resourceId, spigotUser).getDownloadURL());
 
                     webClient.waitForBackgroundJavaScript(10_000);
 
-                    WebResponse response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
+                    WebResponse response = page.getEnclosingWindow().getEnclosedPage().getWebResponse();
+
+                    if (page instanceof HtmlPage && AutoUpdaterAPI.getInstance().isDebug()) {
+                        AutoUpdaterAPI.getInstance().getLogger().info("---- EARLY HTML OUTPUT ----");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("PAGETYPE = HtmlPage");
+                        HtmlPage htmlPage = (HtmlPage) page;
+
+                        AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
+                        AutoUpdaterAPI.getInstance().getLogger().info("HISTORY = " + htmlPage.getEnclosingWindow().getHistory().toString());
+                        AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
+                        AutoUpdaterAPI.getInstance().getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
+                        htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.getInstance().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("---- EARLY HTML OUTPUT ----");
+
+                        response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
+                    }
 
                     String contentLength = response.getResponseHeaderValue("Content-Length");
 
                     int completeFileSize = 0;
 
-                    if (contentLength != null) {
+                    if (contentLength != null)
                         completeFileSize = Integer.parseInt(contentLength);
-                        if (AutoUpdaterAPI.getInstance().isDebug())
-                            AutoUpdaterAPI.getInstance().getLogger().info(contentLength);
-                    } else if (AutoUpdaterAPI.getInstance().isDebug())
-                        AutoUpdaterAPI.getInstance().getLogger().info("0");
 
                     if (AutoUpdaterAPI.getInstance().isDebug()) {
                         AutoUpdaterAPI.getInstance().getLogger().info("");
@@ -220,28 +231,51 @@ public class PremiumUpdater {
                         AutoUpdaterAPI.getInstance().getLogger().info("");
                         AutoUpdaterAPI.getInstance().getLogger().info("");
                         AutoUpdaterAPI.getInstance().getLogger().info("");
-                        AutoUpdaterAPI.getInstance().getLogger().info("");
                         AutoUpdaterAPI.getInstance().getLogger().info("============== BEGIN PREMIUM PLUGIN DEBUG ==============");
-                        AutoUpdaterAPI.getInstance().getLogger().info("HISTORY = "+ htmlPage.getEnclosingWindow().getHistory().toString());
-                        AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = "+ htmlPage.getWebResponse().getStatusCode());
-                        AutoUpdaterAPI.getInstance().getLogger().info("LOAD TIME = "+response.getLoadTime());
-                        AutoUpdaterAPI.getInstance().getLogger().info("STATUS CODE = "+response.getStatusCode());
-                        AutoUpdaterAPI.getInstance().getLogger().info("CURRENT URL = " + webClient.getCurrentWindow().getEnclosedPage().getUrl());
+                        if (pluginName != null)
+                            AutoUpdaterAPI.getInstance().getLogger().info("PLUGIN = "+pluginName);
 
+                        if (page instanceof HtmlPage) {
+                            AutoUpdaterAPI.getInstance().getLogger().info("");
+                            AutoUpdaterAPI.getInstance().getLogger().info("");
+                            AutoUpdaterAPI.getInstance().getLogger().info("PAGETYPE = HtmlPage");
+                            HtmlPage htmlPage = (HtmlPage) page;
+
+                            AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = "+ htmlPage.getWebResponse().getStatusCode());
+                            AutoUpdaterAPI.getInstance().getLogger().info("HISTORY = "+ htmlPage.getEnclosingWindow().getHistory().toString());
+                            AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = "+ htmlPage.getWebResponse().getStatusCode());
+                            AutoUpdaterAPI.getInstance().getLogger().info("STATUS CODE = "+htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
+                            htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.getInstance().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
+                        } else if (page instanceof UnexpectedPage) {
+                            AutoUpdaterAPI.getInstance().getLogger().info("");
+                            AutoUpdaterAPI.getInstance().getLogger().info("");
+                            AutoUpdaterAPI.getInstance().getLogger().info("PAGETYPE = UnexpectedPage");
+                            UnexpectedPage unexpectedPage = (UnexpectedPage) page;
+                            AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = "+ unexpectedPage.getWebResponse().getStatusCode());
+                            AutoUpdaterAPI.getInstance().getLogger().info("HISTORY = "+ unexpectedPage.getEnclosingWindow().getHistory().toString());
+                            AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = "+ unexpectedPage.getWebResponse().getStatusCode());
+                            AutoUpdaterAPI.getInstance().getLogger().info("STATUS CODE = "+unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
+                            AutoUpdaterAPI.getInstance().getLogger().info("NAME | VALUE");
+                            unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.getInstance().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
+                        }
+
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("");
+                        AutoUpdaterAPI.getInstance().getLogger().info("PAGETYPE = Page");
+                        AutoUpdaterAPI.getInstance().getLogger().info("HISTORY = "+ page.getEnclosingWindow().getHistory().toString());
+                        AutoUpdaterAPI.getInstance().getLogger().info("PREVIOUS STATUS CODE = "+ page.getWebResponse().getStatusCode());
+                        AutoUpdaterAPI.getInstance().getLogger().info("STATUS CODE = "+response.getStatusCode());
+                        AutoUpdaterAPI.getInstance().getLogger().info("LOAD TIME = "+response.getLoadTime());
+                        AutoUpdaterAPI.getInstance().getLogger().info("CURRENT URL = " + webClient.getCurrentWindow().getEnclosedPage().getUrl());
                         AutoUpdaterAPI.getInstance().getLogger().info("NAME | VALUE");
                         response.getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.getInstance().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
-                        AutoUpdaterAPI.getInstance().getLogger().info("============== END PREMIUM PLUGIN DEBUG =======");
                     }
-
 
                     int grabSize = 2048;
 
                     BufferedInputStream in = new java.io.BufferedInputStream(response.getContentAsStream());
                     java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(AutoUpdaterAPI.getFileSeperator())) + AutoUpdaterAPI.getFileSeperator() + locale.getFileName() + ".jar"));
                     java.io.BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
-
-                    if (AutoUpdaterAPI.getInstance().isDebug())
-                        AutoUpdaterAPI.getInstance().getLogger().info("EXPECTED TOTAL SIZE = "+completeFileSize);
 
                     byte[] data = new byte[grabSize];
                     long downloadedFileSize = 0;
@@ -273,15 +307,15 @@ public class PremiumUpdater {
                     in.close();
                     fos.close();
 
-                    if (AutoUpdaterAPI.getInstance().isDebug())
-                        AutoUpdaterAPI.getInstance().getLogger().info("FINISHED WITH "+downloadedFileSize+"/"+completeFileSize+" ("+String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100)+"%)");
+                    if (AutoUpdaterAPI.getInstance().isDebug()) {
+                        AutoUpdaterAPI.getInstance().getLogger().info("FINISHED WITH " + downloadedFileSize + "/" + completeFileSize + " (" + String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100) + "%)");
+                        AutoUpdaterAPI.getInstance().getLogger().info("============== END PREMIUM PLUGIN DEBUG =======");
+                    }
 
                     new BukkitRunnable() {
                         @Override
                         public void run() {
                             try {
-                                AutoUpdaterAPI.getInstance().setWebClient(new WebClient(BrowserVersion.CHROME));
-
                                 if (deleteOld) {
                                     File pluginFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
 
@@ -314,9 +348,6 @@ public class PremiumUpdater {
                                 UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
                                 AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
                                 if (pluginName != null) {
-                                    if (AutoUpdaterAPI.getInstance().isDebug())
-                                        AutoUpdaterAPI.getInstance().getLogger().info(pluginName);
-
                                     endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
                                 }
                                 delete();
@@ -324,6 +355,9 @@ public class PremiumUpdater {
                         }
                     }.runTask(AutoUpdaterAPI.getInstance());
                 } catch (Exception ex) {
+                    if (AutoUpdaterAPI.getInstance().isDebug())
+                        AutoUpdaterAPI.getInstance().getLogger().info("============== END PREMIUM PLUGIN DEBUG =======");
+
                     UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
                     AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while updating premium resource.");
                     if (pluginName != null)

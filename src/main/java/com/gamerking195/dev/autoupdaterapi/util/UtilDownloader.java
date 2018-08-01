@@ -128,7 +128,6 @@ public class UtilDownloader {
     }
 
     public static void addURL(URL u) throws IOException {
-
         URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
         Class sysclass = URLClassLoader.class;
 
@@ -140,6 +139,5 @@ public class UtilDownloader {
             t.printStackTrace();
             throw new IOException("Error, could not add URL to system classloader");
         }
-
     }
 }

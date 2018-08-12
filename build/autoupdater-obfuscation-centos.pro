@@ -1,8 +1,7 @@
 -injars ../target/AutoUpdaterAPI.jar
 -outjars ../target/AutoUpdaterAPI-obfsc.jar
 
-# -libraryjars '/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/rt.jar'
--libraryjars '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.171-8.b10.el7_5.x86_64/jre/lib/rt.jar'
+-libraryjars '/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.181-3.b13.el7_5.x86_64/jre/lib/rt.jar'
 
 -target 1.8
 -dontshrink

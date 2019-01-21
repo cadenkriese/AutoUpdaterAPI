@@ -71,32 +71,32 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>exec-maven-plugin</artifactId>
-                <groupId>org.codehaus.mojo</groupId>
-                <version>1.6.0</version>
+                <groupId>com.github.wvengen</groupId>
+                <artifactId>proguard-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>obfuscate-clean</id>
-                        <phase>post-clean</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${basedir}/build/obfuscate.sh</executable>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>obfuscate-package</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>proguard</goal>
                         </goals>
-                        <configuration>
-                            <executable>${basedir}/build/obfuscate.sh</executable>
-                        </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <options>
+                        <option>-dontwarn</option>
+                        <option>-dontnote **</option>
+                        <option>-overloadaggressively</option>
+                        <option>-adaptclassstrings</option>
+                        <option>-useuniqueclassmembernames</option>
+                        <option>-keeppackagenames net.wesjd,be.maximvdw,com.gargoylesoftware,org.spigotmc,commons-codec,commons-logging,org.jsoup,org.projectlombok</option>
+                        <option>-keepattributes Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,LocalVariable*Table,*Annotation*,Synthetic,EnclosingMethod</option>
+                        <option>-renamesourcefileattribute SourceFile</option>
+                        <option>-keep class !com.gamerking195.dev.autoupdaterapi.util.UtilEncryption,!com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds { *; }</option>
+                    </options>
+                    <libs>
+                        <lib>${java.home}/lib/rt.jar</lib>
+                    </libs>
+                </configuration>
             </plugin>
         </plugins>
         <resources>

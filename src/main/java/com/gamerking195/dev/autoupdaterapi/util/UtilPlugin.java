@@ -63,7 +63,8 @@ public class UtilPlugin {
                     Field listenersField = Bukkit.getPluginManager().getClass().getDeclaredField("listeners");
                     listenersField.setAccessible(true);
                     listeners = (Map<Event, SortedSet<RegisteredListener>>) listenersField.get(pluginManager);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
 
                 Field commandMapField = Bukkit.getPluginManager().getClass().getDeclaredField("commandMap");
                 commandMapField.setAccessible(true);

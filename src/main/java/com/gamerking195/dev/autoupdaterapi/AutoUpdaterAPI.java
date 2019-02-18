@@ -1,10 +1,5 @@
 package com.gamerking195.dev.autoupdaterapi;
 
-import java.io.File;
-import java.nio.file.FileSystems;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import be.maximvdw.spigotsite.SpigotSiteCore;
 import be.maximvdw.spigotsite.api.SpigotSiteAPI;
 import be.maximvdw.spigotsite.api.user.User;
@@ -15,15 +10,19 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.logging.LogFactory;
-import org.bstats.Metrics;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /*
  * AutoUpdaterAPI
  *
- * Author: flogic
+ * Author: Caden Kriese (flogic)
  *
  * This resource is licensed under the Apache License Version 2.0.
  * Full license information in the LICENSE file.
@@ -33,62 +32,32 @@ import org.bukkit.scheduler.BukkitRunnable;
  *
  */
 
-
 public final class AutoUpdaterAPI extends JavaPlugin {
 
-    private static AutoUpdaterAPI instance;
+    @Getter private static AutoUpdaterAPI instance;
+    @Getter private SpigotSiteAPI api;
+
+    @Getter @Setter private WebClient webClient;
+    @Getter @Setter private User currentUser;
+    @Getter @Setter private boolean debug = false;
+
     private Logger log;
 
-    public static AutoUpdaterAPI getInstance() {
-        return instance;
-    }
-
-    @Getter
-    private SpigotSiteAPI api;
-
-    @Getter
-    @Setter
-    private WebClient webClient;
-
-    @Getter
-    @Setter
-    private User currentUser;
-
-    @Getter
-    @Setter
-    private boolean debug = false;
-
-    @Getter
-    private static String fileSeperator;
-
-    private Metrics metrics;
-
     public void onEnable() {
-        /*
-         * General setup.
-         */
-
+        //General setup
         instance = this;
-        fileSeperator = FileSystems.getDefault().getSeparator();
         log = getLogger();
 
-        /*
-         * Setup local files
-         */
-
+        //Setup spigot credential files.
         UtilSpigotCreds.getInstance().init();
 
-        /*
-         * HTML Unit (Using the OSGi classifier as to be compatible with MaximVdW's spigot site api)
-         */
-
+        // HTML Unit (Using the OSGi classifier as to be compatible with MaximVdW's spigot site api)
         UtilDownloader.downloadLib(UtilDownloader.Library.HTMMLUNIT);
-
-        File htmlUnit = new File(getDataFolder().getParentFile().getPath()+fileSeperator+"MVdWPlugin"+fileSeperator+"lib"+fileSeperator+"htmlunit_2_15.jar");
+        File htmlUnit = new File(getDataFolder().getParentFile().getPath() + "/MVdWPlugin/lib/htmlunit_2_15.jar");
         if (htmlUnit.exists()) {
             if (htmlUnit.length() < 11000000) {
                 printPluginError("Error occurred while enabling the plugin.", "Error occurred while locating dependencies, it is likely that the dependency download has failed.\nTry deleting the MVdWPlugin directory (if it exists) and trying again.\nIf it fails again try contacting me via spigot @flogic, and/or contacting your hosting provider about internet speed/ram.");
-                log.severe("DISABLING AUTOUPDATERAPI!!!");
+                log.severe("DISABLING AUTOUPDATERAPI!");
                 this.setEnabled(false);
                 return;
             }
@@ -121,10 +90,7 @@ public final class AutoUpdaterAPI extends JavaPlugin {
 
         log.info("Initializing connection with spigot...");
 
-        /*
-         * Spigot Site API
-         */
-
+        //Spigot Site API
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -143,11 +109,8 @@ public final class AutoUpdaterAPI extends JavaPlugin {
             }
         }.runTaskAsynchronously(instance);
 
-        /*
-         * Statistics
-         */
-
-        metrics = new Metrics(instance);
+        //Statistics
+        new Metrics(instance);
 
         log.info("AutoUpdaterAPI V" + getDescription().getVersion() + " enabled!");
     }

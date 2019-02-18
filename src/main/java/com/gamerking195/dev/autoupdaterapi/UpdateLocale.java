@@ -3,9 +3,12 @@ package com.gamerking195.dev.autoupdaterapi;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
-public class UpdateLocale {
+/**
+ * @author Caden Kriese (flogic)
+ *
+ * Created on 6/6/17
+ */
+@Getter @Setter public class UpdateLocale {
     //Variables with NoVar at the end mean they don't support variables.
 
     //Name of the jar file that should be created (.jar will be added at the end)

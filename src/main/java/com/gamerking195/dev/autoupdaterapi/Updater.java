@@ -18,6 +18,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * @author Caden Kriese (flogic)
+ *
+ * Created on 6/14/17
+ */
 public class Updater {
     private Player initiator;
 
@@ -36,7 +41,8 @@ public class Updater {
 
     private long startingTime;
 
-    private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {};
+    private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {
+    };
 
     /**
      * Instantiate the updater for a regular resource.
@@ -105,7 +111,7 @@ public class Updater {
      */
     public String getLatestVersion() {
         try {
-            return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource="+resourceId);
+            return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (Exception exception) {
             AutoUpdaterAPI.getInstance().printError(exception);
             UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
@@ -138,8 +144,6 @@ public class Updater {
                         AutoUpdaterAPI.getInstance().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
                 }
 
-                String s = AutoUpdaterAPI.getFileSeperator();
-
                 new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -153,7 +157,7 @@ public class Updater {
                             int grabSize = 2048;
 
                             BufferedInputStream in = new BufferedInputStream(httpConnection.getInputStream());
-                            FileOutputStream fos = new FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
+                            FileOutputStream fos = new FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
                             BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
 
                             byte[] data = new byte[grabSize];
@@ -162,7 +166,7 @@ public class Updater {
                             while ((grab = in.read(data, 0, grabSize)) >= 0) {
                                 downloadedFileSize += grab;
 
-                                if (downloadedFileSize % (grabSize*5) == 0) {
+                                if (downloadedFileSize % (grabSize * 5) == 0) {
                                     final int currentProgress = (int) ((((double) downloadedFileSize) / ((double) completeFileSize)) * 15);
 
                                     final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
@@ -189,7 +193,7 @@ public class Updater {
 
                                         List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
 
-                                        Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf(s)) + s + locale.getFileName() + ".jar"));
+                                        Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
 
                                         if (pluginName == null) {
                                             List<Plugin> afterPlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
@@ -200,11 +204,11 @@ public class Updater {
                                         Bukkit.getPluginManager().enablePlugin(updated);
 
                                         endTask.run(true, null, updated, pluginName);
-                                        double elapsedTimeSeconds = (double) (System.currentTimeMillis()-startingTime)/1000;
+                                        double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
                                         UtilUI.sendActionBarSync(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
                                         delete();
-                                    } catch(Exception ex) {
+                                    } catch (Exception ex) {
                                         AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while initializing " + pluginName + ".");
                                         UtilUI.sendActionBarSync(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion));
                                         if (pluginName != null)

@@ -1,12 +1,5 @@
 package com.gamerking195.dev.autoupdaterapi.util;
 
-/*
- * Created by Caden Kriese (flogic) on 6/14/17.
- *
- * License is specified by the distributor which this
- * file was written for. Otherwise it can be found in the LICENSE file.
- */
-
 import be.maximvdw.spigotsite.api.SpigotSiteAPI;
 import com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -16,21 +9,25 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * @author Caden Kriese (flogic)
+ *
+ * Created on 6/14/17
+ */
 public class UtilSpigotCreds {
+    private static UtilSpigotCreds instance = new UtilSpigotCreds();
+    private File infoFile;
+    private FileConfiguration infoConfig;
+
     private UtilSpigotCreds() {
     }
-
-    private static UtilSpigotCreds instance = new UtilSpigotCreds();
 
     public static UtilSpigotCreds getInstance() {
         return instance;
     }
 
-    private File infoFile;
-    private FileConfiguration infoConfig;
-
     public void init() {
-        infoFile = new File(AutoUpdaterAPI.getInstance().getDataFolder().getParentFile().getAbsolutePath() + AutoUpdaterAPI.getFileSeperator() + ".creds" + AutoUpdaterAPI.getFileSeperator() + "info.enc");
+        infoFile = new File(AutoUpdaterAPI.getInstance().getDataFolder().getParentFile().getAbsolutePath() + "/.creds/info.enc");
         if (!infoFile.getParentFile().exists())
             infoFile.getParentFile().mkdirs();
         infoConfig = YamlConfiguration.loadConfiguration(infoFile);
@@ -139,6 +136,17 @@ public class UtilSpigotCreds {
         return null;
     }
 
+    public void setUsername(String username) {
+        UtilEncryption.getInstance().setKeyNumber(3);
+
+        String key;
+        key = UtilEncryption.getInstance().encrypt("username");
+
+        UtilEncryption.getInstance().setKeyNumber(0);
+
+        infoConfig.set(key, UtilEncryption.getInstance().encrypt(username));
+    }
+
     public String getPassword() {
         UtilEncryption.getInstance().setKeyNumber(3);
 
@@ -153,6 +161,20 @@ public class UtilSpigotCreds {
         return null;
     }
 
+    /*
+     * SETTERS
+     */
+
+    public void setPassword(String password) {
+        UtilEncryption.getInstance().setKeyNumber(3);
+
+        String key = UtilEncryption.getInstance().encrypt("password");
+
+        UtilEncryption.getInstance().setKeyNumber(1);
+
+        infoConfig.set(key, UtilEncryption.getInstance().encrypt(password));
+    }
+
     public String getTwoFactor() {
         UtilEncryption.getInstance().setKeyNumber(3);
 
@@ -165,31 +187,6 @@ public class UtilSpigotCreds {
         }
 
         return null;
-    }
-
-    /*
-     * SETTERS
-     */
-
-    public void setUsername(String username) {
-        UtilEncryption.getInstance().setKeyNumber(3);
-
-        String key;
-        key = UtilEncryption.getInstance().encrypt("username");
-
-        UtilEncryption.getInstance().setKeyNumber(0);
-
-        infoConfig.set(key, UtilEncryption.getInstance().encrypt(username));
-    }
-
-    public void setPassword(String password) {
-        UtilEncryption.getInstance().setKeyNumber(3);
-
-        String key = UtilEncryption.getInstance().encrypt("password");
-
-        UtilEncryption.getInstance().setKeyNumber(1);
-
-        infoConfig.set(key, UtilEncryption.getInstance().encrypt(password));
     }
 
     public void setTwoFactor(String twoFactor) {

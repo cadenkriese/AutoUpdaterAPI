@@ -8,12 +8,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * Created by Caden Kriese (flogic) on 2/27/18.
- * <p>
- * License is specified by the distributor which this
- * file was written for. Otherwise it can be found in the LICENSE file.
- * If there is no license file the code is then completely copyrighted
- * and you must contact me before using it IN ANY WAY.
+ * @author Caden Kriese (flogic)
+ *
+ * Created on 2/27/18
  */
 public class UtilUI {
     public static void sendActionBar(Player player, String message) {

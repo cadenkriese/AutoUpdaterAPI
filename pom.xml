@@ -6,15 +6,12 @@
 
     <groupId>com.gamerking195.dev</groupId>
     <artifactId>AutoUpdaterAPI</artifactId>
-    <version>2.5.3</version>
+    <version>2.5.4-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>AutoUpdaterAPI</name>
 
     <description>API for automatically updating and installing Spigot plugins.</description>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <url>https://www.spigotmc.org/resources/auto-updater-api.39719/</url>
 
     <build>
@@ -22,7 +19,7 @@
         <finalName>AutoUpdaterAPI</finalName>
         <plugins>
             <plugin>
-                <version>3.1</version>
+                <version>3.8.0</version>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
@@ -38,7 +35,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -69,34 +66,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.github.wvengen</groupId>
-                <artifactId>proguard-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>proguard</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <options>
-                        <option>-dontwarn</option>
-                        <option>-dontnote **</option>
-                        <option>-overloadaggressively</option>
-                        <option>-adaptclassstrings</option>
-                        <option>-useuniqueclassmembernames</option>
-                        <option>-keeppackagenames net.wesjd,be.maximvdw,com.gargoylesoftware,org.spigotmc,commons-codec,commons-logging,org.jsoup,org.projectlombok</option>
-                        <option>-keepattributes Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,LocalVariable*Table,*Annotation*,Synthetic,EnclosingMethod</option>
-                        <option>-renamesourcefileattribute SourceFile</option>
-                        <option>-keep class !com.gamerking195.dev.autoupdaterapi.util.UtilEncryption,!com.gamerking195.dev.autoupdaterapi.util.UtilSpigotCreds { *; }</option>
-                    </options>
-                    <libs>
-                        <lib>${java.home}/lib/rt.jar</lib>
-                    </libs>
-                </configuration>
             </plugin>
         </plugins>
         <resources>
@@ -145,34 +114,34 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.12.2-R0.1-SNAPSHOT</version>
+            <version>1.13.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <!--Bukkit API-->
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>1.12.2-R0.1-SNAPSHOT</version>
+            <version>1.13.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <!-- Apache Commons Codec -->
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.9</version>
+            <version>1.11</version>
             <scope>provided</scope>
         </dependency>
         <!-- Apache Commons Logging -->
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
-            <version>1.1.1</version>
+            <version>1.2</version>
         </dependency>
         <!-- AnvilGUI -->
         <dependency>
             <groupId>net.wesjd</groupId>
             <artifactId>anvilgui</artifactId>
-            <version>1.1.2-20180122.055842-1</version>
+            <version>1.1.2-SNAPSHOT</version>
         </dependency>
         <!-- Jsoup -->
         <dependency>
@@ -206,14 +175,14 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.16</version>
+            <version>1.18.4</version>
             <scope>provided</scope>
         </dependency>
         <!-- bstats -->
         <dependency>
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
-            <version>1.1</version>
+            <version>1.2</version>
         </dependency>
     </dependencies>
 </project>

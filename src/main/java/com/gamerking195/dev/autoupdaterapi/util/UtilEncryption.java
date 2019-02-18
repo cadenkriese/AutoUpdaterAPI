@@ -1,13 +1,7 @@
 package com.gamerking195.dev.autoupdaterapi.util;
 
-/*
- * Created by Caden Kriese (flogic) on 6/14/17.
- *
- * License is specified by the distributor which this
- * file was written for. Otherwise it can be found in the LICENSE file.
- */
-
 import com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI;
+import lombok.Getter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -17,29 +11,26 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * @author Caden Kriese (flogic)
+ *
+ * Created on 6/14/17
+ */
 class UtilEncryption {
-    private UtilEncryption() {
-    }
-
-    private static UtilEncryption instance = new UtilEncryption();
-
-    static UtilEncryption getInstance() {
-        return instance;
-    }
-
-    boolean useOldKeys;
+    @Getter private static UtilEncryption instance = new UtilEncryption();
 
     private static SecretKeySpec secretKey;
-
+    boolean useOldKeys;
     private File keyFile;
     private FileConfiguration keyConfig;
 
     void init() {
         if (keyFile == null)
-            keyFile = new File(AutoUpdaterAPI.getInstance().getDataFolder().getParentFile().getAbsolutePath() + AutoUpdaterAPI.getFileSeperator() + ".auapi" + AutoUpdaterAPI.getFileSeperator() + "key.enc");
+            keyFile = new File(AutoUpdaterAPI.getInstance().getDataFolder().getParentFile().getAbsolutePath() + "/.auapi/key.enc");
 
         if (!keyFile.getParentFile().exists())
             keyFile.getParentFile().mkdirs();
@@ -49,19 +40,17 @@ class UtilEncryption {
             keyConfig.options().copyDefaults(true);
         }
 
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?";
-
         if (keyConfig.get("0") == null)
-            keyConfig.set("0", RandomStringUtils.random(20, characters));
+            keyConfig.set("0", RandomStringUtils.randomAscii(20));
 
         if (keyConfig.get("1") == null)
-            keyConfig.set("1", RandomStringUtils.random(20, characters));
+            keyConfig.set("1", RandomStringUtils.randomAscii(20));
 
         if (keyConfig.get("2") == null)
-            keyConfig.set("2", RandomStringUtils.random(20, characters));
+            keyConfig.set("2", RandomStringUtils.randomAscii(20));
 
         if (keyConfig.get("3") == null)
-            keyConfig.set("3", RandomStringUtils.random(20, characters));
+            keyConfig.set("3", RandomStringUtils.randomAscii(20));
 
         try {
             if (!keyFile.exists())
@@ -111,12 +100,12 @@ class UtilEncryption {
     private void setKey(String myKey) {
         MessageDigest sha;
         try {
-            byte[] key = myKey.getBytes("UTF-8");
+            byte[] key = myKey.getBytes(StandardCharsets.UTF_8);
             sha = MessageDigest.getInstance("SHA-1");
             key = sha.digest(key);
             key = java.util.Arrays.copyOf(key, 16);
             secretKey = new SecretKeySpec(key, "AES");
-        } catch (NoSuchAlgorithmException | java.io.UnsupportedEncodingException ex) {
+        } catch (NoSuchAlgorithmException ex) {
             AutoUpdaterAPI.getInstance().printError(ex);
         }
     }
@@ -127,7 +116,7 @@ class UtilEncryption {
 
             cipher.init(1, secretKey);
 
-            return Base64.encodeBase64String(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
+            return Base64.encodeBase64String(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception ex) {
             AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while encrypting string.");
         }

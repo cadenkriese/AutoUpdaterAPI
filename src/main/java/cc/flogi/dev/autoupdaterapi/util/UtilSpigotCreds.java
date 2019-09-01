@@ -1,7 +1,7 @@
-package com.gamerking195.dev.autoupdaterapi.util;
+package cc.flogi.dev.autoupdaterapi.util;
 
 import be.maximvdw.spigotsite.api.SpigotSiteAPI;
-import com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI;
+import cc.flogi.dev.autoupdaterapi.AutoUpdaterAPI;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -27,7 +27,7 @@ public class UtilSpigotCreds {
     }
 
     public void init() {
-        infoFile = new File(AutoUpdaterAPI.getInstance().getDataFolder().getParentFile().getAbsolutePath() + "/.creds/info.enc");
+        infoFile = new File(AutoUpdaterAPI.get().getDataFolder().getParentFile().getAbsolutePath() + "/.creds/info.enc");
         if (!infoFile.getParentFile().exists())
             infoFile.getParentFile().mkdirs();
         infoConfig = YamlConfiguration.loadConfiguration(infoFile);
@@ -39,7 +39,7 @@ public class UtilSpigotCreds {
                 infoFile.createNewFile();
                 infoConfig.save(infoFile);
             } catch (IOException ex) {
-                AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while creating the encrypted file.");
+                AutoUpdaterAPI.get().printError(ex, "Error occurred while creating the encrypted file.");
             }
         }
 
@@ -49,7 +49,7 @@ public class UtilSpigotCreds {
     public void updateKeys() {
         try {
             UtilEncryption.getInstance().useOldKeys = true;
-            SpigotSiteAPI api = AutoUpdaterAPI.getInstance().getApi();
+            SpigotSiteAPI api = AutoUpdaterAPI.get().getApi();
 
             UtilEncryption.getInstance().setKeyNumber(3);
             if (infoConfig.contains(UtilEncryption.getInstance().encrypt("username"))) {
@@ -71,14 +71,14 @@ public class UtilSpigotCreds {
 
                     saveFile();
 
-                    AutoUpdaterAPI.getInstance().getLogger().info("Successfully converted to new encryption keys.");
+                    AutoUpdaterAPI.get().getLogger().info("Successfully converted to new encryption keys.");
                 }
             } else {
                 UtilEncryption.getInstance().useOldKeys = false;
-                AutoUpdaterAPI.getInstance().getLogger().info("Updated keys detected and enabled.");
+                AutoUpdaterAPI.get().getLogger().info("Updated keys detected and enabled.");
             }
         } catch (Exception e) {
-            AutoUpdaterAPI.getInstance().printError(e);
+            AutoUpdaterAPI.get().printError(e);
         }
     }
 
@@ -89,14 +89,14 @@ public class UtilSpigotCreds {
 
             init();
         } else
-            AutoUpdaterAPI.getInstance().printPluginError("Error occurred while resetting credentials.", "Info file deletion failed.");
+            AutoUpdaterAPI.get().printPluginError("Error occurred while resetting credentials.", "Info file deletion failed.");
     }
 
     public void saveFile() {
         try {
             infoConfig.save(infoFile);
         } catch (IOException ex) {
-            AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while creating the encrypted file.");
+            AutoUpdaterAPI.get().printError(ex, "Error occurred while creating the encrypted file.");
         }
     }
 
@@ -109,12 +109,12 @@ public class UtilSpigotCreds {
                     infoConfig.set(UtilEncryption.getInstance().encrypt("password"), null);
                     infoConfig.set(UtilEncryption.getInstance().encrypt("twoFactorSecret"), null);
                 } catch (Exception e) {
-                    AutoUpdaterAPI.getInstance().printError(e);
+                    AutoUpdaterAPI.get().printError(e);
                 }
 
                 saveFile();
             }
-        }.runTask(AutoUpdaterAPI.getInstance());
+        }.runTask(AutoUpdaterAPI.getPlugin());
     }
 
 

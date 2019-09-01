@@ -1,4 +1,4 @@
-package com.gamerking195.dev.autoupdaterapi;
+package cc.flogi.dev.autoupdaterapi;
 
 import org.bukkit.plugin.Plugin;
 

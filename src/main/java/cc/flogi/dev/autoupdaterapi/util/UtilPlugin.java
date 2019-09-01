@@ -1,6 +1,6 @@
-package com.gamerking195.dev.autoupdaterapi.util;
+package cc.flogi.dev.autoupdaterapi.util;
 
-import com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI;
+import cc.flogi.dev.autoupdaterapi.AutoUpdaterAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
@@ -75,7 +75,7 @@ public class UtilPlugin {
                 commands = (Map<String, Command>) knownCommandsField.get(commandMap);
 
             } catch (NoSuchFieldException | IllegalAccessException ex) {
-                AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while clearing plugin fields.");
+                AutoUpdaterAPI.get().printError(ex, "Error occurred while clearing plugin fields.");
             }
 
         }
@@ -124,14 +124,14 @@ public class UtilPlugin {
                 pluginInitField.set(cl, null);
 
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
-                AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while clearing plugin & plugininit fields.");
+                AutoUpdaterAPI.get().printError(ex, "Error occurred while clearing plugin & plugininit fields.");
             }
 
             try {
 
                 ((URLClassLoader) cl).close();
             } catch (IOException ex) {
-                AutoUpdaterAPI.getInstance().printError(ex, "Error occurred while closing URLClassLoader.");
+                AutoUpdaterAPI.get().printError(ex, "Error occurred while closing URLClassLoader.");
             }
 
         }

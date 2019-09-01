@@ -1,15 +1,17 @@
-package com.gamerking195.dev.autoupdaterapi;
+package cc.flogi.dev.autoupdaterapi;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * @author Caden Kriese (flogic)
  *
  * Created on 6/6/17
  */
-@Getter @Setter public class UpdateLocale {
-    //Variables with NoVar at the end mean they don't support variables.
+@Data @Builder @AllArgsConstructor
+public class UpdateLocale {
+    public UpdateLocale() {}
 
     //Name of the jar file that should be created (.jar will be added at the end)
     private String fileName = "plugin";

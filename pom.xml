@@ -4,22 +4,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.gamerking195.dev</groupId>
+    <groupId>cc.flogi.dev</groupId>
     <artifactId>AutoUpdaterAPI</artifactId>
-    <version>2.5.4-SNAPSHOT</version>
+    <version>3.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>AutoUpdaterAPI</name>
-
     <description>API for automatically updating and installing Spigot plugins.</description>
     <url>https://www.spigotmc.org/resources/auto-updater-api.39719/</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <build>
         <defaultGoal>package</defaultGoal>
         <finalName>AutoUpdaterAPI</finalName>
         <plugins>
             <plugin>
-                <version>3.8.0</version>
+                <version>3.8.1</version>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
@@ -30,12 +33,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.1.2</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.2.1</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -43,27 +46,64 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.gamerking195.dev.autoupdaterapi.AutoUpdaterAPI</mainClass>
-                                </transformer>
-                            </transformers>
+                            <minimizeJar>true</minimizeJar>
+                            <!-- Lots of stuff to exclude from shading both SpigotSite & htmlunit. -->
                             <artifactSet>
-                                <includes>
-                                    <include>*</include>
-                                </includes>
                                 <excludes>
-                                    <exclude>com.gargoylesoftware</exclude>
+                                    <exclude>*:httpcore</exclude>
+                                    <exclude>*:websocket-client</exclude>
+                                    <exclude>*:commons-io</exclude>
+                                    <exclude>*:jetty-http</exclude>
+                                    <exclude>*:jetty-util</exclude>
+                                    <exclude>*:websocket-common</exclude>
+                                    <exclude>*:anvilgui</exclude>
+                                    <exclude>*:commons-logging</exclude>
+                                    <exclude>*:commons-lang3</exclude>
+                                    <exclude>*:xerces</exclude>
+                                    <exclude>*:xercesImpl</exclude>
+                                    <exclude>*:jetty-io</exclude>
+                                    <exclude>*:htmlunit</exclude>
+                                    <exclude>*:htmlunit-core-js</exclude>
+                                    <exclude>*:httpclient</exclude>
+                                    <exclude>*:httpmime</exclude>
+                                    <exclude>*:xalan</exclude>
+                                    <exclude>*:jetty-client</exclude>
+                                    <exclude>*:commons-net</exclude>
+                                    <exclude>*:xml-apis</exclude>
+                                    <exclude>*:commons-text</exclude>
+                                    <exclude>*:websocket-api</exclude>
+                                    <exclude>*:anvilgui-abstraction</exclude>
+                                    <exclude>*:neko-htmlunit</exclude>
+                                    <exclude>*:serializer</exclude>
                                 </excludes>
                             </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>org.bstats</pattern>
-                                    <shadedPattern>com.gamerking195.dev.autoupdaterapi</shadedPattern>
-                                </relocation>
-                            </relocations>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -77,35 +117,20 @@
     </build>
 
     <repositories>
-        <!-- MVdW-public -->
+        <!-- Flogic's resources -->
+        <repository>
+            <id>flogic-resources</id>
+            <url>https://repo.flogi.cc/artifactory/flogic-resources</url>
+        </repository>
+        <!-- MVdW-public (SpigotSiteAPI) -->
         <repository>
             <id>public</id>
             <url>http://repo.mvdw-software.com/content/groups/public/</url>
         </repository>
+        <!-- wesjd-repo (AnvilGUI) -->
         <repository>
-            <id>sonatype</id>
-            <url>https://oss.sonatype.org/content/groups/public/</url>
-        </repository>
-        <!-- bstats -->
-        <repository>
-            <id>bstats-repo</id>
-            <url>http://repo.bstats.org/content/repositories/releases/</url>
-        </repository>
-        <!-- GamerKing195 Public -->
-        <repository>
-            <id>GK195-Pub</id>
-            <name>GK-Plugins-releases</name>
-            <url>http://repo.gamerking195.com/artifactory/GK195-Pub</url>
-        </repository>
-        <!-- GamerKing195 Public -->
-        <repository>
-            <id>FL-Resources</id>
-            <name>Flogic's Plugin Repository-releases</name>
-            <url>http://repo.gamerking195.com/artifactory/FL-Resources</url>
-        </repository>
-        <repository>
-            <id>central</id>
-            <url>http://central.maven.org/maven2/</url>
+            <id>wesjd-repo</id>
+            <url>https://nexus.wesjd.net/repository/thirdparty/</url>
         </repository>
     </repositories>
 
@@ -114,21 +139,14 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.13.2-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <!--Bukkit API-->
-        <dependency>
-            <groupId>org.bukkit</groupId>
-            <artifactId>bukkit</artifactId>
-            <version>1.13.2-R0.1-SNAPSHOT</version>
+            <version>1.14.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <!-- Apache Commons Codec -->
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.11</version>
+            <version>1.13</version>
             <scope>provided</scope>
         </dependency>
         <!-- Apache Commons Logging -->
@@ -141,13 +159,13 @@
         <dependency>
             <groupId>net.wesjd</groupId>
             <artifactId>anvilgui</artifactId>
-            <version>1.1.2-SNAPSHOT</version>
+            <version>1.2.1-SNAPSHOT</version>
         </dependency>
         <!-- Jsoup -->
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.8.3</version>
+            <version>1.12.1</version>
             <scope>provided</scope>
         </dependency>
         <!-- SpigotSite-API -->
@@ -161,28 +179,20 @@
         <dependency>
             <groupId>be.maximvdw</groupId>
             <artifactId>spigotsite</artifactId>
-            <version>0.3.0-SNAPSHOT</version>
+            <version>0.3.1-SNAPSHOT</version>
         </dependency>
         <!-- HTML Unit -->
         <dependency>
-            <groupId>com.gargoylesoftware</groupId>
-            <artifactId>HTMLUnit</artifactId>
-            <version>2.15</version>
-            <classifier>OSGi</classifier>
-            <scope>provided</scope>
+            <groupId>net.sourceforge.htmlunit</groupId>
+            <artifactId>htmlunit</artifactId>
+            <version>2.36.0</version>
         </dependency>
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.4</version>
+            <version>1.18.8</version>
             <scope>provided</scope>
-        </dependency>
-        <!-- bstats -->
-        <dependency>
-            <groupId>org.bstats</groupId>
-            <artifactId>bstats-bukkit</artifactId>
-            <version>1.2</version>
         </dependency>
     </dependencies>
 </project>

@@ -34,7 +34,6 @@ public class UtilPlugin {
     public static void unload(Plugin plugin) {
 
         String name = plugin.getName();
-
         PluginManager pluginManager = Bukkit.getPluginManager();
 
         SimpleCommandMap commandMap = null;
@@ -46,11 +45,9 @@ public class UtilPlugin {
         Map<Event, SortedSet<RegisteredListener>> listeners = null;
 
         if (pluginManager != null) {
-
             pluginManager.disablePlugin(plugin);
 
             try {
-
                 Field pluginsField = Bukkit.getPluginManager().getClass().getDeclaredField("plugins");
                 pluginsField.setAccessible(true);
                 plugins = (List<Plugin>) pluginsField.get(pluginManager);
@@ -63,8 +60,7 @@ public class UtilPlugin {
                     Field listenersField = Bukkit.getPluginManager().getClass().getDeclaredField("listeners");
                     listenersField.setAccessible(true);
                     listeners = (Map<Event, SortedSet<RegisteredListener>>) listenersField.get(pluginManager);
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) {}
 
                 Field commandMapField = Bukkit.getPluginManager().getClass().getDeclaredField("commandMap");
                 commandMapField.setAccessible(true);

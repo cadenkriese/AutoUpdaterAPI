@@ -1,7 +1,5 @@
 package cc.flogi.dev.autoupdaterapi.util;
 
-import cc.flogi.dev.autoupdaterapi.AutoUpdaterAPI;
-
 import java.io.IOException;
 import java.util.Properties;
 
@@ -12,18 +10,18 @@ import java.util.Properties;
  */
 public class ProjectProperties {
     public ProjectProperties(Properties properties) {
-        name = properties.getProperty("name");
-        description = properties.getProperty("description");
-        url = properties.getProperty("url");
-        repoUrl = properties.getProperty("repo_url");
-        author = properties.getProperty("author");
-        version = properties.getProperty("version");
+        NAME = properties.getProperty("name");
+        DESCRIPTION = properties.getProperty("description");
+        URL = properties.getProperty("url");
+        REPO_URL = properties.getProperty("repo_url");
+        AUTHOR = properties.getProperty("author");
+        VERSION = properties.getProperty("version");
     }
 
     public static ProjectProperties from(String resource) {
         try {
             Properties properties = new Properties();
-            properties.load(AutoUpdaterAPI.class.getResourceAsStream(resource));
+            properties.load(ProjectProperties.class.getResourceAsStream("/"+resource));
             return new ProjectProperties(properties);
         } catch (IOException e) {
             e.printStackTrace();
@@ -32,18 +30,18 @@ public class ProjectProperties {
         return null;
     }
 
-    public String name;
-    public String description;
-    public String url;
-    public String repoUrl;
-    public String author;
-    public String version;
+    public final String NAME;
+    public final String DESCRIPTION;
+    public final String URL;
+    public final String REPO_URL;
+    public final String AUTHOR;
+    public final String VERSION;
 
     public String getTitle() {
-        return name + " V" + version;
+        return NAME + " V" + VERSION;
     }
 
     public String getTitleWithAuthor() {
-        return name + " V" + version + " by " + author;
+        return NAME + " V" + VERSION + " by " + AUTHOR;
     }
 }

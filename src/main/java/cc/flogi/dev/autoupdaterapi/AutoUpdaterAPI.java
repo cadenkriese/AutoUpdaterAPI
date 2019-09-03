@@ -15,7 +15,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 
@@ -42,14 +41,14 @@ public class AutoUpdaterAPI {
     @Getter private Logger logger;
     @Getter private File dataFolder;
 
-    public final static ProjectProperties PROPERTIES = ProjectProperties.from("project.properties");
+    public final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
     public static final boolean DEBUG = false;
 
-    public void init(Plugin javaPlugin) {
+    public AutoUpdaterAPI(Plugin javaPlugin) {
         //General setup
         plugin = javaPlugin;
         instance = this;
-        logger = LogManager.getLogManager().getLogger(getClass().getName());
+        logger = javaPlugin.getLogger();
         dataFolder = new File(plugin.getDataFolder().getParent()+"/.auapi/");
 
         //Setup spigot credential files.
@@ -103,12 +102,12 @@ public class AutoUpdaterAPI {
 
     public void printError(Exception ex) {
         this.logger.severe("A severe error has occurred.");
-        this.logger.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at "+PROPERTIES.repoUrl+"issues.");
+        this.logger.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at "+PROPERTIES.REPO_URL +"issues.");
         this.logger.severe("");
         this.logger.severe("============== BEGIN ERROR ==============");
-        this.logger.severe("PLUGIN VERSION: "+PROPERTIES.getTitle());
+        this.logger.severe("API VERSION: "+PROPERTIES.getTitle());
         this.logger.severe("");
-        this.logger.severe("MESSAGE: " + ex.getMessage());
+        this.logger.severe("ERROR MESSAGE: " + ex.getMessage());
         this.logger.severe("");
         this.logger.severe("STACKTRACE: ");
         ex.printStackTrace();
@@ -118,14 +117,14 @@ public class AutoUpdaterAPI {
 
     public void printError(Exception ex, String extraInfo) {
         this.logger.severe("A severe error has occurred.");
-        this.logger.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at "+PROPERTIES.repoUrl+"issues.");
+        this.logger.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at "+PROPERTIES.REPO_URL +"issues.");
         this.logger.severe("");
         this.logger.severe("============== BEGIN ERROR ==============");
-        this.logger.severe("PLUGIN VERSION: "+PROPERTIES.getTitle());
+        this.logger.severe("API VERSION: "+PROPERTIES.getTitle());
         this.logger.severe("");
-        this.logger.severe("PLUGIN MESSAGE: " + extraInfo);
+        this.logger.severe("API MESSAGE: " + extraInfo);
         this.logger.severe("");
-        this.logger.severe("MESSAGE: " + ex.getMessage());
+        this.logger.severe("ERROR MESSAGE: " + ex.getMessage());
         this.logger.severe("");
         this.logger.severe("STACKTRACE: ");
         ex.printStackTrace();
@@ -137,9 +136,9 @@ public class AutoUpdaterAPI {
         this.logger.severe("============== BEGIN ERROR ==============");
         this.logger.severe(header);
         this.logger.severe("");
-        this.logger.severe("PLUGIN VERSION: "+PROPERTIES.getTitle());
+        this.logger.severe("API VERSION: "+PROPERTIES.getTitle());
         this.logger.severe("");
-        this.logger.severe("PLUGIN MESSAGE: " + message);
+        this.logger.severe("API MESSAGE: " + message);
         this.logger.severe("");
         this.logger.severe("============== END ERROR ==============");
     }

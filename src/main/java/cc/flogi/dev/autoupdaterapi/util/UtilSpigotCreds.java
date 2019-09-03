@@ -58,7 +58,7 @@ public class UtilSpigotCreds {
                 if (api.getUserManager().getUserByName(username) != null) {
 
                     String pass = getPassword();
-                    String twofactor = getTwoFactor();
+                    String twoFactor = getTwoFactor();
 
                     reset();
                     init();
@@ -67,7 +67,7 @@ public class UtilSpigotCreds {
 
                     setUsername(username);
                     setPassword(pass);
-                    setTwoFactor(twofactor);
+                    setTwoFactor(twoFactor);
 
                     saveFile();
 

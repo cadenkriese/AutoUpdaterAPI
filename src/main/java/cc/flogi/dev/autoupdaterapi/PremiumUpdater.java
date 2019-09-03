@@ -68,23 +68,19 @@ public class PremiumUpdater {
      * @param deleteOld     Should the old version of the plugin be deleted  disabled.
      */
     public PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean deleteOld) {
+        locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
+
         spigotUser = AutoUpdaterAPI.get().getCurrentUser();
         dataFolderPath = AutoUpdaterAPI.get().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         loginAttempts = 1;
+        pluginName = locale.getPluginName();
         this.resourceId = resourceId;
         this.plugin = plugin;
         this.initiator = initiator;
         this.locale = locale;
         this.deleteOld = deleteOld;
         endTask = (successful, ex, updatedPlugin, pluginName) -> {};
-
-        if (locale.getPluginName() != null) {
-            pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion);
-            locale.setPluginName(locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion));
-        } else {
-            pluginName = null;
-        }
     }
 
     /**
@@ -98,24 +94,19 @@ public class PremiumUpdater {
      * @param endTask       Runnable that will run once the update has completed.
      */
     public PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
+        locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
+
         spigotUser = AutoUpdaterAPI.get().getCurrentUser();
         dataFolderPath = AutoUpdaterAPI.get().getDataFolder().getPath();
         currentVersion = plugin.getDescription().getVersion();
         loginAttempts = 1;
+        pluginName = locale.getPluginName();
         this.resourceId = resourceId;
         this.plugin = plugin;
         this.initiator = initiator;
         this.locale = locale;
         this.deleteOld = deleteOld;
         this.endTask = endTask;
-
-
-        if (locale.getPluginName() != null) {
-            pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion);
-            locale.setPluginName(locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion));
-        } else {
-            pluginName = null;
-        }
     }
 
     /**
@@ -128,7 +119,7 @@ public class PremiumUpdater {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (Exception exception) {
             AutoUpdaterAPI.get().printError(exception);
-            UtilUI.sendActionBar(initiator, locale.getUpdateFailed().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", "&4NULL"));
+            UtilUI.sendActionBar(initiator, locale.getUpdateFailed().replace("%new_version%", "&4NULL"));
         }
 
         return "";
@@ -143,6 +134,7 @@ public class PremiumUpdater {
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PLUGIN INFO]");
 
         String newVersion = getLatestVersion();
+        locale.updateVariables(plugin.getName(), currentVersion, newVersion);
 
         if (currentVersion.equals(newVersion)) {
             UtilUI.sendActionBar(initiator, "&c&lUPDATE FAILED &8[NO UPDATES AVAILABLE]");
@@ -153,9 +145,9 @@ public class PremiumUpdater {
         spigotUser = AutoUpdaterAPI.get().getCurrentUser();
 
         if (locale.getPluginName() != null)
-            pluginName = locale.getPluginName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion);
+            pluginName = locale.getPluginName();
 
-        locale.setFileName(locale.getFileName().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace(" ", "_"));
+        locale.setFileName(locale.getFileName());
 
         if (spigotUser == null) {
             authenticate(true);
@@ -186,7 +178,7 @@ public class PremiumUpdater {
             @Override
             public void run() {
                 try {
-                    UtilUI.sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[ATTEMPTING DOWNLOAD]");
+                    UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]");
 
                     Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
 
@@ -293,7 +285,10 @@ public class PremiumUpdater {
                             String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
                             final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
 
-                            UtilUI.sendActionBar(initiator, locale.getUpdatingDownload().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%download_bar%", bar).replace("%download_percent%", currentPercent + "%") + " &8[DOWNLOADING RESOURCE]");
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingDownload()
+                                                                    .replace("%download_bar%", bar)
+                                                                    .replace("%download_percent%", currentPercent + "%")
+                                                                    + " &8[DOWNLOADING RESOURCE]");
                         }
 
                         bout.write(data, 0, grabbed);
@@ -321,7 +316,7 @@ public class PremiumUpdater {
                                         AutoUpdaterAPI.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
                                 }
 
-                                UtilUI.sendActionBar(initiator, locale.getUpdating().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion) + " &8[INITIALIZING]");
+                                UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]");
 
                                 List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
 
@@ -336,7 +331,7 @@ public class PremiumUpdater {
                                 Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin(pluginName));
 
                                 double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
-                                UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%plugin%", plugin.getName()).replace("%old_version%", currentVersion).replace("%new_version%", newVersion).replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
+                                UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
 
                                 endTask.run(true, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
                             } catch (Exception ex) {

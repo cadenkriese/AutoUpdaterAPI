@@ -1,0 +1,6 @@
+name: updater-plugin
+version: ${project.version}
+main: cc.flogi.dev.updaterplugin.UpdaterPlugin
+api-version: 1.13
+authors: [flogic]
+description: Plugin briefly used to handle operations done by AutoUpdaterAPI.

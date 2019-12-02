@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-COMPILED_JAR_NAME="updater-plugin-$1.jar"
+COMPILED_JAR_NAME="autoupdater-core-$1.jar"
 
 #Iterate through arguments except for first.
 for i in "${@:2}"

@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>autoupdater-premium</artifactId>
-    <version>${currentversion}</version>
+    <version>3.0.1-SNAPSHOT</version>
 
     <build>
         <plugins>

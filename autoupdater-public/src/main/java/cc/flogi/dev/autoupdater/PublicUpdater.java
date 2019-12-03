@@ -149,7 +149,7 @@ import java.nio.file.StandardCopyOption;
                                                     //Enable plugin and perform update task.
                                                     try {
                                                         Bukkit.getPluginManager().loadPlugin(targetFile);
-                                                        UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("AutoUpdaterAPI");
+                                                        UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("autoupdater-core");
                                                         if (updaterPlugin == null)
                                                             throw new Exception("Unable to locate updater plugin.");
                                                         updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, pluginFolderPath, locale, startingTime, endTask);

@@ -16,8 +16,8 @@
     <build>
         <resources>
             <resource>
+                <!-- Don't turn on filtering, corrupts and compiled artifacts in that dir -->
                 <directory>src/main/resources</directory>
-                <filtering>true</filtering>
             </resource>
         </resources>
     </build>

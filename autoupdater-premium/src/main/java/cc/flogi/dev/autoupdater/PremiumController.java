@@ -99,12 +99,12 @@ public class PremiumController {
      * @param plugin     The instance of the outdated plugin.
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param replace    Should the old version of the plugin be deleted and disabled.
      *
      * @return An instantiated PremiumUpdater.
      */
-    protected PremiumUpdater createPremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean deleteOld) {
-        return new PremiumUpdater(initiator, plugin, resourceId, locale, deleteOld);
+    protected PremiumUpdater createPremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
+        return new PremiumUpdater(initiator, plugin, resourceId, locale, replace);
     }
 
     /**
@@ -114,13 +114,13 @@ public class PremiumController {
      * @param plugin     The instance of the outdated plugin.
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      *
      * @return An instantiated PremiumUpdater.
      */
-    protected PremiumUpdater createPremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
-        return new PremiumUpdater(initiator, plugin, resourceId, locale, deleteOld, endTask);
+    protected PremiumUpdater createPremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+        return new PremiumUpdater(initiator, plugin, resourceId, locale, replace, endTask);
     }
 
     /**
@@ -129,12 +129,12 @@ public class PremiumController {
      * @param initiator  The player that started this action (if there is none set to null).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param replace    Should the old version of the plugin be deleted and disabled.
      *
      * @return An instantiated PremiumUpdater.
      */
-    protected PremiumUpdater createPremiumSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
-        return new PremiumUpdater(initiator, plugin, resourceId, locale, deleteOld);
+    protected PremiumUpdater createPremiumSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+        return new PremiumUpdater(initiator, plugin, resourceId, locale, replace);
     }
 
     /**
@@ -143,13 +143,13 @@ public class PremiumController {
      * @param initiator  The player that started this action (if there is none set to null).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      *
      * @return An instantiated PremiumUpdater.
      */
-    protected PremiumUpdater createPremiumSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
-        return new PremiumUpdater(initiator, plugin, resourceId, locale, deleteOld, endTask);
+    protected PremiumUpdater createPremiumSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+        return new PremiumUpdater(initiator, plugin, resourceId, locale, replace, endTask);
     }
 
     /**

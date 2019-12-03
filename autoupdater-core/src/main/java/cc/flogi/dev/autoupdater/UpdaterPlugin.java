@@ -51,28 +51,50 @@ public final class UpdaterPlugin extends JavaPlugin {
         getLogger().info("AutoUpdaterAPI utility enabled.");
     }
 
-    public void updatePlugin(Plugin plugin, Player initiator, boolean deleteOld, String pluginName, String pluginFolderPath, UpdateLocale locale, long startingTime, UpdaterRunnable endTask) throws URISyntaxException, InvalidDescriptionException, InvalidPluginException {
-        if (deleteOld) {
-            File pluginFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
-            UtilPlugin.unload(plugin);
+    public void updatePlugin(Plugin plugin, Player initiator, boolean replace, String pluginName, String pluginFolderPath, UpdateLocale locale, long startingTime, UpdaterRunnable endTask)
+            throws URISyntaxException, InvalidDescriptionException, InvalidPluginException {
+        try {
+            if (replace) {
+                File pluginFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+                UtilPlugin.unload(plugin);
+                if (!pluginFile.delete())
+                    AutoUpdaterAPI.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
+            }
+
+            sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]");
+
+            List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
+            Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
+
+            if (pluginName == null) {
+                List<Plugin> afterPlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
+                afterPlugins.removeAll(beforePlugins);
+                pluginName = afterPlugins.get(0).getName();
+            }
+
+            Bukkit.getPluginManager().enablePlugin(updated);
+            endTask.run(true, null, updated, pluginName);
+            double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
+            UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
+        } finally {
+            new BukkitRunnable() {
+                @Override public void run() {
+                    selfDestruct();
+                }
+            }.runTaskLater(this, 2L);
+        }
+    }
+
+    private void selfDestruct() {
+        try {
+            File pluginFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+            UtilPlugin.unload(this);
             if (!pluginFile.delete())
-                AutoUpdaterAPI.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
+                AutoUpdaterAPI.get().printPluginError(
+                        "Error occurred while self-destructing updater plugin utility.",
+                        "Could not delete plugin jar file.");
+        } catch (Exception ex) {
+            AutoUpdaterAPI.get().printError(ex, "Error occurred while self-destructing updater plugin utility.");
         }
-
-        sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]");
-
-        List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
-        Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
-
-        if (pluginName == null) {
-            List<Plugin> afterPlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
-            afterPlugins.removeAll(beforePlugins);
-            pluginName = afterPlugins.get(0).getName();
-        }
-
-        Bukkit.getPluginManager().enablePlugin(updated);
-        endTask.run(true, null, updated, pluginName);
-        double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
-        UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
     }
 }

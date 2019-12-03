@@ -51,12 +51,12 @@ public class PremiumUpdater {
     private UpdaterRunnable endTask;
     private SpigotSiteAPI siteAPI;
 
-    private boolean deleteOld;
+    private boolean replace;
     private int resourceId;
     private int loginAttempts;
     private long startingTime;
 
-    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean deleteOld) {
+    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
         siteAPI = PremiumController.get().getSiteAPI();
@@ -69,12 +69,12 @@ public class PremiumUpdater {
         this.plugin = plugin;
         this.initiator = initiator;
         this.locale = locale;
-        this.deleteOld = deleteOld;
+        this.replace = replace;
         endTask = (successful, ex, updatedPlugin, pluginName) -> {
         };
     }
 
-    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
+    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
         siteAPI = PremiumController.get().getSiteAPI();
@@ -87,7 +87,7 @@ public class PremiumUpdater {
         this.plugin = plugin;
         this.initiator = initiator;
         this.locale = locale;
-        this.deleteOld = deleteOld;
+        this.replace = replace;
         this.endTask = endTask;
     }
 
@@ -227,7 +227,7 @@ public class PremiumUpdater {
                                     UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("AutoUpdaterAPI");
                                     if (updaterPlugin == null)
                                         throw new Exception("Unable to locate updater plugin.");
-                                    updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, pluginFolderPath, locale, startingTime, endTask);
+                                    updaterPlugin.updatePlugin(plugin, initiator, replace, pluginName, pluginFolderPath, locale, startingTime, endTask);
                                 } catch (Exception ex) {
                                     error(ex, ex.getMessage(), newVersion);
                                 }

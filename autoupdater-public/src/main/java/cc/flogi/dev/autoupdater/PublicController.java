@@ -26,12 +26,12 @@ public class PublicController {
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param replace    Should the old version of the plugin be deleted and disabled.
      *
      * @return The updater object for you to update the plugin with.
      */
-    public PublicUpdater createUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
-        return new PublicUpdater(plugin, initiator, resourceId, locale, deleteOld);
+    public PublicUpdater createUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+        return new PublicUpdater(plugin, initiator, resourceId, locale, replace);
     }
 
     /**
@@ -41,13 +41,13 @@ public class PublicController {
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      *
      * @return The updater object for you to update the plugin with.
      */
-    public PublicUpdater createUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
-        return new PublicUpdater(plugin, initiator, resourceId, locale, deleteOld, endTask);
+    public PublicUpdater createUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+        return new PublicUpdater(plugin, initiator, resourceId, locale, replace, endTask);
     }
 
     /**
@@ -56,12 +56,12 @@ public class PublicController {
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param replace    Should the old version of the plugin be deleted and disabled.
      *
      * @return The updater object for you to update yourself with.
      */
-    public PublicUpdater createSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
-        return new PublicUpdater(plugin, initiator, resourceId, locale, deleteOld);
+    public PublicUpdater createSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+        return new PublicUpdater(plugin, initiator, resourceId, locale, replace);
     }
 
     /**
@@ -70,12 +70,12 @@ public class PublicController {
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      *
      * @return The updater object for you to update yourself with.
      */
-    public PublicUpdater createSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
-        return new PublicUpdater(plugin, initiator, resourceId, locale, deleteOld, endTask);
+    public PublicUpdater createSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+        return new PublicUpdater(plugin, initiator, resourceId, locale, replace, endTask);
     }
 }

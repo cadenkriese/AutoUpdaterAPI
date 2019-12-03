@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
-public class UtilPlugin {
+@SuppressWarnings("unchecked") public class UtilPlugin {
     /**
      * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
      *

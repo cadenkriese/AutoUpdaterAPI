@@ -34,12 +34,12 @@ import java.nio.file.StandardCopyOption;
     private String pluginName;
     private UpdateLocale locale;
 
-    private boolean deleteOld;
+    private boolean replace;
     private long startingTime;
 
     private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {};
 
-    protected PublicUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
+    protected PublicUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
         pluginFolderPath = plugin.getDataFolder().getParent();
@@ -48,12 +48,12 @@ import java.nio.file.StandardCopyOption;
         this.plugin = plugin;
         this.initiator = initiator;
         this.locale = locale;
-        this.deleteOld = deleteOld;
+        this.replace = replace;
         this.resourceId = String.valueOf(resourceId);
         this.pluginName = locale.getPluginName();
     }
 
-    protected PublicUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
+    protected PublicUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
         pluginFolderPath = plugin.getDataFolder().getParent();
@@ -62,7 +62,7 @@ import java.nio.file.StandardCopyOption;
         this.plugin = plugin;
         this.initiator = initiator;
         this.locale = locale;
-        this.deleteOld = deleteOld;
+        this.replace = replace;
         this.resourceId = String.valueOf(resourceId);
         this.endTask = endTask;
         this.pluginName = locale.getPluginName();
@@ -152,7 +152,7 @@ import java.nio.file.StandardCopyOption;
                                                         UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("autoupdater-core");
                                                         if (updaterPlugin == null)
                                                             throw new Exception("Unable to locate updater plugin.");
-                                                        updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, pluginFolderPath, locale, startingTime, endTask);
+                                                        updaterPlugin.updatePlugin(plugin, initiator, replace, pluginName, pluginFolderPath, locale, startingTime, endTask);
                                                     } catch (Exception ex) {
                                                         error(ex, ex.getMessage(), newVersion);
                                                     }

@@ -51,7 +51,7 @@ public final class UpdaterPlugin extends JavaPlugin {
         getLogger().info("AutoUpdaterAPI utility enabled.");
     }
 
-    public void updatePlugin(Plugin plugin, Player initiator, boolean deleteOld, String pluginName, String dataFolderPath, UpdateLocale locale, long startingTime, UpdaterRunnable endTask) throws URISyntaxException, InvalidDescriptionException, InvalidPluginException {
+    public void updatePlugin(Plugin plugin, Player initiator, boolean deleteOld, String pluginName, String pluginFolderPath, UpdateLocale locale, long startingTime, UpdaterRunnable endTask) throws URISyntaxException, InvalidDescriptionException, InvalidPluginException {
         if (deleteOld) {
             File pluginFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
             UtilPlugin.unload(plugin);
@@ -62,7 +62,7 @@ public final class UpdaterPlugin extends JavaPlugin {
         sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]");
 
         List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
-        Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
+        Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
 
         if (pluginName == null) {
             List<Plugin> afterPlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));

@@ -6,6 +6,7 @@ import lombok.NonNull;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Objects;
 import java.util.logging.Logger;
 
 /*
@@ -29,6 +30,8 @@ public class AutoUpdaterAPI {
     public AutoUpdaterAPI(JavaPlugin javaPlugin) {
         instance = this;
         plugin = javaPlugin;
+
+        Objects.requireNonNull(PROPERTIES);
     }
 
     public static AutoUpdaterAPI get() {

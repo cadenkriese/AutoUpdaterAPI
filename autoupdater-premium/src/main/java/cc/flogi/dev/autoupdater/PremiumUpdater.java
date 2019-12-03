@@ -37,16 +37,11 @@ import java.util.Map;
  * Created on 6/6/17
  */
 
-/*
- * TODO
- *  - Cleanup this mess of a file.
- *  - Try to rework login blocks.
- */
-@SuppressWarnings({"GrazieInspection", "ConstantConditions"}) public class PremiumUpdater {
+public class PremiumUpdater {
     private Player initiator;
     private Plugin plugin;
 
-    private String dataFolderPath;
+    private String pluginFolderPath;
     private String currentVersion;
     private String pluginName;
     private UpdateLocale locale;
@@ -66,7 +61,7 @@ import java.util.Map;
 
         siteAPI = PremiumController.get().getSiteAPI();
         spigotUser = PremiumController.get().getCurrentUser();
-        dataFolderPath = PremiumController.get().getPrivateDataFolder().getPath();
+        pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
         loginAttempts = 1;
         pluginName = locale.getPluginName();
@@ -84,7 +79,7 @@ import java.util.Map;
 
         siteAPI = PremiumController.get().getSiteAPI();
         spigotUser = PremiumController.get().getCurrentUser();
-        dataFolderPath = PremiumController.get().getPrivateDataFolder().getPath();
+        pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
         loginAttempts = 1;
         pluginName = locale.getPluginName();
@@ -189,7 +184,7 @@ import java.util.Map;
                     printDebug1(page, response, webClient);
 
                     BufferedInputStream in = new BufferedInputStream(response.getContentAsStream());
-                    FileOutputStream fos = new FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
+                    FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
                     BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
 
                     byte[] data = new byte[grabSize];
@@ -232,7 +227,7 @@ import java.util.Map;
                                     UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("AutoUpdaterAPI");
                                     if (updaterPlugin == null)
                                         throw new Exception("Unable to locate updater plugin.");
-                                    updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, dataFolderPath, locale, startingTime, endTask);
+                                    updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, pluginFolderPath, locale, startingTime, endTask);
                                 } catch (Exception ex) {
                                     error(ex, ex.getMessage(), newVersion);
                                 }

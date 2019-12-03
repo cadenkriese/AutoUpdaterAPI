@@ -23,6 +23,7 @@ public class UpdateLocale {
     private String updateComplete = "&f&lUPDATED &1&l%plugin% &f&lTO &b&lV%new_version% &7&o(%elapsed_time%s)";
     private String updateFailed = "&f&lUPDATING &1&l%plugin% &b&lV%old_version% &a&l» &b&l%new_version% &8[&c&lUPDATE FAILED &7&o(Check Console)]";
     private String updateFailedNoVar = "&c&lUPDATE FAILED &7(Check Console)";
+
     public UpdateLocale() {}
 
     /**
@@ -33,8 +34,6 @@ public class UpdateLocale {
      * @param newVersion The new version of the plugin in the context of this UpdateLocale.
      */
     public void updateVariables(String pluginName, String oldVersion, String newVersion) {
-        System.out.println("UPDATING STATIC VARIABLES");
-
         try {
             for (Field field : UpdateLocale.class.getDeclaredFields()) {
                 String value = (String) field.get(this);

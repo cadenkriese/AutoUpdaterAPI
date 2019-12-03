@@ -27,7 +27,7 @@ import java.nio.file.StandardCopyOption;
     private Player initiator;
     private Plugin plugin;
 
-    private String dataFolderPath;
+    private String pluginFolderPath;
     private String currentVersion;
     private String url;
     private String resourceId;
@@ -42,7 +42,7 @@ import java.nio.file.StandardCopyOption;
     protected PublicUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
-        dataFolderPath = plugin.getDataFolder().getParent();
+        pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
         url = "https://api.spiget.org/v2/resources/" + resourceId;
         this.plugin = plugin;
@@ -56,7 +56,7 @@ import java.nio.file.StandardCopyOption;
     protected PublicUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
-        dataFolderPath = plugin.getDataFolder().getParent();
+        pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
         url = "https://api.spiget.org/v2/resources/" + resourceId;
         this.plugin = plugin;
@@ -115,7 +115,7 @@ import java.nio.file.StandardCopyOption;
                                         int grabSize = 2048;
 
                                         BufferedInputStream in = new BufferedInputStream(httpConnection.getInputStream());
-                                        FileOutputStream fos = new FileOutputStream(new File(dataFolderPath.substring(0, dataFolderPath.lastIndexOf("/")) + "/" + locale.getFileName() + ".jar"));
+                                        FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
                                         BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
 
                                         byte[] data = new byte[grabSize];
@@ -152,7 +152,7 @@ import java.nio.file.StandardCopyOption;
                                                         UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("AutoUpdaterAPI");
                                                         if (updaterPlugin == null)
                                                             throw new Exception("Unable to locate updater plugin.");
-                                                        updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, dataFolderPath, locale, startingTime, endTask);
+                                                        updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, pluginFolderPath, locale, startingTime, endTask);
                                                     } catch (Exception ex) {
                                                         error(ex, ex.getMessage(), newVersion);
                                                     }

@@ -1,6 +1,6 @@
 name: ${project.name}
 version: ${project.version}
-main: cc.flogi.dev.autoupdater.UpdaterPlugin.java
+main: cc.flogi.dev.autoupdater.UpdaterPlugin
 api-version: 1.13
 authors: [flogic]
 description: ${project.description}

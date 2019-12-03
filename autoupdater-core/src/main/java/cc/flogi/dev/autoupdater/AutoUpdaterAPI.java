@@ -39,45 +39,33 @@ public class AutoUpdaterAPI {
     }
 
     public void printError(Exception ex) {
-        this.logger.severe("A severe error has occurred.");
-        this.logger.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
-        this.logger.severe("");
-        this.logger.severe("============== BEGIN ERROR ==============");
-        this.logger.severe("API VERSION: " + PROPERTIES.getTitle());
-        this.logger.severe("");
-        this.logger.severe("ERROR MESSAGE: " + ex.getMessage());
-        this.logger.severe("");
-        this.logger.severe("STACKTRACE: ");
+        this.logger.warning("An error has occurred.");
+        this.logger.warning("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
+        this.logger.warning("\n============== BEGIN ERROR ==============");
+        this.logger.warning("API VERSION: " + PROPERTIES.getTitle());
+        this.logger.warning("\nERROR MESSAGE: " + ex.getMessage());
+        this.logger.warning("\nSTACKTRACE: ");
         ex.printStackTrace();
-        this.logger.severe("");
-        this.logger.severe("============== END ERROR ==============");
+        this.logger.warning("\n============== END ERROR ==============");
     }
 
     public void printError(Exception ex, String extraInfo) {
-        this.logger.severe("A severe error has occurred.");
-        this.logger.severe("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
-        this.logger.severe("");
-        this.logger.severe("============== BEGIN ERROR ==============");
-        this.logger.severe("API VERSION: " + PROPERTIES.getTitle());
-        this.logger.severe("");
-        this.logger.severe("API MESSAGE: " + extraInfo);
-        this.logger.severe("");
-        this.logger.severe("ERROR MESSAGE: " + ex.getMessage());
-        this.logger.severe("");
-        this.logger.severe("STACKTRACE: ");
+        this.logger.warning("An error has occurred.");
+        this.logger.warning("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
+        this.logger.warning("\n============== BEGIN ERROR ==============");
+        this.logger.warning("API VERSION: " + PROPERTIES.getTitle());
+        this.logger.warning("\nAPI MESSAGE: " + extraInfo);
+        this.logger.warning("\nERROR MESSAGE: " + ex.getMessage());
+        this.logger.warning("\nSTACKTRACE: ");
         ex.printStackTrace();
-        this.logger.severe("");
-        this.logger.severe("============== END ERROR ==============");
+        this.logger.warning("\n============== END ERROR ==============");
     }
 
     public void printPluginError(String header, String message) {
-        this.logger.severe("============== BEGIN ERROR ==============");
-        this.logger.severe(header);
-        this.logger.severe("");
-        this.logger.severe("API VERSION: " + PROPERTIES.getTitle());
-        this.logger.severe("");
-        this.logger.severe("API MESSAGE: " + message);
-        this.logger.severe("");
-        this.logger.severe("============== END ERROR ==============");
+        this.logger.warning("============== BEGIN ERROR ==============");
+        this.logger.warning(header);
+        this.logger.warning("\nAPI VERSION: " + PROPERTIES.getTitle());
+        this.logger.warning("\nAPI MESSAGE: " + message);
+        this.logger.warning("\n============== END ERROR ==============");
     }
 }

@@ -1,6 +1,5 @@
 package cc.flogi.dev.autoupdater.util;
 
-import be.maximvdw.spigotsite.api.SpigotSiteAPI;
 import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
 import cc.flogi.dev.autoupdater.PremiumController;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -20,10 +19,9 @@ import java.io.IOException;
     private File infoFile;
     private FileConfiguration infoConfig;
 
-    private UtilSpigotCreds() {
-    }
+    private UtilSpigotCreds() {}
 
-    public static UtilSpigotCreds getInstance() {
+    public static UtilSpigotCreds get() {
         return instance;
     }
 
@@ -45,42 +43,6 @@ import java.io.IOException;
         }
 
         UtilEncryption.getInstance().init();
-    }
-
-    public void updateKeys() {
-        try {
-            UtilEncryption.getInstance().useOldKeys = true;
-            SpigotSiteAPI api = PremiumController.get().getSiteAPI();
-
-            UtilEncryption.getInstance().setKeyNumber(3);
-            if (infoConfig.contains(UtilEncryption.getInstance().encrypt("username"))) {
-                String username = getUsername();
-
-                if (api.getUserManager().getUserByName(username) != null) {
-
-                    String pass = getPassword();
-                    String twoFactor = getTwoFactor();
-
-                    reset();
-                    init();
-
-                    UtilEncryption.getInstance().useOldKeys = false;
-
-                    setUsername(username);
-                    setPassword(pass);
-                    setTwoFactor(twoFactor);
-
-                    saveFile();
-
-                    AutoUpdaterAPI.get().getLogger().info("Successfully converted to new encryption keys.");
-                }
-            } else {
-                UtilEncryption.getInstance().useOldKeys = false;
-                AutoUpdaterAPI.get().getLogger().info("Updated keys detected and enabled.");
-            }
-        } catch (Exception e) {
-            AutoUpdaterAPI.get().printError(e);
-        }
     }
 
     public void reset() {

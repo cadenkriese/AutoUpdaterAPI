@@ -104,9 +104,8 @@ import java.util.Map;
     public String getLatestVersion() {
         try {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
-        } catch (Exception exception) {
-            AutoUpdaterAPI.get().printError(exception);
-            UtilUI.sendActionBar(initiator, UtilText.format(locale.getUpdateFailed(), "%new_version%", "&4NULL"));
+        } catch (Exception ex) {
+            error(ex, "Error occurred while retrieving latest version of premium resource.");
         }
 
         return "";
@@ -149,9 +148,7 @@ import java.util.Map;
                 }
             }
         } catch (ConnectionFailedException ex) {
-            UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-            AutoUpdaterAPI.get().printError(ex, "Error occurred while connecting to spigot. (#1)");
-            endTask.run(false, ex, null, pluginName);
+            error(ex, "Error occurred while connecting to spigot. (#1)");
         }
 
         if (resource == null) {
@@ -257,9 +254,9 @@ import java.util.Map;
             public void run() {
                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING DECRYPT]");
 
-                String username = UtilSpigotCreds.getInstance().getUsername();
-                String password = UtilSpigotCreds.getInstance().getPassword();
-                String twoFactor = UtilSpigotCreds.getInstance().getTwoFactor();
+                String username = UtilSpigotCreds.get().getUsername();
+                String password = UtilSpigotCreds.get().getPassword();
+                String twoFactor = UtilSpigotCreds.get().getTwoFactor();
 
                 if (username == null || password == null) {
                     runGuis(recall);
@@ -272,7 +269,7 @@ import java.util.Map;
 
                     if (spigotUser == null) {
                         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]");
-                        UtilSpigotCreds.getInstance().clearFile();
+                        UtilSpigotCreds.get().clearFile();
                         runGuis(recall);
                         return;
                     }
@@ -306,7 +303,7 @@ import java.util.Map;
 
                             if (spigotUser == null) {
                                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
-                                UtilSpigotCreds.getInstance().clearFile();
+                                UtilSpigotCreds.get().clearFile();
                                 runGuis(recall);
                                 return;
                             }
@@ -329,7 +326,7 @@ import java.util.Map;
                         } catch (Exception otherException) {
                             if (otherException instanceof InvalidCredentialsException) {
                                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
-                                UtilSpigotCreds.getInstance().clearFile();
+                                UtilSpigotCreds.get().clearFile();
                                 runGuis(recall);
                             } else if (otherException instanceof ConnectionFailedException) {
                                 UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
@@ -355,7 +352,7 @@ import java.util.Map;
                         }
                     } else if (ex instanceof InvalidCredentialsException) {
                         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
-                        UtilSpigotCreds.getInstance().clearFile();
+                        UtilSpigotCreds.get().clearFile();
                         runGuis(recall);
                     } else if (ex instanceof ConnectionFailedException) {
                         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
@@ -377,72 +374,10 @@ import java.util.Map;
                 new AnvilGUI(AutoUpdaterAPI.getPlugin(), initiator, "Spigot username", (Player player1, String usernameInput) -> {
                     try {
                         if (siteAPI.getUserManager().getUserByName(usernameInput) != null) {
-                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]");
-                            new AnvilGUI(AutoUpdaterAPI.getPlugin(), initiator, "Spigot password", (Player player2, String passwordInput) -> {
-                                try {
-                                    spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput);
-
-                                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
-                                    UtilSpigotCreds.getInstance().setUsername(usernameInput);
-                                    UtilSpigotCreds.getInstance().setPassword(passwordInput);
-                                    UtilSpigotCreds.getInstance().saveFile();
-
-                                    new BukkitRunnable() {
-                                        @Override
-                                        public void run() {
-                                            authenticate(recall);
-                                        }
-                                    }.runTaskLater(AutoUpdaterAPI.getPlugin(), 200L);
-                                    player2.closeInventory();
-
-                                } catch (TwoFactorAuthenticationException ex) {
-                                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]");
-                                    new AnvilGUI(AutoUpdaterAPI.getPlugin(), initiator, "Spigot two factor secret", (Player player3, String twoFactorInput) -> {
-                                        try {
-                                            //Make extra string because the input seems to change for some reason.
-                                            spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput, twoFactorInput);
-
-                                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
-
-                                            UtilSpigotCreds.getInstance().setUsername(usernameInput);
-                                            UtilSpigotCreds.getInstance().setPassword(passwordInput);
-                                            UtilSpigotCreds.getInstance().setTwoFactor(twoFactorInput);
-                                            UtilSpigotCreds.getInstance().saveFile();
-
-                                            new BukkitRunnable() {
-                                                @Override
-                                                public void run() {
-                                                    authenticate(recall);
-                                                }
-                                            }.runTaskLater(AutoUpdaterAPI.getPlugin(), 200L);
-                                            player3.closeInventory();
-
-                                            return "Retrieved credentials you may now close this GUI.";
-                                        } catch (Exception exception) {
-                                            UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                                            AutoUpdaterAPI.get().printError(exception, "Error occurred while authenticating Spigot user.");
-                                            endTask.run(false, exception, null, pluginName);
-                                            return "Authentication failed";
-                                        }
-                                    });
-                                } catch (ConnectionFailedException ex) {
-                                    UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                                    AutoUpdaterAPI.get().printError(ex, "Error occurred while connecting to Spigot. (#3)");
-                                    endTask.run(false, ex, null, pluginName);
-                                    return "Could not connect to Spigot";
-                                } catch (InvalidCredentialsException ex) {
-                                    UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                                    endTask.run(false, ex, null, pluginName);
-                                    return "Invalid credentials";
-                                }
-
-                                return null;
-                            });
+                            requestPassword(usernameInput, recall);
                         } else if (usernameInput.contains("@") && usernameInput.contains(".")) {
                             initiator.closeInventory();
-
                             UtilUI.sendActionBar(initiator, "&cEmails are not supported!");
-
                             endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
                             return "Emails are not supported!";
                         } else {
@@ -451,16 +386,88 @@ import java.util.Map;
                             return "Invalid username!";
                         }
                     } catch (Exception ex) {
-                        error(ex, "Error occurred while authenticating Spigot username.", "");
-                        AutoUpdaterAPI.get().printError(ex, "Error occurred while authenticating Spigot username.");
-                        UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                        endTask.run(false, ex, null, pluginName);
+                        error(ex, "Error occurred while authenticating Spigot username.");
                     }
 
                     return null;
                 });
             }
         }.runTask(AutoUpdaterAPI.getPlugin());
+    }
+
+    private void requestPassword(String usernameInput, boolean recall) {
+        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]");
+        new AnvilGUI(AutoUpdaterAPI.getPlugin(), initiator, "Spigot password", (Player player, String passwordInput) -> {
+            try {
+                spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput);
+
+                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
+                UtilSpigotCreds.get().setUsername(usernameInput);
+                UtilSpigotCreds.get().setPassword(passwordInput);
+                UtilSpigotCreds.get().saveFile();
+
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        authenticate(recall);
+                    }
+                }.runTaskLater(AutoUpdaterAPI.getPlugin(), 200L);
+
+                //TODO possibly uncomment, potentially caused console spam.
+                //player.closeInventory();
+
+            } catch (TwoFactorAuthenticationException ex) {
+                requestTwoFactor(usernameInput, passwordInput, recall);
+            } catch (ConnectionFailedException ex) {
+                error(ex, "Error occurred while connecting to Spigot. (#3)");
+                return "Could not connect to Spigot.";
+            } catch (InvalidCredentialsException ex) {
+                UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                endTask.run(false, ex, null, pluginName);
+                return "Invalid credentials!";
+            }
+
+            return null;
+        });
+    }
+
+    private void requestTwoFactor(String usernameInput, String passwordInput, boolean recall) {
+        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]");
+        new AnvilGUI(AutoUpdaterAPI.getPlugin(), initiator, "Spigot two factor secret", (Player player, String twoFactorInput) -> {
+            try {
+                //Make extra string because the input seems to change for some reason.
+                spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput, twoFactorInput);
+
+                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
+
+                UtilSpigotCreds.get().setUsername(usernameInput);
+                UtilSpigotCreds.get().setPassword(passwordInput);
+                UtilSpigotCreds.get().setTwoFactor(twoFactorInput);
+                UtilSpigotCreds.get().saveFile();
+
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        authenticate(recall);
+                    }
+                }.runTaskLater(AutoUpdaterAPI.getPlugin(), 200L);
+                //TODO possibly uncomment, potentially caused console spam.
+                //player.closeInventory();
+
+                return "Retrieved credentials you may now close this GUI.";
+            } catch (Exception exception) {
+                UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                AutoUpdaterAPI.get().printError(exception, "Error occurred while authenticating Spigot user.");
+                endTask.run(false, exception, null, pluginName);
+                return "Authentication failed";
+            }
+        });
+    }
+
+    private void error(Exception ex, String message) {
+        AutoUpdaterAPI.get().printError(ex, message);
+        UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
+        endTask.run(false, ex, null, pluginName);
     }
 
     private void error(Exception ex, String message, String newVersion) {
@@ -477,22 +484,12 @@ import java.util.Map;
 
     private void printDebug1(Page page, WebResponse response, WebClient webClient) {
         if (AutoUpdaterAPI.DEBUG) {
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("============== BEGIN PREMIUM PLUGIN DEBUG ==============");
+            AutoUpdaterAPI.get().getLogger().info("\n\n\n\n\n\n============== BEGIN PREMIUM PLUGIN DEBUG ==============");
             if (pluginName != null)
                 AutoUpdaterAPI.get().getLogger().info("PLUGIN = " + pluginName);
 
             if (page instanceof HtmlPage) {
-                AutoUpdaterAPI.get().getLogger().info("");
-                AutoUpdaterAPI.get().getLogger().info("");
-                AutoUpdaterAPI.get().getLogger().info("PAGETYPE = HtmlPage");
+                AutoUpdaterAPI.get().getLogger().info("\n\nPAGETYPE = HtmlPage");
                 HtmlPage htmlPage = (HtmlPage) page;
 
                 AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
@@ -501,9 +498,7 @@ import java.util.Map;
                 AutoUpdaterAPI.get().getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
                 htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.get().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
             } else if (page instanceof UnexpectedPage) {
-                AutoUpdaterAPI.get().getLogger().info("");
-                AutoUpdaterAPI.get().getLogger().info("");
-                AutoUpdaterAPI.get().getLogger().info("PAGETYPE = UnexpectedPage");
+                AutoUpdaterAPI.get().getLogger().info("\n\nPAGETYPE = UnexpectedPage");
                 UnexpectedPage unexpectedPage = (UnexpectedPage) page;
                 AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + unexpectedPage.getWebResponse().getStatusCode());
                 AutoUpdaterAPI.get().getLogger().info("HISTORY = " + unexpectedPage.getEnclosingWindow().getHistory().toString());
@@ -513,9 +508,7 @@ import java.util.Map;
                 unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.get().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
             }
 
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("PAGETYPE = Page");
+            AutoUpdaterAPI.get().getLogger().info("\n\nPAGETYPE = Page");
             AutoUpdaterAPI.get().getLogger().info("HISTORY = " + page.getEnclosingWindow().getHistory().toString());
             AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + page.getWebResponse().getStatusCode());
             AutoUpdaterAPI.get().getLogger().info("STATUS CODE = " + response.getStatusCode());
@@ -529,16 +522,14 @@ import java.util.Map;
     private void printDebug2(HtmlPage htmlPage) {
         if (AutoUpdaterAPI.DEBUG) {
             AutoUpdaterAPI.get().getLogger().info("---- EARLY HTML OUTPUT ----");
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("PAGETYPE = HtmlPage");
+            AutoUpdaterAPI.get().getLogger().info("\nPAGETYPE = HtmlPage");
 
             AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
             AutoUpdaterAPI.get().getLogger().info("HISTORY = " + htmlPage.getEnclosingWindow().getHistory().toString());
             AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
             AutoUpdaterAPI.get().getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
             htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.get().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
-            AutoUpdaterAPI.get().getLogger().info("");
-            AutoUpdaterAPI.get().getLogger().info("---- EARLY HTML OUTPUT ----");
+            AutoUpdaterAPI.get().getLogger().info("\n---- EARLY HTML OUTPUT ----");
         }
     }
 

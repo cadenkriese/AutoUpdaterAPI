@@ -111,6 +111,13 @@
             <version>1.18.8</version>
             <scope>provided</scope>
         </dependency>
+        <!-- JetBrains Annotations -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>17.0.0</version>
+            <scope>provided</scope>
+        </dependency>
         <!--TestNG - for unit tests.-->
         <dependency>
             <groupId>org.testng</groupId>

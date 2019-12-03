@@ -47,40 +47,37 @@ public class PremiumController {
         privateDataFolder = new File(javaPlugin.getDataFolder().getParent() + "/.auapi/");
         Logger logger = updaterAPI.getLogger();
 
-        //Setup spigot credential files.
-        UtilSpigotCreds.getInstance().init();
-
-        try {
-            LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log",
-                    "org.apache.commons.logging.impl.NoOpLog");
-            java.util.logging.Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
-        } catch (Exception ex) {
-            AutoUpdaterAPI.get().printError(ex, "Unable to turn off HTML unit logging!.");
-        }
-
-        //Setup web client
-        webClient = new WebClient(BrowserVersion.CHROME);
-        webClient.getOptions().setJavaScriptEnabled(true);
-        webClient.getOptions().setTimeout(15000);
-        webClient.getOptions().setCssEnabled(false);
-        webClient.getOptions().setRedirectEnabled(true);
-        webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-        webClient.getOptions().setThrowExceptionOnScriptError(false);
-        webClient.getOptions().setPrintContentOnFailingStatusCode(false);
-        java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
-
-        logger.info("Initializing connection with spigot...");
-
-        //Spigot Site API
         new BukkitRunnable() {
             @Override
             public void run() {
-                siteAPI = new SpigotSiteCore();
-
-                UtilSpigotCreds.getInstance().updateKeys();
+                //Setup spigot credential files.
+                UtilSpigotCreds.get().init();
 
                 try {
-                    if (UtilSpigotCreds.getInstance().getUsername() != null && UtilSpigotCreds.getInstance().getPassword() != null) {
+                    LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log",
+                            "org.apache.commons.logging.impl.NoOpLog");
+                    java.util.logging.Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
+                } catch (Exception ex) {
+                    AutoUpdaterAPI.get().printError(ex, "Unable to turn off HTML unit logging!.");
+                }
+
+                //Setup web client
+                webClient = new WebClient(BrowserVersion.CHROME);
+                webClient.getOptions().setJavaScriptEnabled(true);
+                webClient.getOptions().setTimeout(15000);
+                webClient.getOptions().setCssEnabled(false);
+                webClient.getOptions().setRedirectEnabled(true);
+                webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+                webClient.getOptions().setThrowExceptionOnScriptError(false);
+                webClient.getOptions().setPrintContentOnFailingStatusCode(false);
+                java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
+
+                logger.info("Initializing connection with spigot...");
+
+                //Spigot Site API
+                siteAPI = new SpigotSiteCore();
+                try {
+                    if (UtilSpigotCreds.get().getUsername() != null && UtilSpigotCreds.get().getPassword() != null) {
                         logger.info("Stored credentials detected, attempting login.");
                         new PremiumUpdater(null, javaPlugin, 1, new UpdateLocale(), false).authenticate(false);
                     }
@@ -155,8 +152,11 @@ public class PremiumController {
         return new PremiumUpdater(initiator, plugin, resourceId, locale, deleteOld, endTask);
     }
 
+    /**
+     * Resets the current user.
+     */
     public void resetUser() {
         currentUser = null;
-        UtilSpigotCreds.getInstance().reset();
+        UtilSpigotCreds.get().reset();
     }
 }

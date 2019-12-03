@@ -23,14 +23,13 @@ import java.util.Objects;
  * Created on 6/14/17
  */
 @SuppressWarnings("ResultOfMethodCallIgnored") class UtilEncryption {
-    @Getter private static UtilEncryption instance = new UtilEncryption();
 
+    @Getter private static UtilEncryption instance = new UtilEncryption();
     private static SecretKeySpec secretKey;
-    boolean useOldKeys;
     private File keyFile;
     private FileConfiguration keyConfig;
 
-    void init() {
+    protected void init() {
         if (keyFile == null)
             keyFile = new File(PremiumController.get().getPrivateDataFolder().getAbsolutePath() + "/.enc");
 
@@ -44,13 +43,10 @@ import java.util.Objects;
 
         if (keyConfig.get("0") == null)
             keyConfig.set("0", RandomStringUtils.randomAscii(20));
-
         if (keyConfig.get("1") == null)
             keyConfig.set("1", RandomStringUtils.randomAscii(20));
-
         if (keyConfig.get("2") == null)
             keyConfig.set("2", RandomStringUtils.randomAscii(20));
-
         if (keyConfig.get("3") == null)
             keyConfig.set("3", RandomStringUtils.randomAscii(20));
 
@@ -67,23 +63,8 @@ import java.util.Objects;
         }
     }
 
-    void setKeyNumber(int number) {
-        if (useOldKeys) {
-            switch (number) {
-                case 0:
-                    setKey("h9-[hEM*G!DfXp8~");
-                    break;
-                case 1:
-                    setKey("Hb3Kd`z-M(8p%U;f");
-                    break;
-                case 2:
-                    setKey("t?NB%P%WsH]R(6}Bn");
-                    break;
-                case 3:
-                    setKey("f5/K5^n8};u2LxqK");
-            }
-        } else
-            setKey(Objects.requireNonNull(keyConfig.getString(String.valueOf(number))));
+    protected void setKeyNumber(int number) {
+        setKey(Objects.requireNonNull(keyConfig.getString(String.valueOf(number))));
     }
 
     private void setKey(String myKey) {
@@ -99,7 +80,7 @@ import java.util.Objects;
         }
     }
 
-    String encrypt(String strToEncrypt) {
+    protected String encrypt(String strToEncrypt) {
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
 
@@ -113,7 +94,7 @@ import java.util.Objects;
         return null;
     }
 
-    String decrypt(String strToDecrypt) {
+    protected String decrypt(String strToDecrypt) {
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
 

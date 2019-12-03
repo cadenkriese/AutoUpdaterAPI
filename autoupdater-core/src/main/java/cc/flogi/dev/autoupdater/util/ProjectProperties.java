@@ -9,6 +9,13 @@ import java.util.Properties;
  * Created on 9/1/19
  */
 public class ProjectProperties {
+    public final String NAME;
+    public final String DESCRIPTION;
+    public final String URL;
+    public final String REPO_URL;
+    public final String AUTHOR;
+    public final String VERSION;
+
     public ProjectProperties(Properties properties) {
         NAME = properties.getProperty("name");
         DESCRIPTION = properties.getProperty("description");
@@ -21,7 +28,7 @@ public class ProjectProperties {
     public static ProjectProperties from(String resource) {
         try {
             Properties properties = new Properties();
-            properties.load(ProjectProperties.class.getResourceAsStream("/"+resource));
+            properties.load(ProjectProperties.class.getResourceAsStream("/" + resource));
             return new ProjectProperties(properties);
         } catch (IOException e) {
             e.printStackTrace();
@@ -29,13 +36,6 @@ public class ProjectProperties {
 
         return null;
     }
-
-    public final String NAME;
-    public final String DESCRIPTION;
-    public final String URL;
-    public final String REPO_URL;
-    public final String AUTHOR;
-    public final String VERSION;
 
     public String getTitle() {
         return NAME + " V" + VERSION;

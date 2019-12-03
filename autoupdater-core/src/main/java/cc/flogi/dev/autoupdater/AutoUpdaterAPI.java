@@ -2,6 +2,7 @@ package cc.flogi.dev.autoupdater;
 
 import cc.flogi.dev.autoupdater.util.ProjectProperties;
 import lombok.Getter;
+import lombok.NonNull;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -18,18 +19,20 @@ import java.util.logging.Logger;
  */
 
 public class AutoUpdaterAPI {
-    private static AutoUpdaterAPI instance;
-    public static AutoUpdaterAPI get() {
-        return instance;
-    }
-    public final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
+    @NonNull public final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
     public static final boolean DEBUG = false;
-    @Getter private Logger logger = Logger.getLogger("AutoUpdaterAPI");
+
+    private static AutoUpdaterAPI instance;
     @Getter private static Plugin plugin;
+    @Getter private Logger logger = Logger.getLogger("AutoUpdaterAPI");
 
     public AutoUpdaterAPI(JavaPlugin javaPlugin) {
         instance = this;
         plugin = javaPlugin;
+    }
+
+    public static AutoUpdaterAPI get() {
+        return instance;
     }
 
     public void printError(Exception ex) {

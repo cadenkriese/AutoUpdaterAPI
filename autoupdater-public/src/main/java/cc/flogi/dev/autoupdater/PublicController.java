@@ -10,11 +10,11 @@ import org.bukkit.plugin.java.JavaPlugin;
  *
  * Created on 12/1/19
  */
-public class FreeManager {
+public class PublicController {
     @Getter private static Plugin plugin;
     @Getter private static AutoUpdaterAPI updaterAPI;
 
-    public FreeManager(JavaPlugin javaPlugin) {
+    public PublicController(JavaPlugin javaPlugin) {
         plugin = javaPlugin;
         updaterAPI = new AutoUpdaterAPI(javaPlugin);
     }
@@ -27,10 +27,11 @@ public class FreeManager {
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     *
      * @return The updater object for you to update yourself with.
      */
-    public Updater createUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
-        return new Updater(plugin, initiator, resourceId, locale, deleteOld);
+    public PublicUpdater createUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
+        return new PublicUpdater(plugin, initiator, resourceId, locale, deleteOld);
     }
 
     /**
@@ -42,10 +43,11 @@ public class FreeManager {
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param deleteOld  Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
+     *
      * @return The updater object for you to update yourself with.
      */
-    public Updater createUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
-        return new Updater(plugin, initiator, resourceId, locale, deleteOld, endTask);
+    public PublicUpdater createUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
+        return new PublicUpdater(plugin, initiator, resourceId, locale, deleteOld, endTask);
     }
 
     /**
@@ -55,10 +57,11 @@ public class FreeManager {
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     *
      * @return The updater object for you to update yourself with.
      */
-    public Updater createSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
-        return new Updater(plugin, initiator, resourceId, locale, deleteOld);
+    public PublicUpdater createSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
+        return new PublicUpdater(plugin, initiator, resourceId, locale, deleteOld);
     }
 
     /**
@@ -69,9 +72,10 @@ public class FreeManager {
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param deleteOld  Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
+     *
      * @return The updater object for you to update yourself with.
      */
-    public Updater createSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
-        return new Updater(plugin, initiator, resourceId, locale, deleteOld, endTask);
+    public PublicUpdater createSelfUpdater(Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
+        return new PublicUpdater(plugin, initiator, resourceId, locale, deleteOld, endTask);
     }
 }

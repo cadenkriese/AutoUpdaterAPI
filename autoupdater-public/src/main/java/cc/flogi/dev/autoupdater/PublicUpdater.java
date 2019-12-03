@@ -10,19 +10,20 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 /**
  * @author Caden Kriese (flogic)
  *
+ * Performs the update task for public Spigot plugins.
+ *
  * Created on 6/14/17
  */
-@Getter public class Updater {
+@Getter public class PublicUpdater {
     private Player initiator;
     private Plugin plugin;
 
@@ -36,10 +37,9 @@ import java.net.URL;
     private boolean deleteOld;
     private long startingTime;
 
-    private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {
-    };
+    private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {};
 
-    protected Updater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
+    protected PublicUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
         dataFolderPath = plugin.getDataFolder().getParent();
@@ -53,7 +53,7 @@ import java.net.URL;
         this.pluginName = locale.getPluginName();
     }
 
-    protected Updater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
+    protected PublicUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean deleteOld, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
         dataFolderPath = plugin.getDataFolder().getParent();
@@ -78,7 +78,7 @@ import java.net.URL;
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (Exception exception) {
             AutoUpdaterAPI.get().printError(exception);
-            UtilUI.sendActionBar(initiator, locale.getUpdateFailed().replace("%new_version%", "&4NULL"));
+            UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
         }
 
         return "";
@@ -105,7 +105,7 @@ import java.net.URL;
                         UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[RETRIEVING FILES]");
                         try {
                             new BukkitRunnable() {
-                                @Override
+                                @SuppressWarnings("ConstantConditions") @Override
                                 public void run() {
                                     try {
                                         URL downloadUrl = new URL(url + "/download");
@@ -130,7 +130,6 @@ import java.net.URL;
                                                         "%download_bar%", bar,
                                                         "%download_percent%", currentPercent + "%"));
                                             }
-
                                             bout.write(data, 0, grab);
                                         }
 
@@ -138,18 +137,30 @@ import java.net.URL;
                                         in.close();
                                         fos.close();
 
-                                        new BukkitRunnable() {
-                                            @Override
-                                            public void run() {
-                                                try {
-                                                    //TODO Copy compiled plugin from src/main/resources and enable it.
-                                                    UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("updater-plugin");
-                                                    updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, dataFolderPath, locale, startingTime, endTask);
-                                                } catch (Exception ex) {
-                                                    error(ex, "Error occurred while initializing " + pluginName + ".", newVersion);
+                                        //Copy plugin utility from src/main/resources
+                                        String corePluginFile = "/autoupdater-core-" + AutoUpdaterAPI.PROPERTIES.VERSION + ".jar";
+                                        try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
+                                            File targetFile = new File(plugin.getDataFolder().getParent() + corePluginFile);
+                                            Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                                            is.close();
+                                            new BukkitRunnable() {
+                                                @Override
+                                                public void run() {
+                                                    //Enable plugin and perform update task.
+                                                    try {
+                                                        Bukkit.getPluginManager().loadPlugin(targetFile);
+                                                        UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("AutoUpdaterAPI");
+                                                        if (updaterPlugin == null)
+                                                            throw new Exception("Unable to locate updater plugin.");
+                                                        updaterPlugin.updatePlugin(plugin, initiator, deleteOld, pluginName, dataFolderPath, locale, startingTime, endTask);
+                                                    } catch (Exception ex) {
+                                                        error(ex, ex.getMessage(), newVersion);
+                                                    }
                                                 }
-                                            }
-                                        }.runTask(AutoUpdaterAPI.getPlugin());
+                                            }.runTask(AutoUpdaterAPI.getPlugin());
+                                        } catch (Exception ex) {
+                                            error(ex, ex.getMessage(), newVersion);
+                                        }
                                     } catch (Exception ex) {
                                         error(ex, "Error occurred while updating " + pluginName + ".", newVersion);
                                     }
@@ -165,8 +176,10 @@ import java.net.URL;
     }
 
     private void error(Exception ex, String message, String newVersion) {
-        AutoUpdaterAPI.get().printError(ex, "Error occurred while updating " + pluginName + ".");
-        UtilUI.sendActionBar(initiator, locale.getUpdateFailed());
+        AutoUpdaterAPI.get().printError(ex, message);
+        UtilUI.sendActionBar(initiator, UtilText.format(locale.getUpdateFailed(),
+                "old_version", currentVersion,
+                "new_version", newVersion));
         endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
     }
 }

@@ -2,7 +2,7 @@ package cc.flogi.dev.autoupdater.util;
 
 import be.maximvdw.spigotsite.api.SpigotSiteAPI;
 import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
-import cc.flogi.dev.autoupdater.PremiumManager;
+import cc.flogi.dev.autoupdater.PremiumController;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -15,7 +15,7 @@ import java.io.IOException;
  *
  * Created on 6/14/17
  */
-public class UtilSpigotCreds {
+@SuppressWarnings("ResultOfMethodCallIgnored") public class UtilSpigotCreds {
     private static UtilSpigotCreds instance = new UtilSpigotCreds();
     private File infoFile;
     private FileConfiguration infoConfig;
@@ -28,7 +28,7 @@ public class UtilSpigotCreds {
     }
 
     public void init() {
-        infoFile = new File(PremiumManager.get().getPrivateDataFolder().getParentFile().getAbsolutePath() + "/.creds/info.enc");
+        infoFile = new File(PremiumController.get().getPrivateDataFolder().getParentFile().getAbsolutePath() + "/.creds/info.enc");
         if (!infoFile.getParentFile().exists())
             infoFile.getParentFile().mkdirs();
         infoConfig = YamlConfiguration.loadConfiguration(infoFile);
@@ -50,7 +50,7 @@ public class UtilSpigotCreds {
     public void updateKeys() {
         try {
             UtilEncryption.getInstance().useOldKeys = true;
-            SpigotSiteAPI api = PremiumManager.get().getSiteAPI();
+            SpigotSiteAPI api = PremiumController.get().getSiteAPI();
 
             UtilEncryption.getInstance().setKeyNumber(3);
             if (infoConfig.contains(UtilEncryption.getInstance().encrypt("username"))) {

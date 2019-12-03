@@ -17,6 +17,7 @@ public class UtilReader {
      * Reads content from a URL.
      *
      * @param url The URL to read from.
+     *
      * @return The content from the page.
      * @throws IOException from stream.
      */

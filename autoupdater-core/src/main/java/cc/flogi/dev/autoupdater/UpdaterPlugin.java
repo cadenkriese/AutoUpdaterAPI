@@ -22,6 +22,29 @@ import java.util.List;
 public final class UpdaterPlugin extends JavaPlugin {
     private static UpdaterPlugin instance;
 
+    /**
+     * Sends an action bar message to the player.
+     *
+     * @param player  The player to receive the message.
+     * @param message The message to be sent (with color codes to be replaced).
+     */
+    public static void sendActionBar(Player player, String message) {
+        if (!Bukkit.isPrimaryThread()) {
+            new BukkitRunnable() {
+                @Override public void run() {
+                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
+                }
+            }.runTask(instance);
+            return;
+        }
+
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
+    }
+
+    public static UpdaterPlugin get() {
+        return instance;
+    }
+
     @Override
     public void onEnable() {
         instance = this;
@@ -51,28 +74,5 @@ public final class UpdaterPlugin extends JavaPlugin {
         endTask.run(true, null, updated, pluginName);
         double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
         UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
-    }
-
-    /**
-     * Sends an action bar message to the player.
-     *
-     * @param player  The player to receive the message.
-     * @param message The message to be sent (with color codes to be replaced).
-     */
-    public static void sendActionBar(Player player, String message) {
-        if (!Bukkit.isPrimaryThread()) {
-            new BukkitRunnable() {
-                @Override public void run() {
-                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
-                }
-            }.runTask(instance);
-            return;
-        }
-
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
-    }
-
-    public static UpdaterPlugin get() {
-        return instance;
     }
 }

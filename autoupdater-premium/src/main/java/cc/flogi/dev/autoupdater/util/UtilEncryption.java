@@ -1,7 +1,7 @@
 package cc.flogi.dev.autoupdater.util;
 
 import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
-import cc.flogi.dev.autoupdater.PremiumManager;
+import cc.flogi.dev.autoupdater.PremiumController;
 import lombok.Getter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
@@ -15,13 +15,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 
 /**
  * @author Caden Kriese (flogic)
  *
  * Created on 6/14/17
  */
-class UtilEncryption {
+@SuppressWarnings("ResultOfMethodCallIgnored") class UtilEncryption {
     @Getter private static UtilEncryption instance = new UtilEncryption();
 
     private static SecretKeySpec secretKey;
@@ -31,7 +32,7 @@ class UtilEncryption {
 
     void init() {
         if (keyFile == null)
-            keyFile = new File(PremiumManager.get().getPrivateDataFolder().getAbsolutePath() + "/.enc");
+            keyFile = new File(PremiumController.get().getPrivateDataFolder().getAbsolutePath() + "/.enc");
 
         if (!keyFile.getParentFile().exists())
             keyFile.getParentFile().mkdirs();
@@ -82,7 +83,7 @@ class UtilEncryption {
                     setKey("f5/K5^n8};u2LxqK");
             }
         } else
-            setKey(keyConfig.getString(String.valueOf(number)));
+            setKey(Objects.requireNonNull(keyConfig.getString(String.valueOf(number))));
     }
 
     private void setKey(String myKey) {

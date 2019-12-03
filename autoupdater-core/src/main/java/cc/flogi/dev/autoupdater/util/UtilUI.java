@@ -69,6 +69,7 @@ public class UtilUI {
      * @param barChar     The character the progress bar is made out of.
      * @param used        The color representing the used section of the bar.
      * @param free        The color representing the free section of the bar.
+     *
      * @return The generated progress bar.
      */
     public static String progressBar(int barSize, double numerator, double denominator, char barChar, ChatColor used, ChatColor free) {
@@ -82,6 +83,7 @@ public class UtilUI {
      * Shorthand notation for ${@link ChatColor#translateAlternateColorCodes(char, String)}.
      *
      * @param string The string to be colorized.
+     *
      * @return The colorized string.
      */
     public static String colorize(String string) {

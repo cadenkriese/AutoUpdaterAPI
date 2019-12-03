@@ -21,14 +21,12 @@ import java.util.logging.Logger;
 /**
  * @author Caden Kriese (flogic)
  *
+ * Controls any updates surrounding a premium plugin.
+ *
  * Created on 11/30/19
  */
-public class PremiumManager {
-    private static PremiumManager instance;
-    public static PremiumManager get() {
-        return instance;
-    }
-
+public class PremiumController {
+    private static PremiumController instance;
     @Getter @Setter private User currentUser;
     @Getter private SpigotSiteAPI siteAPI;
     @Getter private Plugin plugin;
@@ -36,19 +34,17 @@ public class PremiumManager {
     @Getter private WebClient webClient;
     @Getter private File privateDataFolder;
 
-    //TODO Rename this class.
-
     /**
      * Instantiates a PremiumManager.
      *
-     * @param javaPlugin the plugin running the API, not nescesarily the one being updated.
+     * @param javaPlugin the plugin running the API, not necessarily the one being updated.
      */
-    public PremiumManager(JavaPlugin javaPlugin) {
+    public PremiumController(JavaPlugin javaPlugin) {
         //General setup
         instance = this;
         plugin = javaPlugin;
         updaterAPI = new AutoUpdaterAPI(javaPlugin);
-        privateDataFolder = new File(javaPlugin.getDataFolder().getParent()+"/.auapi/");
+        privateDataFolder = new File(javaPlugin.getDataFolder().getParent() + "/.auapi/");
         Logger logger = updaterAPI.getLogger();
 
         //Setup spigot credential files.
@@ -95,14 +91,18 @@ public class PremiumManager {
         }.runTaskAsynchronously(javaPlugin);
     }
 
+    public static PremiumController get() {
+        return instance;
+    }
+
     /**
      * Instantiate PremiumUpdater
      *
-     * @param initiator     The player that started this action (if there is none set to null).
-     * @param plugin        The instance of the outdated plugin.
-     * @param resourceId    The ID of the plugin on Spigot found in the url after the name.
-     * @param locale        The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld     Should the old version of the plugin be deleted and disabled.
+     * @param initiator  The player that started this action (if there is none set to null).
+     * @param plugin     The instance of the outdated plugin.
+     * @param resourceId The ID of the plugin on Spigot found in the url after the name.
+     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
      *
      * @return An instantiated PremiumUpdater.
      */
@@ -113,12 +113,12 @@ public class PremiumManager {
     /**
      * Instantiate PremiumUpdater
      *
-     * @param initiator     The player that started this action (if there is none set to null).
-     * @param plugin        The instance of the outdated plugin.
-     * @param resourceId    The ID of the plugin on Spigot found in the url after the name.
-     * @param locale        The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld     Should the old version of the plugin be deleted and disabled.
-     * @param endTask       Runnable that will run once the update has completed.
+     * @param initiator  The player that started this action (if there is none set to null).
+     * @param plugin     The instance of the outdated plugin.
+     * @param resourceId The ID of the plugin on Spigot found in the url after the name.
+     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param endTask    Runnable that will run once the update has completed.
      *
      * @return An instantiated PremiumUpdater.
      */
@@ -129,10 +129,10 @@ public class PremiumManager {
     /**
      * Instantiate PremiumUpdater
      *
-     * @param initiator     The player that started this action (if there is none set to null).
-     * @param resourceId    The ID of the plugin on Spigot found in the url after the name.
-     * @param locale        The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld     Should the old version of the plugin be deleted and disabled.
+     * @param initiator  The player that started this action (if there is none set to null).
+     * @param resourceId The ID of the plugin on Spigot found in the url after the name.
+     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
      *
      * @return An instantiated PremiumUpdater.
      */
@@ -143,11 +143,11 @@ public class PremiumManager {
     /**
      * Instantiate PremiumUpdater
      *
-     * @param initiator     The player that started this action (if there is none set to null).
-     * @param resourceId    The ID of the plugin on Spigot found in the url after the name.
-     * @param locale        The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param deleteOld     Should the old version of the plugin be deleted and disabled.
-     * @param endTask       Runnable that will run once the update has completed.
+     * @param initiator  The player that started this action (if there is none set to null).
+     * @param resourceId The ID of the plugin on Spigot found in the url after the name.
+     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param deleteOld  Should the old version of the plugin be deleted and disabled.
+     * @param endTask    Runnable that will run once the update has completed.
      *
      * @return An instantiated PremiumUpdater.
      */

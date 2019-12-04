@@ -35,11 +35,8 @@ import java.util.SortedSet;
 
         String name = plugin.getName();
         PluginManager pluginManager = Bukkit.getPluginManager();
-
         SimpleCommandMap commandMap = null;
-
         List<Plugin> plugins = null;
-
         Map<String, Plugin> names = null;
         Map<String, Command> commands = null;
         Map<Event, SortedSet<RegisteredListener>> listeners = null;
@@ -73,15 +70,12 @@ import java.util.SortedSet;
             } catch (NoSuchFieldException | IllegalAccessException ex) {
                 AutoUpdaterAPI.get().printError(ex, "Error occurred while clearing plugin fields.");
             }
-
         }
 
         if (pluginManager != null)
             pluginManager.disablePlugin(plugin);
-
         if (plugins != null)
             plugins.remove(plugin);
-
         if (names != null)
             names.remove(name);
 
@@ -108,9 +102,7 @@ import java.util.SortedSet;
         ClassLoader cl = plugin.getClass().getClassLoader();
 
         if (cl instanceof URLClassLoader) {
-
             try {
-
                 Field pluginField = cl.getClass().getDeclaredField("plugin");
                 pluginField.setAccessible(true);
                 pluginField.set(cl, null);
@@ -118,13 +110,11 @@ import java.util.SortedSet;
                 Field pluginInitField = cl.getClass().getDeclaredField("pluginInit");
                 pluginInitField.setAccessible(true);
                 pluginInitField.set(cl, null);
-
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
-                AutoUpdaterAPI.get().printError(ex, "Error occurred while clearing plugin & plugininit fields.");
+                AutoUpdaterAPI.get().printError(ex, "Error occurred while clearing plugin & pluginInit fields.");
             }
 
             try {
-
                 ((URLClassLoader) cl).close();
             } catch (IOException ex) {
                 AutoUpdaterAPI.get().printError(ex, "Error occurred while closing URLClassLoader.");
@@ -135,6 +125,5 @@ import java.util.SortedSet;
         // Will not work on processes started with the -XX:+DisableExplicitGC flag, but let's try it anyway.
         // This tries to get around the issue where Windows refuses to unlock jar files that were previously loaded into the JVM.
         System.gc();
-
     }
 }

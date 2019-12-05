@@ -138,9 +138,8 @@ import java.nio.file.StandardCopyOption;
                                         fos.close();
 
                                         //Copy plugin utility from src/main/resources
-                                        //TODO copy to premium branch
                                         String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterAPI.PROPERTIES.VERSION + ".jar";
-                                        try (InputStream is = getClass().getResourceAsStream(corePluginFile+".disabled")) {
+                                        try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
                                             File targetFile = new File(plugin.getDataFolder().getParent() + corePluginFile);
                                             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                                             is.close();
@@ -153,6 +152,8 @@ import java.nio.file.StandardCopyOption;
                                                         UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("autoupdater-plugin");
                                                         if (updaterPlugin == null)
                                                             throw new FileNotFoundException("Unable to locate updater plugin.");
+
+                                                        Bukkit.getPluginManager().enablePlugin(updaterPlugin);
                                                         updaterPlugin.updatePlugin(plugin, initiator, replace, pluginName, pluginFolderPath, locale, startingTime, endTask);
                                                     } catch (Exception ex) {
                                                         error(ex, ex.getMessage(), newVersion);

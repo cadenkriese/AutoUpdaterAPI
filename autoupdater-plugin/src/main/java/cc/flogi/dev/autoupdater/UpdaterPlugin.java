@@ -2,10 +2,7 @@ package cc.flogi.dev.autoupdater;
 
 import cc.flogi.dev.autoupdater.util.UtilPlugin;
 import cc.flogi.dev.autoupdater.util.UtilUI;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
@@ -21,26 +18,6 @@ import java.util.List;
 
 public final class UpdaterPlugin extends JavaPlugin {
     private static UpdaterPlugin instance;
-
-    /**
-     * Sends an action bar message to the player.
-     *
-     * @param player  The player to receive the message.
-     * @param message The message to be sent (with color codes to be replaced).
-     */
-    public static void sendActionBar(Player player, String message) {
-        if (!Bukkit.isPrimaryThread()) {
-            new BukkitRunnable() {
-                @Override public void run() {
-                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
-                }
-            }.runTask(instance);
-            return;
-        }
-
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.translateAlternateColorCodes('&', message)));
-    }
-
     public static UpdaterPlugin get() {
         return instance;
     }
@@ -61,7 +38,7 @@ public final class UpdaterPlugin extends JavaPlugin {
                     AutoUpdaterAPI.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
             }
 
-            sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]");
+            UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]");
 
             List<Plugin> beforePlugins = new ArrayList<>(Arrays.asList(Bukkit.getPluginManager().getPlugins()));
             Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));

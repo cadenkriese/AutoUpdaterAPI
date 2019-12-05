@@ -84,15 +84,17 @@
     </repositories>
 
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>cc.flogi.dev</groupId>-->
-<!--            <artifactId>autoupdater-core</artifactId>-->
-<!--            <version>${currentversion}</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>cc.flogi.dev</groupId>
+            <artifactId>autoupdater-core</artifactId>
+            <version>${currentversion}</version>
+        </dependency>
         <dependency>
             <groupId>cc.flogi.dev</groupId>
             <artifactId>autoupdater-plugin</artifactId>
             <version>${currentversion}</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/src/main/resources/autoupdater-plugin-3.0.1-SNAPSHOT.jar</systemPath>
         </dependency>
         <!-- AnvilGUI -->
         <dependency>

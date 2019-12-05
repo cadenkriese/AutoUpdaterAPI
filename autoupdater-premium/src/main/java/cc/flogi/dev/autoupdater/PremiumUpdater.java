@@ -213,7 +213,7 @@ public class PremiumUpdater {
                     printDebug3(downloadedFileSize, completeFileSize);
 
                     //Copy plugin utility from src/main/resources
-                    String corePluginFile = "/autoupdater-core-" + AutoUpdaterAPI.PROPERTIES.VERSION + ".jar";
+                    String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterAPI.PROPERTIES.VERSION + ".jar";
                     try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
                         File targetFile = new File(plugin.getDataFolder().getParent() + corePluginFile);
                         Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -224,9 +224,11 @@ public class PremiumUpdater {
                                 //Enable plugin and perform update task.
                                 try {
                                     Bukkit.getPluginManager().loadPlugin(targetFile);
-                                    UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("AutoUpdaterAPI");
+                                    UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("autoupdater-plugin");
                                     if (updaterPlugin == null)
-                                        throw new Exception("Unable to locate updater plugin.");
+                                        throw new FileNotFoundException("Unable to locate updater plugin.");
+
+                                    Bukkit.getPluginManager().enablePlugin(updaterPlugin);
                                     updaterPlugin.updatePlugin(plugin, initiator, replace, pluginName, pluginFolderPath, locale, startingTime, endTask);
                                 } catch (Exception ex) {
                                     error(ex, ex.getMessage(), newVersion);

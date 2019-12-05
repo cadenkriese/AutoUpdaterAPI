@@ -14,7 +14,7 @@
     <version>3.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <description>Plugin briefly used to handle operations done by AutoUpdaterAPI.</description>
+    <description>Core module containing basic API functions of AutoUpdaterAPI.</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -27,30 +27,5 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
-                <executions>
-                    <execution>
-                        <id>copy-artifacts</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${basedir}/scripts/copy-artifacts.sh</executable>
-                            <workingDirectory>${pom.basedir}/target/</workingDirectory>
-                            <arguments>
-                                <argument>${currentversion}</argument>
-                                <argument>${basedir}/../autoupdater-public</argument>
-                                <argument>${basedir}/../autoupdater-premium</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
     </build>
 </project>

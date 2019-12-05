@@ -1,0 +1,8 @@
+name: ${project.name}
+version: ${project.version}
+description: ${project.description}
+main: cc.flogi.dev.autoupdater.UpdaterPlugin
+api-version: 1.13
+prefix: AutoUpdaterAPI
+authors: [flogic]
+website: flogi.cc

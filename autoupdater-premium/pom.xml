@@ -84,9 +84,14 @@
     </repositories>
 
     <dependencies>
+<!--        <dependency>-->
+<!--            <groupId>cc.flogi.dev</groupId>-->
+<!--            <artifactId>autoupdater-core</artifactId>-->
+<!--            <version>${currentversion}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>cc.flogi.dev</groupId>
-            <artifactId>autoupdater-core</artifactId>
+            <artifactId>autoupdater-plugin</artifactId>
             <version>${currentversion}</version>
         </dependency>
         <!-- AnvilGUI -->

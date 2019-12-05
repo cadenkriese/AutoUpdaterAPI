@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>AutoUpdaterAPI</artifactId>
+        <groupId>cc.flogi.dev</groupId>
+        <version>3.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>autoupdater-plugin</artifactId>
+    <version>3.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>autoupdater-plugin</name>
+
+    <description>Briefly used utility for automatically updating plugins. If this plugin does not disappear quickly,
+        please delete it from your plugins folder.
+    </description>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <url>flogi.cc</url>
+
+    <build>
+        <defaultGoal>clean package</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-artifacts</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/scripts/copy-artifacts.sh</executable>
+                            <workingDirectory>${pom.basedir}/target/</workingDirectory>
+                            <arguments>
+                                <argument>${currentversion}</argument>
+                                <argument>${basedir}/../autoupdater-public</argument>
+                                <argument>${basedir}/../autoupdater-premium</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>cc.flogi.dev</groupId>
+            <artifactId>autoupdater-core</artifactId>
+            <version>${currentversion}</version>
+        </dependency>
+    </dependencies>
+</project>

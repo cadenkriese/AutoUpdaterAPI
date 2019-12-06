@@ -34,7 +34,6 @@
                                     <exclude>*:jetty-http</exclude>
                                     <exclude>*:jetty-util</exclude>
                                     <exclude>*:websocket-common</exclude>
-                                    <exclude>*:anvilgui</exclude>
                                     <exclude>*:commons-codec</exclude>
                                     <exclude>*:commons-logging</exclude>
                                     <exclude>*:commons-lang3</exclude>
@@ -52,7 +51,6 @@
                                     <exclude>*:xml-apis</exclude>
                                     <exclude>*:commons-text</exclude>
                                     <exclude>*:websocket-api</exclude>
-                                    <exclude>*:anvilgui-abstraction</exclude>
                                     <exclude>*:neko-htmlunit</exclude>
                                     <exclude>*:serializer</exclude>
                                 </excludes>

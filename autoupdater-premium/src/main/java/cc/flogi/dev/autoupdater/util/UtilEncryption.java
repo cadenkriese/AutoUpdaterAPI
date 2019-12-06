@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Objects;
 
 /**
  * @author Caden Kriese (flogic)
@@ -31,7 +30,7 @@ import java.util.Objects;
 
     protected void init() {
         if (keyFile == null)
-            keyFile = new File(PremiumController.get().getPrivateDataFolder().getAbsolutePath() + "/.enc");
+            keyFile = new File(PremiumController.get().getPrivateDataFolder().getAbsolutePath() + "/keys.enc");
 
         if (!keyFile.getParentFile().exists())
             keyFile.getParentFile().mkdirs();
@@ -64,7 +63,7 @@ import java.util.Objects;
     }
 
     protected void setKeyNumber(int number) {
-        setKey(Objects.requireNonNull(keyConfig.getString(String.valueOf(number))));
+        setKey(keyConfig.getString(String.valueOf(number)));
     }
 
     private void setKey(String myKey) {

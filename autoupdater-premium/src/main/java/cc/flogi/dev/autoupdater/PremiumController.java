@@ -41,18 +41,19 @@ public class PremiumController {
      */
     public PremiumController(JavaPlugin javaPlugin) {
         //General setup
-        instance = this;
+        if (instance == null)
+            instance = this;
+
         plugin = javaPlugin;
         updaterAPI = new AutoUpdaterAPI(javaPlugin);
         privateDataFolder = new File(javaPlugin.getDataFolder().getParent() + "/.auapi/");
         Logger logger = updaterAPI.getLogger();
 
+        UtilSpigotCreds.get().init();
+
         new BukkitRunnable() {
             @Override
             public void run() {
-                //Setup spigot credential files.
-                UtilSpigotCreds.get().init();
-
                 try {
                     LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log",
                             "org.apache.commons.logging.impl.NoOpLog");

@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 public class AutoUpdaterAPI {
     @NonNull public final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     private static AutoUpdaterAPI instance;
     @Getter private static Plugin plugin;

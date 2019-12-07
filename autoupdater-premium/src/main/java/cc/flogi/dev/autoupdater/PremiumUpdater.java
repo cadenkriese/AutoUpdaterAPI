@@ -331,7 +331,7 @@ public class PremiumUpdater {
                                 endTask.run(false, otherException, null, pluginName);
                             } else if (otherException instanceof TwoFactorAuthenticationException) {
                                 if (loginAttempts < 4) {
-                                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "]");
+                                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "/3]");
                                     loginAttempts++;
                                     new BukkitRunnable() {
                                         @Override
@@ -363,102 +363,105 @@ public class PremiumUpdater {
         }.runTaskAsynchronously(AutoUpdaterAPI.getPlugin());
     }
 
+    //TODO Rewrite with new AnvilGUI structure.
+    //Potentially define GUI's statically with bi functions that call methods.
     private void runGuis(boolean recall) {
         new BukkitRunnable() {
             @Override
             public void run() {
                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]");
-                new AnvilGUI(AutoUpdaterAPI.getPlugin(), initiator, "Spigot username", (Player player1, String usernameInput) -> {
-                    try {
-                        if (siteAPI.getUserManager().getUserByName(usernameInput) != null) {
-                            requestPassword(usernameInput, recall);
-                        } else if (usernameInput.contains("@") && usernameInput.contains(".")) {
-                            initiator.closeInventory();
-                            UtilUI.sendActionBar(initiator, "&cEmails are not supported!");
-                            endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
-                            return "Emails are not supported!";
-                        } else {
-                            UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                            endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
-                            return "Invalid username!";
-                        }
-                    } catch (Exception ex) {
-                        error(ex, "Error occurred while authenticating Spigot username.");
-                    }
+                new AnvilGUI.Builder()
+                        .text("Spigot username")
+                        .plugin(AutoUpdaterAPI.getPlugin())
+                        .onComplete((Player player, String usernameInput) -> {
+                            try {
+                                if (siteAPI.getUserManager().getUserByName(usernameInput) != null) {
+                                    requestPassword(usernameInput, recall);
+                                } else if (usernameInput.contains("@") && usernameInput.contains(".")) {
+                                    initiator.closeInventory();
+                                    UtilUI.sendActionBar(initiator, "&cEmails are not supported!");
+                                    endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
+                                    return AnvilGUI.Response.text("Emails are not supported!");
+                                } else {
+                                    UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                                    endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
+                                    return AnvilGUI.Response.text("Invalid username!");
+                                }
+                            } catch (Exception ex) {
+                                error(ex, "Error occurred while authenticating Spigot username.");
+                            }
 
-                    return null;
-                });
+                            return AnvilGUI.Response.text("Success!");
+                        }).open(initiator);
             }
         }.runTask(AutoUpdaterAPI.getPlugin());
     }
 
     private void requestPassword(String usernameInput, boolean recall) {
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]");
-        new AnvilGUI(AutoUpdaterAPI.getPlugin(), initiator, "Spigot password", (Player player, String passwordInput) -> {
-            try {
-                spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput);
+        new AnvilGUI.Builder()
+                .text("Spigot password")
+                .plugin(AutoUpdaterAPI.getPlugin())
+                .onComplete(((player, passwordInput) -> {
+                    try {
+                        spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput);
 
-                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
-                UtilSpigotCreds.get().setUsername(usernameInput);
-                UtilSpigotCreds.get().setPassword(passwordInput);
-                UtilSpigotCreds.get().saveFile();
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
+                        UtilSpigotCreds.get().setUsername(usernameInput);
+                        UtilSpigotCreds.get().setPassword(passwordInput);
+                        UtilSpigotCreds.get().saveFile();
 
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        authenticate(recall);
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                authenticate(recall);
+                            }
+                        }.runTaskLater(AutoUpdaterAPI.getPlugin(), 200L);
+                    } catch (TwoFactorAuthenticationException ex) {
+                        requestTwoFactor(usernameInput, passwordInput, recall);
+                    } catch (ConnectionFailedException ex) {
+                        error(ex, "Error occurred while connecting to Spigot. (#3)");
+                        return AnvilGUI.Response.text("Could not connect to Spigot.");
+                    } catch (InvalidCredentialsException ex) {
+                        UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                        endTask.run(false, ex, null, pluginName);
+                        return AnvilGUI.Response.text("Invalid credentials!");
                     }
-                }.runTaskLater(AutoUpdaterAPI.getPlugin(), 200L);
 
-                //TODO possibly uncomment, potentially caused console spam.
-                //player.closeInventory();
-
-            } catch (TwoFactorAuthenticationException ex) {
-                requestTwoFactor(usernameInput, passwordInput, recall);
-            } catch (ConnectionFailedException ex) {
-                error(ex, "Error occurred while connecting to Spigot. (#3)");
-                return "Could not connect to Spigot.";
-            } catch (InvalidCredentialsException ex) {
-                UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                endTask.run(false, ex, null, pluginName);
-                return "Invalid credentials!";
-            }
-
-            return null;
-        });
+                    return AnvilGUI.Response.text("Success!");
+                })).open(initiator);
     }
 
     private void requestTwoFactor(String usernameInput, String passwordInput, boolean recall) {
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]");
-        new AnvilGUI(AutoUpdaterAPI.getPlugin(), initiator, "Spigot two factor secret", (Player player, String twoFactorInput) -> {
-            try {
-                //Make extra string because the input seems to change for some reason.
-                spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput, twoFactorInput);
+        new AnvilGUI.Builder().plugin(AutoUpdaterAPI.getPlugin())
+                .text("Spigot two factor secret")
+                .onComplete((Player player, String twoFactorInput) -> {
+                    try {
+                        //Make extra string because the input seems to change for some reason.
+                        spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput, twoFactorInput);
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
 
-                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]");
+                        UtilSpigotCreds.get().setUsername(usernameInput);
+                        UtilSpigotCreds.get().setPassword(passwordInput);
+                        UtilSpigotCreds.get().setTwoFactor(twoFactorInput);
+                        UtilSpigotCreds.get().saveFile();
 
-                UtilSpigotCreds.get().setUsername(usernameInput);
-                UtilSpigotCreds.get().setPassword(passwordInput);
-                UtilSpigotCreds.get().setTwoFactor(twoFactorInput);
-                UtilSpigotCreds.get().saveFile();
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                authenticate(recall);
+                            }
+                        }.runTaskLater(AutoUpdaterAPI.getPlugin(), 200L);
 
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        authenticate(recall);
+                        return AnvilGUI.Response.text("Logging in, close GUI.");
+                    } catch (Exception exception) {
+                        UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                        AutoUpdaterAPI.get().printError(exception, "Error occurred while authenticating Spigot user.");
+                        endTask.run(false, exception, null, pluginName);
+                        return AnvilGUI.Response.text("Authentication failed");
                     }
-                }.runTaskLater(AutoUpdaterAPI.getPlugin(), 200L);
-                //TODO possibly uncomment, potentially caused console spam.
-                //player.closeInventory();
-
-                return "Retrieved credentials you may now close this GUI.";
-            } catch (Exception exception) {
-                UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                AutoUpdaterAPI.get().printError(exception, "Error occurred while authenticating Spigot user.");
-                endTask.run(false, exception, null, pluginName);
-                return "Authentication failed";
-            }
-        });
+                }).open(initiator);
     }
 
     private void error(Exception ex, String message) {
@@ -506,8 +509,10 @@ public class PremiumUpdater {
             }
 
             AutoUpdaterAPI.get().getLogger().info("\n\nPAGETYPE = Page");
-            AutoUpdaterAPI.get().getLogger().info("HISTORY = " + page.getEnclosingWindow().getHistory().toString());
-            AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + page.getWebResponse().getStatusCode());
+            AutoUpdaterAPI.get().getLogger().info("HISTORY: ");
+            for (int i = 0; i < page.getEnclosingWindow().getHistory().getLength(); i++) {
+                AutoUpdaterAPI.get().getLogger().info(page.getEnclosingWindow().getHistory().getUrl(i).toString());
+            }            AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + page.getWebResponse().getStatusCode());
             AutoUpdaterAPI.get().getLogger().info("STATUS CODE = " + response.getStatusCode());
             AutoUpdaterAPI.get().getLogger().info("LOAD TIME = " + response.getLoadTime());
             AutoUpdaterAPI.get().getLogger().info("CURRENT URL = " + webClient.getCurrentWindow().getEnclosedPage().getUrl());
@@ -522,7 +527,10 @@ public class PremiumUpdater {
             AutoUpdaterAPI.get().getLogger().info("\nPAGETYPE = HtmlPage");
 
             AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
-            AutoUpdaterAPI.get().getLogger().info("HISTORY = " + htmlPage.getEnclosingWindow().getHistory().toString());
+            AutoUpdaterAPI.get().getLogger().info("HISTORY: ");
+            for (int i = 0; i < htmlPage.getEnclosingWindow().getHistory().getLength(); i++) {
+                AutoUpdaterAPI.get().getLogger().info(htmlPage.getEnclosingWindow().getHistory().getUrl(i).toString());
+            }
             AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
             AutoUpdaterAPI.get().getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
             htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.get().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));

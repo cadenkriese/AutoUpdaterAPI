@@ -21,6 +21,9 @@ public class UtilUI {
      * @param message The message to be sent (with color codes to be replaced).
      */
     public static void sendActionBar(Player player, String message) {
+        if (player == null)
+            return;
+
         if (!Bukkit.isPrimaryThread()) {
             new BukkitRunnable() {
                 @Override public void run() {
@@ -57,6 +60,9 @@ public class UtilUI {
      * @param fadeOut  The fade out duration in ticks.
      */
     public static void sendTitle(Player player, String title, String subtitle, int fadeIn, int stay, int fadeOut) {
+        if (player == null)
+            return;
+
         player.sendTitle(colorize(title), colorize(subtitle), fadeIn, stay, fadeOut);
     }
 

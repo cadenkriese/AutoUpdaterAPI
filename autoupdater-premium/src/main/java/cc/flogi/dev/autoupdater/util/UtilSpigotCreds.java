@@ -26,7 +26,7 @@ import java.io.IOException;
     }
 
     public void init() {
-        infoFile = new File(PremiumController.get().getPrivateDataFolder().getParentFile().getAbsolutePath() + "/.creds/info.enc");
+        infoFile = new File(PremiumController.get().getPrivateDataFolder().getAbsolutePath() + "/.creds/info.enc");
         if (!infoFile.getParentFile().exists())
             infoFile.getParentFile().mkdirs();
         infoConfig = YamlConfiguration.loadConfiguration(infoFile);

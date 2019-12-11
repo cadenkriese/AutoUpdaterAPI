@@ -16,18 +16,17 @@ import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.util.Cookie;
-import net.md_5.bungee.api.ChatColor;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Map;
 
 /**
  * @author Caden Kriese (flogic)
@@ -117,13 +116,11 @@ public class PremiumUpdater {
         String newVersion = getLatestVersion();
         locale.updateVariables(plugin.getName(), currentVersion, newVersion);
 
-        if (currentVersion.equals(newVersion)) {
+        if (currentVersion.equalsIgnoreCase(newVersion)) {
             UtilUI.sendActionBar(initiator, "&c&lUPDATE FAILED &8[NO UPDATES AVAILABLE]");
             endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
             return;
         }
-
-        spigotUser = PremiumController.get().getCurrentUser();
 
         if (locale.getPluginName() != null)
             pluginName = locale.getPluginName();
@@ -153,64 +150,74 @@ public class PremiumUpdater {
             return;
         }
 
+        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]");
         new BukkitRunnable() {
             @Override
             public void run() {
                 try {
-                    UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]");
-                    Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
-                    WebClient webClient = PremiumController.get().getWebClient();
+                    printDebug();
 
-                    for (Map.Entry<String, String> entry : cookies.entrySet())
-                        webClient.getCookieManager().addCookie(new Cookie("spigotmc.org", entry.getKey(), entry.getValue()));
+                    siteAPI.getResourceManager().getResourceById(resourceId, spigotUser)
+                            .downloadResource(spigotUser, new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
 
-                    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-                    Page page = webClient.getPage(siteAPI.getResourceManager().getResourceById(resourceId, spigotUser).getDownloadURL());
-                    webClient.waitForBackgroundJavaScript(10_000);
-                    WebResponse response = page.getEnclosingWindow().getEnclosedPage().getWebResponse();
-
-                    if (page instanceof HtmlPage) {
-                        HtmlPage htmlPage = (HtmlPage) page;
-                        printDebug2(htmlPage);
-                        response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
-                    }
-
-                    String contentLength = response.getResponseHeaderValue("Content-Length");
-                    int completeFileSize = 0;
-                    int grabSize = 2048;
-                    if (contentLength != null)
-                        completeFileSize = Integer.parseInt(contentLength);
-
-                    printDebug1(page, response, webClient);
-
-                    BufferedInputStream in = new BufferedInputStream(response.getContentAsStream());
-                    FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
-                    BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
-
-                    byte[] data = new byte[grabSize];
-                    long downloadedFileSize = 0;
-                    int grabbed;
-                    while ((grabbed = in.read(data, 0, grabSize)) >= 0) {
-                        downloadedFileSize += grabbed;
-
-                        //Don't send action bar for every grab we're not trying to crash any clients (or servers) here.
-                        if (downloadedFileSize % (grabSize * 5) == 0 && completeFileSize > 0) {
-                            String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
-                            final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
-
-                            UtilUI.sendActionBar(initiator, locale.getUpdatingDownload()
-                                                                    .replace("%download_bar%", bar)
-                                                                    .replace("%download_percent%", currentPercent + "%")
-                                                                    + " &8[DOWNLOADING RESOURCE]");
-                        }
-                        bout.write(data, 0, grabbed);
-                    }
-
-                    bout.close();
-                    in.close();
-                    fos.close();
-
-                    printDebug3(downloadedFileSize, completeFileSize);
+//                    Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
+//                    WebClient webClient = PremiumController.get().getWebClient();
+//
+//                    cookies.forEach((key, value) -> webClient.getCookieManager().addCookie(
+//                            new Cookie("spigotmc.org", key, value)));
+//
+//                    webClient.waitForBackgroundJavaScript(10_000);
+//                    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+//                    Page page = webClient.getPage(siteAPI.getResourceManager().getResourceById(resourceId, spigotUser).getDownloadURL());
+//                    WebResponse response = page.getEnclosingWindow().getEnclosedPage().getWebResponse();
+//
+//                    if (page instanceof HtmlPage) {
+//                        HtmlPage htmlPage = (HtmlPage) page;
+//                        printDebug2(htmlPage);
+//                        if (htmlPage.asXml().contains("DDoS protection by Cloudflare")) {
+//                            //TODO remove
+//                            AutoUpdaterAPI.get().getLogger().info("Arrived at DDoS protection screen.");
+//                            webClient.waitForBackgroundJavaScript(10_000);
+//                        }
+//                        response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
+//                    }
+//
+//                    String contentLength = response.getResponseHeaderValue("Content-Length");
+//                    int completeFileSize = 0;
+//                    int grabSize = 2048;
+//                    if (contentLength != null)
+//                        completeFileSize = Integer.parseInt(contentLength);
+//
+//                    printDebug1(page, response, webClient);
+//
+//                    BufferedInputStream in = new BufferedInputStream(response.getContentAsStream());
+//                    FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
+//                    BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
+//
+//                    byte[] data = new byte[grabSize];
+//                    long downloadedFileSize = 0;
+//                    int grabbed;
+//                    while ((grabbed = in.read(data, 0, grabSize)) >= 0) {
+//                        downloadedFileSize += grabbed;
+//
+//                        //Don't send action bar for every grab we're not trying to crash any clients (or servers) here.
+//                        if (downloadedFileSize % (grabSize * 5) == 0 && completeFileSize > 0) {
+//                            String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
+//                            final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
+//
+//                            UtilUI.sendActionBar(initiator, locale.getUpdatingDownload()
+//                                                                    .replace("%download_bar%", bar)
+//                                                                    .replace("%download_percent%", currentPercent + "%")
+//                                                                    + " &8[DOWNLOADING RESOURCE]");
+//                        }
+//                        bout.write(data, 0, grabbed);
+//                    }
+//
+//                    bout.close();
+//                    in.close();
+//                    fos.close();
+//
+//                    printDebug3(downloadedFileSize, completeFileSize);
 
                     //Copy plugin utility from src/main/resources
                     String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterAPI.PROPERTIES.VERSION + ".jar";
@@ -292,7 +299,7 @@ public class PremiumUpdater {
                         try {
                             UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
                             if (twoFactor == null) {
-                                runGuis(recall);
+                                requestTwoFactor(username, password, recall);
                                 return;
                             }
 
@@ -482,9 +489,17 @@ public class PremiumUpdater {
      * DEBUG MESSAGES
      */
 
-    private void printDebug1(Page page, WebResponse response, WebClient webClient) {
+    private void printDebug() {
         if (AutoUpdaterAPI.DEBUG) {
             AutoUpdaterAPI.get().getLogger().info("\n\n\n\n\n\n============== BEGIN PREMIUM PLUGIN DEBUG ==============");
+            AutoUpdaterAPI.get().getLogger().info("AUTHENTICATED: " + spigotUser.isAuthenticated());
+            AutoUpdaterAPI.get().getLogger().info("COOKIES: ");
+            ((SpigotUser) spigotUser).getCookies().forEach((k, v) -> AutoUpdaterAPI.get().getLogger().info("\t" + k + " | " + v));
+        }
+    }
+
+    private void printDebug1(Page page, WebResponse response, WebClient webClient) {
+        if (AutoUpdaterAPI.DEBUG) {
             if (pluginName != null)
                 AutoUpdaterAPI.get().getLogger().info("PLUGIN = " + pluginName);
 
@@ -493,16 +508,20 @@ public class PremiumUpdater {
                 HtmlPage htmlPage = (HtmlPage) page;
 
                 AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
-                AutoUpdaterAPI.get().getLogger().info("HISTORY = " + htmlPage.getEnclosingWindow().getHistory().toString());
-                AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
+                AutoUpdaterAPI.get().getLogger().info("HISTORY: ");
+                for (int i = 0; i < page.getEnclosingWindow().getHistory().getLength(); i++) {
+                    AutoUpdaterAPI.get().getLogger().info(htmlPage.getEnclosingWindow().getHistory().getUrl(i).toString());
+                }
                 AutoUpdaterAPI.get().getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
                 htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.get().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
             } else if (page instanceof UnexpectedPage) {
                 AutoUpdaterAPI.get().getLogger().info("\n\nPAGETYPE = UnexpectedPage");
                 UnexpectedPage unexpectedPage = (UnexpectedPage) page;
                 AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + unexpectedPage.getWebResponse().getStatusCode());
-                AutoUpdaterAPI.get().getLogger().info("HISTORY = " + unexpectedPage.getEnclosingWindow().getHistory().toString());
-                AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + unexpectedPage.getWebResponse().getStatusCode());
+                AutoUpdaterAPI.get().getLogger().info("HISTORY: ");
+                for (int i = 0; i < page.getEnclosingWindow().getHistory().getLength(); i++) {
+                    AutoUpdaterAPI.get().getLogger().info(page.getEnclosingWindow().getHistory().getUrl(i).toString());
+                }
                 AutoUpdaterAPI.get().getLogger().info("STATUS CODE = " + unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
                 AutoUpdaterAPI.get().getLogger().info("NAME | VALUE");
                 unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterAPI.get().getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
@@ -512,8 +531,11 @@ public class PremiumUpdater {
             AutoUpdaterAPI.get().getLogger().info("HISTORY: ");
             for (int i = 0; i < page.getEnclosingWindow().getHistory().getLength(); i++) {
                 AutoUpdaterAPI.get().getLogger().info(page.getEnclosingWindow().getHistory().getUrl(i).toString());
-            }            AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + page.getWebResponse().getStatusCode());
+            }
+            AutoUpdaterAPI.get().getLogger().info("PREVIOUS STATUS CODE = " + page.getWebResponse().getStatusCode());
             AutoUpdaterAPI.get().getLogger().info("STATUS CODE = " + response.getStatusCode());
+            AutoUpdaterAPI.get().getLogger().info("CONTENT TYPE = " + response.getContentType());
+            AutoUpdaterAPI.get().getLogger().info("STATUS MESSAGE = " + response.getStatusMessage());
             AutoUpdaterAPI.get().getLogger().info("LOAD TIME = " + response.getLoadTime());
             AutoUpdaterAPI.get().getLogger().info("CURRENT URL = " + webClient.getCurrentWindow().getEnclosedPage().getUrl());
             AutoUpdaterAPI.get().getLogger().info("NAME | VALUE");

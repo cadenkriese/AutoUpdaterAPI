@@ -71,8 +71,8 @@ import java.io.IOException;
                     infoConfig.set(UtilEncryption.getInstance().encrypt("username"), null);
                     infoConfig.set(UtilEncryption.getInstance().encrypt("password"), null);
                     infoConfig.set(UtilEncryption.getInstance().encrypt("twoFactorSecret"), null);
-                } catch (Exception e) {
-                    AutoUpdaterAPI.get().printError(e);
+                } catch (Exception ex) {
+                    AutoUpdaterAPI.get().printError(ex);
                 }
 
                 saveFile();

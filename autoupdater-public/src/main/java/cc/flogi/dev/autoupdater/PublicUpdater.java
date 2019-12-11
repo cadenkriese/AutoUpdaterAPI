@@ -24,17 +24,17 @@ import java.nio.file.StandardCopyOption;
  * Created on 6/14/17
  */
 @Getter public class PublicUpdater {
-    private Player initiator;
-    private Plugin plugin;
+    private final Player initiator;
+    private final Plugin plugin;
 
-    private String pluginFolderPath;
-    private String currentVersion;
-    private String url;
-    private String resourceId;
-    private String pluginName;
-    private UpdateLocale locale;
+    private final String pluginFolderPath;
+    private final String currentVersion;
+    private final String url;
+    private final String resourceId;
+    private final String pluginName;
+    private final UpdateLocale locale;
 
-    private boolean replace;
+    private final boolean replace;
     private long startingTime;
 
     private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {};
@@ -102,10 +102,10 @@ import java.nio.file.StandardCopyOption;
                             return;
                         }
 
-                        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[RETRIEVING FILES]");
+                        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[RETRIEVING FILES]", 15);
                         try {
                             new BukkitRunnable() {
-                                @SuppressWarnings("ConstantConditions") @Override
+                                @Override
                                 public void run() {
                                     try {
                                         URL downloadUrl = new URL(url + "/download");

@@ -14,7 +14,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +31,6 @@ public class PremiumController {
     @Getter private Plugin plugin;
     @Getter private AutoUpdaterAPI updaterAPI;
     @Getter private WebClient webClient;
-    @Getter private File privateDataFolder;
 
     /**
      * Instantiates a PremiumManager.
@@ -46,8 +44,7 @@ public class PremiumController {
 
         plugin = javaPlugin;
         updaterAPI = new AutoUpdaterAPI(javaPlugin);
-        privateDataFolder = new File(javaPlugin.getDataFolder().getParent() + "/.auapi/");
-        Logger logger = updaterAPI.getLogger();
+        Logger logger = AutoUpdaterAPI.getLogger();
 
         UtilSpigotCreds.get().init();
 

@@ -8,12 +8,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.HashMap;
+
 /**
  * @author Caden Kriese (flogic)
  *
  * Created on 2/27/18
  */
 public class UtilUI {
+    private static final long ACTIONBAR_DEFAULT_DURATION = 55;
+    private static HashMap<String, BukkitRunnable> currentTasks = new HashMap<>();
+
     /**
      * Sends an action bar message to the player.
      *
@@ -23,6 +28,8 @@ public class UtilUI {
     public static void sendActionBar(Player player, String message) {
         if (player == null)
             return;
+
+        clearActionBar(player);
 
         if (!Bukkit.isPrimaryThread()) {
             new BukkitRunnable() {
@@ -34,6 +41,49 @@ public class UtilUI {
         }
 
         player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(colorize(message)));
+    }
+
+    /**
+     * Sends an action bar message to the player.
+     * The duration of the message has a minimum of about 60 ticks, due to how minecraft sends actionbars.
+     *
+     * @param player   The player to send the message to.
+     * @param message  The message to be sent.
+     * @param duration The duration of the message in seconds.
+     */
+    public static void sendActionBar(Player player, String message, long duration) {
+        if (player == null)
+            return;
+
+        clearActionBar(player);
+        final String uuid = player.getUniqueId().toString();
+
+        BukkitRunnable actionBarRunnable = new BukkitRunnable() {
+            long displayedDuration = 0;
+            long totalDuration = duration * 20;
+
+            @Override public void run() {
+                if (player != null && player.isOnline() && displayedDuration < totalDuration) {
+                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(colorize(message)));
+                    displayedDuration += ACTIONBAR_DEFAULT_DURATION;
+                } else {
+                    currentTasks.remove(uuid);
+                    cancel();
+                }
+            }
+        };
+
+        currentTasks.put(player.getUniqueId().toString(), actionBarRunnable);
+        actionBarRunnable.runTaskTimer(AutoUpdaterAPI.getPlugin(), 0L, ACTIONBAR_DEFAULT_DURATION);
+    }
+
+    public static void clearActionBar(Player player) {
+        if (currentTasks.containsKey(player.getUniqueId().toString())) {
+            currentTasks.get(player.getUniqueId().toString()).cancel();
+            currentTasks.remove(player.getUniqueId().toString());
+        }
+
+        sendActionBar(player, "");
     }
 
     /**

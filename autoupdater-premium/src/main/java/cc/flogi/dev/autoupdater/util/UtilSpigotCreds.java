@@ -1,7 +1,6 @@
 package cc.flogi.dev.autoupdater.util;
 
 import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
-import cc.flogi.dev.autoupdater.PremiumController;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -26,7 +25,7 @@ import java.io.IOException;
     }
 
     public void init() {
-        infoFile = new File(PremiumController.get().getPrivateDataFolder().getAbsolutePath() + "/.creds/info.enc");
+        infoFile = new File(AutoUpdaterAPI.getDataFolder().getAbsolutePath() + "/.creds/info.enc");
         if (!infoFile.getParentFile().exists())
             infoFile.getParentFile().mkdirs();
         infoConfig = YamlConfiguration.loadConfiguration(infoFile);

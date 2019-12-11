@@ -1,7 +1,6 @@
 package cc.flogi.dev.autoupdater.util;
 
 import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
-import cc.flogi.dev.autoupdater.PremiumController;
 import lombok.Getter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
@@ -30,7 +29,7 @@ import java.security.NoSuchAlgorithmException;
 
     protected void init() {
         if (keyFile == null)
-            keyFile = new File(PremiumController.get().getPrivateDataFolder().getAbsolutePath() + "/keys.enc");
+            keyFile = new File(AutoUpdaterAPI.getDataFolder().getAbsolutePath() + "/keys.enc");
 
         if (!keyFile.getParentFile().exists())
             keyFile.getParentFile().mkdirs();

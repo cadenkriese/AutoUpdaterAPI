@@ -36,6 +36,8 @@ import java.util.List;
         final File restoreFile = new File(getDataFolder().getParent() + locale.getFileName() + ".jar");
         File cachedPlugin = null;
 
+        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]", 6);
+
         try {
             cachedPlugin = File.createTempFile("auapi-cached-plugin", ".jar");
 
@@ -46,8 +48,6 @@ import java.util.List;
                 if (!pluginFile.delete())
                     AutoUpdaterAPI.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
             }
-
-            UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]");
 
             initializePlugin(pluginName, pluginFolderPath, locale, endTask);
 

@@ -16,17 +16,18 @@ import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.util.Cookie;
+import net.md_5.bungee.api.ChatColor;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 
 /**
  * @author Caden Kriese (flogic)
@@ -157,67 +158,64 @@ public class PremiumUpdater {
                 try {
                     printDebug();
 
-                    siteAPI.getResourceManager().getResourceById(resourceId, spigotUser)
-                            .downloadResource(spigotUser, new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
+                    Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
+                    WebClient webClient = PremiumController.get().getWebClient();
 
-//                    Map<String, String> cookies = ((SpigotUser) spigotUser).getCookies();
-//                    WebClient webClient = PremiumController.get().getWebClient();
-//
-//                    cookies.forEach((key, value) -> webClient.getCookieManager().addCookie(
-//                            new Cookie("spigotmc.org", key, value)));
-//
-//                    webClient.waitForBackgroundJavaScript(10_000);
-//                    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-//                    Page page = webClient.getPage(siteAPI.getResourceManager().getResourceById(resourceId, spigotUser).getDownloadURL());
-//                    WebResponse response = page.getEnclosingWindow().getEnclosedPage().getWebResponse();
-//
-//                    if (page instanceof HtmlPage) {
-//                        HtmlPage htmlPage = (HtmlPage) page;
-//                        printDebug2(htmlPage);
-//                        if (htmlPage.asXml().contains("DDoS protection by Cloudflare")) {
-//                            //TODO remove
-//                            AutoUpdaterAPI.get().getLogger().info("Arrived at DDoS protection screen.");
-//                            webClient.waitForBackgroundJavaScript(10_000);
-//                        }
-//                        response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
-//                    }
-//
-//                    String contentLength = response.getResponseHeaderValue("Content-Length");
-//                    int completeFileSize = 0;
-//                    int grabSize = 2048;
-//                    if (contentLength != null)
-//                        completeFileSize = Integer.parseInt(contentLength);
-//
-//                    printDebug1(page, response, webClient);
-//
-//                    BufferedInputStream in = new BufferedInputStream(response.getContentAsStream());
-//                    FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
-//                    BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
-//
-//                    byte[] data = new byte[grabSize];
-//                    long downloadedFileSize = 0;
-//                    int grabbed;
-//                    while ((grabbed = in.read(data, 0, grabSize)) >= 0) {
-//                        downloadedFileSize += grabbed;
-//
-//                        //Don't send action bar for every grab we're not trying to crash any clients (or servers) here.
-//                        if (downloadedFileSize % (grabSize * 5) == 0 && completeFileSize > 0) {
-//                            String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
-//                            final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
-//
-//                            UtilUI.sendActionBar(initiator, locale.getUpdatingDownload()
-//                                                                    .replace("%download_bar%", bar)
-//                                                                    .replace("%download_percent%", currentPercent + "%")
-//                                                                    + " &8[DOWNLOADING RESOURCE]");
-//                        }
-//                        bout.write(data, 0, grabbed);
-//                    }
-//
-//                    bout.close();
-//                    in.close();
-//                    fos.close();
-//
-//                    printDebug3(downloadedFileSize, completeFileSize);
+                    cookies.forEach((key, value) -> webClient.getCookieManager().addCookie(
+                            new Cookie("spigotmc.org", key, value)));
+
+                    webClient.waitForBackgroundJavaScript(10_000);
+                    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+                    Page page = webClient.getPage(siteAPI.getResourceManager().getResourceById(resourceId, spigotUser).getDownloadURL());
+                    WebResponse response = page.getEnclosingWindow().getEnclosedPage().getWebResponse();
+
+                    if (page instanceof HtmlPage) {
+                        HtmlPage htmlPage = (HtmlPage) page;
+                        printDebug2(htmlPage);
+                        if (htmlPage.asXml().contains("DDoS protection by Cloudflare")) {
+                            UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[WAITING FOR CLOUDFLARE]");
+                            AutoUpdaterAPI.get().getLogger().info("Arrived at DDoS protection screen.");
+                            webClient.waitForBackgroundJavaScript(8_000);
+                        }
+                        response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
+                    }
+
+                    String contentLength = response.getResponseHeaderValue("content-length");
+                    int completeFileSize = 0;
+                    int grabSize = 2048;
+                    if (contentLength != null)
+                        completeFileSize = Integer.parseInt(contentLength);
+
+                    printDebug1(page, response, webClient);
+
+                    BufferedInputStream in = new BufferedInputStream(response.getContentAsStream());
+                    FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
+                    BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
+
+                    byte[] data = new byte[grabSize];
+                    long downloadedFileSize = 0;
+                    int grabbed;
+                    while ((grabbed = in.read(data, 0, grabSize)) >= 0) {
+                        downloadedFileSize += grabbed;
+
+                        //Don't send action bar for every grab we're not trying to crash any clients (or servers) here.
+                        if (downloadedFileSize % (grabSize * 5) == 0 && completeFileSize > 0) {
+                            String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
+                            final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
+
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingDownload()
+                                                                    .replace("%download_bar%", bar)
+                                                                    .replace("%download_percent%", currentPercent + "%")
+                                                                    + " &8[DOWNLOADING RESOURCE]");
+                        }
+                        bout.write(data, 0, grabbed);
+                    }
+
+                    bout.close();
+                    in.close();
+                    fos.close();
+
+                    printDebug3(downloadedFileSize, completeFileSize);
 
                     //Copy plugin utility from src/main/resources
                     String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterAPI.PROPERTIES.VERSION + ".jar";

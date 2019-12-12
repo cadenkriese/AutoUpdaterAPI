@@ -36,7 +36,7 @@ import java.util.List;
         final File restoreFile = new File(getDataFolder().getParent() + locale.getFileName() + ".jar");
         File cachedPlugin = null;
 
-        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]", 6);
+        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]", 10);
 
         try {
             cachedPlugin = File.createTempFile("auapi-cached-plugin", ".jar");

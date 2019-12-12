@@ -16,7 +16,7 @@ import java.util.HashMap;
  * Created on 2/27/18
  */
 public class UtilUI {
-    private static final long ACTIONBAR_DEFAULT_DURATION = 55;
+    private static final long ACTIONBAR_DEFAULT_DURATION = 40;
     private static HashMap<String, BukkitRunnable> currentTasks = new HashMap<>();
 
     /**
@@ -78,12 +78,15 @@ public class UtilUI {
     }
 
     public static void clearActionBar(Player player) {
+        if (player == null)
+            return;
+
         if (currentTasks.containsKey(player.getUniqueId().toString())) {
             currentTasks.get(player.getUniqueId().toString()).cancel();
             currentTasks.remove(player.getUniqueId().toString());
         }
 
-        sendActionBar(player, "");
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(""));
     }
 
     /**

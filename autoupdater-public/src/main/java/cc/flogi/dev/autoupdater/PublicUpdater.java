@@ -102,7 +102,7 @@ import java.nio.file.StandardCopyOption;
                             return;
                         }
 
-                        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[RETRIEVING FILES]", 15);
+                        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[RETRIEVING FILES]", 20);
                         try {
                             new BukkitRunnable() {
                                 @Override

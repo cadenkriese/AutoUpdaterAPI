@@ -150,7 +150,7 @@ public class PremiumUpdater {
             return;
         }
 
-        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]");
+        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]", 20);
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -172,7 +172,7 @@ public class PremiumUpdater {
                         HtmlPage htmlPage = (HtmlPage) page;
                         printDebug2(htmlPage);
                         if (htmlPage.asXml().contains("DDoS protection by Cloudflare")) {
-                            UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[WAITING FOR CLOUDFLARE]");
+                            UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[WAITING FOR CLOUDFLARE]", 20);
                             AutoUpdaterAPI.getLogger().info("Arrived at DDoS protection screen.");
                             webClient.waitForBackgroundJavaScript(8_000);
                         }
@@ -253,7 +253,7 @@ public class PremiumUpdater {
         new BukkitRunnable() {
             @Override
             public void run() {
-                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING DECRYPT]", 5);
+                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING DECRYPT]", 10);
 
                 String username = UtilSpigotCreds.get().getUsername();
                 String password = UtilSpigotCreds.get().getPassword();
@@ -265,18 +265,18 @@ public class PremiumUpdater {
                 }
 
                 try {
-                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING AUTHENTICATION]", 5);
+                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING AUTHENTICATION]", 15);
                     spigotUser = siteAPI.getUserManager().authenticate(username, password);
 
                     if (spigotUser == null) {
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]", 5);
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]");
                         UtilSpigotCreds.get().clearFile();
                         runGuis(recall);
                         return;
                     }
 
                     PremiumController.get().setCurrentUser(spigotUser);
-                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]", 5);
+                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
                     AutoUpdaterAPI.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
                     new BukkitRunnable() {
@@ -294,7 +294,7 @@ public class PremiumUpdater {
                 } catch (Exception ex) {
                     if (ex instanceof TwoFactorAuthenticationException) {
                         try {
-                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]");
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]", 15);
                             if (twoFactor == null) {
                                 requestTwoFactor(username, password, recall);
                                 return;
@@ -303,14 +303,14 @@ public class PremiumUpdater {
                             spigotUser = siteAPI.getUserManager().authenticate(username, password, twoFactor);
 
                             if (spigotUser == null) {
-                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]", 5);
+                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                                 UtilSpigotCreds.get().clearFile();
                                 runGuis(recall);
                                 return;
                             }
 
                             PremiumController.get().setCurrentUser(spigotUser);
-                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]", 5);
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
                             AutoUpdaterAPI.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
                             new BukkitRunnable() {
@@ -335,7 +335,7 @@ public class PremiumUpdater {
                                 endTask.run(false, otherException, null, pluginName);
                             } else if (otherException instanceof TwoFactorAuthenticationException) {
                                 if (loginAttempts < 4) {
-                                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "/3]");
+                                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "/3]", 15);
                                     loginAttempts++;
                                     new BukkitRunnable() {
                                         @Override
@@ -352,11 +352,11 @@ public class PremiumUpdater {
                             }
                         }
                     } else if (ex instanceof InvalidCredentialsException) {
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]", 6);
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                         UtilSpigotCreds.get().clearFile();
                         runGuis(recall);
                     } else if (ex instanceof ConnectionFailedException) {
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]", 6);
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]", 15);
                         AutoUpdaterAPI.get().printError(ex, "Error occurred while connecting to spigot. (#2)");
                         endTask.run(false, ex, null, pluginName);
                     } else {
@@ -375,7 +375,7 @@ public class PremiumUpdater {
         new BukkitRunnable() {
             @Override
             public void run() {
-                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]", 30);
+                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]", 120);
                 new AnvilGUI.Builder()
                         .text("Spigot username")
                         .plugin(AutoUpdaterAPI.getPlugin())
@@ -404,7 +404,7 @@ public class PremiumUpdater {
     }
 
     private void requestPassword(String usernameInput, boolean recall) {
-        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]", 30);
+        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]", 120);
         new AnvilGUI.Builder()
                 .text("Spigot password")
                 .plugin(AutoUpdaterAPI.getPlugin())
@@ -412,7 +412,7 @@ public class PremiumUpdater {
                     try {
                         spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput);
 
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]", 6);
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]", 10);
                         UtilSpigotCreds.get().setUsername(usernameInput);
                         UtilSpigotCreds.get().setPassword(passwordInput);
                         UtilSpigotCreds.get().saveFile();
@@ -439,13 +439,13 @@ public class PremiumUpdater {
     }
 
     private void requestTwoFactor(String usernameInput, String passwordInput, boolean recall) {
-        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]", 30);
+        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]", 120);
         new AnvilGUI.Builder().plugin(AutoUpdaterAPI.getPlugin())
                 .text("Spigot two factor secret")
                 .onComplete((Player player, String twoFactorInput) -> {
                     try {
                         spigotUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput, twoFactorInput);
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]", 6);
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]", 10);
 
                         UtilSpigotCreds.get().setUsername(usernameInput);
                         UtilSpigotCreds.get().setPassword(passwordInput);

@@ -7,10 +7,7 @@ import be.maximvdw.spigotsite.api.user.User;
 import be.maximvdw.spigotsite.api.user.exceptions.InvalidCredentialsException;
 import be.maximvdw.spigotsite.api.user.exceptions.TwoFactorAuthenticationException;
 import be.maximvdw.spigotsite.user.SpigotUser;
-import cc.flogi.dev.autoupdater.util.UtilReader;
-import cc.flogi.dev.autoupdater.util.UtilSpigotCreds;
-import cc.flogi.dev.autoupdater.util.UtilText;
-import cc.flogi.dev.autoupdater.util.UtilUI;
+import cc.flogi.dev.autoupdater.util.*;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -22,7 +19,6 @@ import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -151,9 +147,7 @@ public class PremiumUpdater {
         }
 
         UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]", 20);
-        new BukkitRunnable() {
-            @Override
-            public void run() {
+        UtilThreading.async(() -> {
                 try {
                     printDebug();
 
@@ -222,37 +216,30 @@ public class PremiumUpdater {
                         File targetFile = new File(plugin.getDataFolder().getParent() + corePluginFile);
                         Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         is.close();
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
+                        UtilThreading.sync(() -> {
                                 //Enable plugin and perform update task.
                                 try {
-                                    Bukkit.getPluginManager().loadPlugin(targetFile);
-                                    UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().getPlugin("autoupdater-plugin");
+                                    UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().loadPlugin(targetFile);
                                     if (updaterPlugin == null)
                                         throw new FileNotFoundException("Unable to locate updater plugin.");
-
                                     Bukkit.getPluginManager().enablePlugin(updaterPlugin);
-                                    updaterPlugin.updatePlugin(plugin, initiator, replace, pluginName, pluginFolderPath, locale, startingTime, endTask);
+                                    updaterPlugin.updatePlugin(plugin, initiator, replace, pluginName,
+                                            pluginFolderPath, locale, startingTime, endTask);
                                 } catch (Exception ex) {
                                     error(ex, ex.getMessage(), newVersion);
                                 }
-                            }
-                        }.runTask(AutoUpdaterAPI.getPlugin());
+                        });
                     } catch (Exception ex) {
                         error(ex, ex.getMessage(), newVersion);
                     }
                 } catch (Exception ex) {
                     error(ex, "Error occurred while updating premium resource.", newVersion);
                 }
-            }
-        }.runTaskAsynchronously(AutoUpdaterAPI.getPlugin());
+            });
     }
 
     public void authenticate(boolean recall) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
+        UtilThreading.async(() -> {
                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING DECRYPT]", 10);
 
                 String username = UtilSpigotCreds.get().getUsername();
@@ -279,18 +266,8 @@ public class PremiumUpdater {
                     UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
                     AutoUpdaterAPI.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                if (recall)
-                                    update();
-                            } catch (Exception ex) {
-                                AutoUpdaterAPI.get().printError(ex);
-                            }
-                        }
-                    }.runTaskLater(AutoUpdaterAPI.getPlugin(), 40L);
-
+                    if (recall)
+                        UtilThreading.syncDelayed(this::update, 40);
                 } catch (Exception ex) {
                     if (ex instanceof TwoFactorAuthenticationException) {
                         try {
@@ -313,17 +290,8 @@ public class PremiumUpdater {
                             UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
                             AutoUpdaterAPI.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
-                            new BukkitRunnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        if (recall)
-                                            update();
-                                    } catch (Exception ex) {
-                                        AutoUpdaterAPI.get().printError(ex);
-                                    }
-                                }
-                            }.runTask(AutoUpdaterAPI.getPlugin());
+                            if (recall)
+                                UtilThreading.sync(this::update);
                         } catch (Exception otherException) {
                             if (otherException instanceof InvalidCredentialsException) {
                                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
@@ -337,12 +305,7 @@ public class PremiumUpdater {
                                 if (loginAttempts < 4) {
                                     UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "/3]", 15);
                                     loginAttempts++;
-                                    new BukkitRunnable() {
-                                        @Override
-                                        public void run() {
-                                            authenticate(recall);
-                                        }
-                                    }.runTaskLater(AutoUpdaterAPI.getPlugin(), 100L);
+                                    UtilThreading.syncDelayed(() -> authenticate(recall), 100);
                                 } else {
                                     loginAttempts = 1;
                                     AutoUpdaterAPI.get().printError(otherException);
@@ -363,8 +326,7 @@ public class PremiumUpdater {
                         AutoUpdaterAPI.get().printError(ex);
                     }
                 }
-            }
-        }.runTaskAsynchronously(AutoUpdaterAPI.getPlugin());
+                });
     }
 
     /*
@@ -372,35 +334,32 @@ public class PremiumUpdater {
      */
 
     private void runGuis(boolean recall) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]", 120);
-                new AnvilGUI.Builder()
-                        .text("Spigot username")
-                        .plugin(AutoUpdaterAPI.getPlugin())
-                        .onComplete((Player player, String usernameInput) -> {
-                            try {
-                                if (siteAPI.getUserManager().getUserByName(usernameInput) != null) {
-                                    requestPassword(usernameInput, recall);
-                                } else if (usernameInput.contains("@") && usernameInput.contains(".")) {
-                                    initiator.closeInventory();
-                                    UtilUI.sendActionBar(initiator, "&cEmails aren't supported!", 10);
-                                    endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
-                                    return AnvilGUI.Response.text("Emails aren't supported!");
-                                } else {
-                                    UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                                    endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
-                                    return AnvilGUI.Response.text("Invalid username!");
-                                }
-                            } catch (Exception ex) {
-                                error(ex, "Error occurred while authenticating Spigot username.");
+        UtilThreading.sync(() -> {
+            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]", 120);
+            new AnvilGUI.Builder()
+                    .text("Spigot username")
+                    .plugin(AutoUpdaterAPI.getPlugin())
+                    .onComplete((Player player, String usernameInput) -> {
+                        try {
+                            if (siteAPI.getUserManager().getUserByName(usernameInput) != null) {
+                                requestPassword(usernameInput, recall);
+                            } else if (usernameInput.contains("@") && usernameInput.contains(".")) {
+                                initiator.closeInventory();
+                                UtilUI.sendActionBar(initiator, "&cEmails aren't supported!", 10);
+                                endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
+                                return AnvilGUI.Response.text("Emails aren't supported!");
+                            } else {
+                                UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                                endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
+                                return AnvilGUI.Response.text("Invalid username!");
                             }
+                        } catch (Exception ex) {
+                            error(ex, "Error occurred while authenticating Spigot username.");
+                        }
 
-                            return AnvilGUI.Response.text("Success!");
-                        }).open(initiator);
-            }
-        }.runTask(AutoUpdaterAPI.getPlugin());
+                        return AnvilGUI.Response.text("Success!");
+                    }).open(initiator);
+        });
     }
 
     private void requestPassword(String usernameInput, boolean recall) {
@@ -417,12 +376,7 @@ public class PremiumUpdater {
                         UtilSpigotCreds.get().setPassword(passwordInput);
                         UtilSpigotCreds.get().saveFile();
 
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                authenticate(recall);
-                            }
-                        }.runTaskLater(AutoUpdaterAPI.getPlugin(), 100L);
+                        UtilThreading.syncDelayed(() -> authenticate(recall), 100);
                     } catch (TwoFactorAuthenticationException ex) {
                         requestTwoFactor(usernameInput, passwordInput, recall);
                     } catch (ConnectionFailedException ex) {
@@ -452,12 +406,7 @@ public class PremiumUpdater {
                         UtilSpigotCreds.get().setTwoFactor(twoFactorInput);
                         UtilSpigotCreds.get().saveFile();
 
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                authenticate(recall);
-                            }
-                        }.runTaskLater(AutoUpdaterAPI.getPlugin(), 100L);
+                        UtilThreading.syncDelayed(() -> authenticate(recall), 100);
 
                         return AnvilGUI.Response.text("Logging in, close GUI.");
                     } catch (Exception ex) {

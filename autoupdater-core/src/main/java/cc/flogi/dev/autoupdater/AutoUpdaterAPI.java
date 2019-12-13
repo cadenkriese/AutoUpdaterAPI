@@ -46,7 +46,8 @@ public class AutoUpdaterAPI {
 
     public void printError(Exception ex) {
         logger.warning("An error has occurred.");
-        logger.warning("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
+        logger.warning("If you cannot figure out this error on your own please copy and paste " +
+                               "\neverything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
         logger.warning("\n============== BEGIN ERROR ==============");
         logger.warning("API VERSION: " + PROPERTIES.getTitle());
         logger.warning("\nERROR MESSAGE: " + ex.getMessage());
@@ -57,7 +58,8 @@ public class AutoUpdaterAPI {
 
     public void printError(Exception ex, String extraInfo) {
         logger.warning("An error has occurred.");
-        logger.warning("If you cannot figure out this error on your own (e.g. a config error) please copy and paste everything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
+        logger.warning("If you cannot figure out this error on your own please copy and paste " +
+                               "\neverything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
         logger.warning("\n============== BEGIN ERROR ==============");
         logger.warning("API VERSION: " + PROPERTIES.getTitle());
         logger.warning("\nAPI MESSAGE: " + extraInfo);

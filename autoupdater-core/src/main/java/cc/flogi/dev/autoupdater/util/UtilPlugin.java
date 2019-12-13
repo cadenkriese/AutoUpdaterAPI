@@ -30,9 +30,7 @@ import java.util.SortedSet;
      *
      * @param plugin The plugin that needs to be unloaded.
      */
-
     public static void unload(Plugin plugin) {
-
         String name = plugin.getName();
         PluginManager pluginManager = Bukkit.getPluginManager();
         SimpleCommandMap commandMap = null;
@@ -40,10 +38,10 @@ import java.util.SortedSet;
         Map<String, Plugin> names = null;
         Map<String, Command> commands = null;
         Map<Event, SortedSet<RegisteredListener>> listeners = null;
+        boolean reloadlisteners = true;
 
         if (pluginManager != null) {
             pluginManager.disablePlugin(plugin);
-
             try {
                 Field pluginsField = Bukkit.getPluginManager().getClass().getDeclaredField("plugins");
                 pluginsField.setAccessible(true);
@@ -57,8 +55,9 @@ import java.util.SortedSet;
                     Field listenersField = Bukkit.getPluginManager().getClass().getDeclaredField("listeners");
                     listenersField.setAccessible(true);
                     listeners = (Map<Event, SortedSet<RegisteredListener>>) listenersField.get(pluginManager);
-                } catch (Exception ignored) {}
-
+                } catch (Exception e) {
+                    reloadlisteners = false;
+                }
                 Field commandMapField = Bukkit.getPluginManager().getClass().getDeclaredField("commandMap");
                 commandMapField.setAccessible(true);
                 commandMap = (SimpleCommandMap) commandMapField.get(pluginManager);
@@ -66,20 +65,19 @@ import java.util.SortedSet;
                 Field knownCommandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
                 knownCommandsField.setAccessible(true);
                 commands = (Map<String, Command>) knownCommandsField.get(commandMap);
-
             } catch (NoSuchFieldException | IllegalAccessException ex) {
-                AutoUpdaterAPI.get().printError(ex, "Error occurred while clearing plugin fields.");
+                AutoUpdaterAPI.get().printError(ex);
             }
         }
+        
+        pluginManager.disablePlugin(plugin);
 
-        if (pluginManager != null)
-            pluginManager.disablePlugin(plugin);
         if (plugins != null)
             plugins.remove(plugin);
         if (names != null)
             names.remove(name);
 
-        if (listeners != null) {
+        if (listeners != null && reloadlisteners) {
             for (SortedSet<RegisteredListener> set : listeners.values()) {
                 set.removeIf(value -> value.getPlugin() == plugin);
             }
@@ -89,9 +87,9 @@ import java.util.SortedSet;
             for (Iterator<Map.Entry<String, Command>> it = commands.entrySet().iterator(); it.hasNext(); ) {
                 Map.Entry<String, Command> entry = it.next();
                 if (entry.getValue() instanceof PluginCommand) {
-                    PluginCommand c = (PluginCommand) entry.getValue();
-                    if (c.getPlugin() == plugin) {
-                        c.unregister(commandMap);
+                    PluginCommand cmd = (PluginCommand) entry.getValue();
+                    if (cmd.getPlugin() == plugin) {
+                        cmd.unregister(commandMap);
                         it.remove();
                     }
                 }
@@ -99,27 +97,24 @@ import java.util.SortedSet;
         }
 
         // Attempt to close the classloader to unlock any handles on the plugin's jar file.
-        ClassLoader cl = plugin.getClass().getClassLoader();
-
-        if (cl instanceof URLClassLoader) {
+        ClassLoader loader = plugin.getClass().getClassLoader();
+        if (loader instanceof URLClassLoader) {
             try {
-                Field pluginField = cl.getClass().getDeclaredField("plugin");
+                Field pluginField = loader.getClass().getDeclaredField("plugin");
                 pluginField.setAccessible(true);
-                pluginField.set(cl, null);
+                pluginField.set(loader, null);
 
-                Field pluginInitField = cl.getClass().getDeclaredField("pluginInit");
+                Field pluginInitField = loader.getClass().getDeclaredField("pluginInit");
                 pluginInitField.setAccessible(true);
-                pluginInitField.set(cl, null);
+                pluginInitField.set(loader, null);
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
-                AutoUpdaterAPI.get().printError(ex, "Error occurred while clearing plugin & pluginInit fields.");
+                AutoUpdaterAPI.get().printError(ex);
             }
-
             try {
-                ((URLClassLoader) cl).close();
+                ((URLClassLoader) loader).close();
             } catch (IOException ex) {
-                AutoUpdaterAPI.get().printError(ex, "Error occurred while closing URLClassLoader.");
+                AutoUpdaterAPI.get().printError(ex);
             }
-
         }
 
         // Will not work on processes started with the -XX:+DisableExplicitGC flag, but let's try it anyway.

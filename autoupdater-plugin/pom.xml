@@ -81,19 +81,6 @@
     </build>
 
     <dependencies>
-        <!--Spigot API-->
-        <dependency>
-            <groupId>org.bukkit</groupId>
-            <artifactId>bukkit</artifactId>
-            <version>1.15-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.bukkit</groupId>
-            <artifactId>craftbukkit</artifactId>
-            <version>1.15-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>cc.flogi.dev</groupId>
             <artifactId>autoupdater-core</artifactId>

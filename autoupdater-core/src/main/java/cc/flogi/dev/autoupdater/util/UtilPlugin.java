@@ -5,11 +5,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.SimpleCommandMap;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.RegisteredListener;
+import org.bukkit.plugin.*;
 
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URLClassLoader;
@@ -18,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
-@SuppressWarnings("unchecked") public class UtilPlugin {
+public class UtilPlugin {
     /**
      * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
      *
@@ -69,7 +68,7 @@ import java.util.SortedSet;
                 AutoUpdaterAPI.get().printError(ex);
             }
         }
-        
+
         pluginManager.disablePlugin(plugin);
 
         if (plugins != null)
@@ -110,7 +109,9 @@ import java.util.SortedSet;
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
                 AutoUpdaterAPI.get().printError(ex);
             }
+
             try {
+                //TODO Causes errors when trying to close your own classloader.
                 ((URLClassLoader) loader).close();
             } catch (IOException ex) {
                 AutoUpdaterAPI.get().printError(ex);
@@ -120,5 +121,12 @@ import java.util.SortedSet;
         // Will not work on processes started with the -XX:+DisableExplicitGC flag, but let's try it anyway.
         // This tries to get around the issue where Windows refuses to unlock jar files that were previously loaded into the JVM.
         System.gc();
+    }
+
+    public static Plugin loadPlugin(File file) throws InvalidDescriptionException, InvalidPluginException {
+        Plugin plugin = AutoUpdaterAPI.getPlugin().getServer().getPluginManager().loadPlugin(file);
+        plugin.onLoad();
+        AutoUpdaterAPI.getPlugin().getServer().getPluginManager().enablePlugin(plugin);
+        return plugin;
     }
 }

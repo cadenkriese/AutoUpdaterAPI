@@ -1,9 +1,6 @@
 package cc.flogi.dev.autoupdater;
 
-import cc.flogi.dev.autoupdater.util.UserAgent;
-import cc.flogi.dev.autoupdater.util.UtilText;
-import cc.flogi.dev.autoupdater.util.UtilThreading;
-import cc.flogi.dev.autoupdater.util.UtilUI;
+import cc.flogi.dev.autoupdater.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.ChatColor;
@@ -122,26 +119,29 @@ import java.nio.file.StandardCopyOption;
 
                             //Copy plugin utility from src/main/resources
                             String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterAPI.PROPERTIES.VERSION + ".jar";
+                            File targetFile = new File(AutoUpdaterAPI.getDataFolder().getAbsolutePath() + corePluginFile);
+                            targetFile.getParentFile().mkdirs();
                             try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
-                                File targetFile = new File(plugin.getDataFolder().getParent() + corePluginFile);
+                                //if (!targetFile.exists())
                                 Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                                is.close();
-                                UtilThreading.sync(() -> {
-                                    //Enable plugin and perform update task.
-                                    try {
-                                        UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().loadPlugin(targetFile);
-                                        if (updaterPlugin == null)
-                                            throw new FileNotFoundException("Unable to locate updater plugin.");
-
-                                        Bukkit.getPluginManager().enablePlugin(updaterPlugin);
-                                        updaterPlugin.updatePlugin(plugin, initiator, replace, pluginName, pluginFolderPath, locale, startingTime, endTask);
-                                    } catch (Exception ex) {
-                                        error(ex, ex.getMessage(), newVersion);
-                                    }
-                                });
                             } catch (Exception ex) {
                                 error(ex, ex.getMessage(), newVersion);
                             }
+
+                            UtilThreading.sync(() -> {
+                                //Enable plugin and perform update task.
+                                try {
+                                    UtilPlugin.loadPlugin(targetFile);
+                                    if (UpdaterPlugin.get() == null)
+                                        throw new FileNotFoundException("Unable to locate updater plugin.");
+
+                                    UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
+                                            pluginFolderPath, locale, startingTime, endTask);
+                                } catch (Exception ex) {
+                                    Bukkit.broadcastMessage("EXCEPTION CAUGHT IN PUBLICUPDATER");
+                                    error(ex, ex.getMessage(), newVersion);
+                                }
+                            });
                         } catch (Exception ex) {
                             error(ex, "Error occurred while updating " + pluginName + ".", newVersion);
                         }

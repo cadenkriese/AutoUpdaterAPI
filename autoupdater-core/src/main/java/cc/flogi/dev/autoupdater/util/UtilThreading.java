@@ -1,7 +1,7 @@
 package cc.flogi.dev.autoupdater.util;
 
 import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.Bukkit;
 
 /**
  * @author Caden Kriese (flogic)
@@ -10,50 +10,26 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class UtilThreading {
     public static void async(Runnable runnable) {
-        new BukkitRunnable() {
-            @Override public void run() {
-                runnable.run();
-            }
-        }.runTaskAsynchronously(AutoUpdaterAPI.getPlugin());
+        Bukkit.getScheduler().runTaskAsynchronously(AutoUpdaterAPI.getPlugin(), runnable);
     }
 
     public static void asyncDelayed(Runnable runnable, long delay) {
-        new BukkitRunnable() {
-            @Override public void run() {
-                runnable.run();
-            }
-        }.runTaskLaterAsynchronously(AutoUpdaterAPI.getPlugin(), delay);
+        Bukkit.getScheduler().runTaskLaterAsynchronously(AutoUpdaterAPI.getPlugin(), runnable, delay);
     }
 
     public static void asyncRepeating(Runnable runnable, long delay, long period) {
-        new BukkitRunnable() {
-            @Override public void run() {
-                runnable.run();
-            }
-        }.runTaskTimerAsynchronously(AutoUpdaterAPI.getPlugin(), delay, period);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(AutoUpdaterAPI.getPlugin(), runnable, delay, period);
     }
 
     public static void sync(Runnable runnable) {
-        new BukkitRunnable() {
-            @Override public void run() {
-                runnable.run();
-            }
-        }.runTask(AutoUpdaterAPI.getPlugin());
+        Bukkit.getScheduler().runTask(AutoUpdaterAPI.getPlugin(), runnable);
     }
 
     public static void syncDelayed(Runnable runnable, long delay) {
-        new BukkitRunnable() {
-            @Override public void run() {
-                runnable.run();
-            }
-        }.runTaskLater(AutoUpdaterAPI.getPlugin(), delay);
+        Bukkit.getScheduler().runTaskLater(AutoUpdaterAPI.getPlugin(), runnable, delay);
     }
 
     public static void syncRepeating(Runnable runnable, long delay, long period) {
-        new BukkitRunnable() {
-            @Override public void run() {
-                runnable.run();
-            }
-        }.runTaskTimer(AutoUpdaterAPI.getPlugin(), delay, period);
+        Bukkit.getScheduler().runTaskTimer(AutoUpdaterAPI.getPlugin(), runnable, delay, period);
     }
 }

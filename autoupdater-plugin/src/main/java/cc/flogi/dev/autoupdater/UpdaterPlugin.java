@@ -50,8 +50,8 @@ import java.net.URISyntaxException;
             double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
             UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
         } catch (Exception ex) {
+            getLogger().severe("A critical exception occurred while initializing the plugin '" + pluginName + "'");
             if (replace) {
-                getLogger().severe("A critical exception occurred while updating the plugin '" + pluginName + "'");
                 getLogger().severe("Attempting to re-initialize old version.");
                 Files.copy(cachedPlugin, restoreFile);
                 Plugin oldVersion = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
@@ -79,7 +79,9 @@ import java.net.URISyntaxException;
 
     private Plugin initializePlugin(String pluginName, String pluginFolderPath, UpdateLocale locale, UpdaterRunnable endTask)
             throws InvalidDescriptionException, InvalidPluginException {
-        Plugin updated = Bukkit.getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
+        Bukkit.broadcastMessage("LOADING PLUGIN AT " + pluginFolderPath + "/" + locale.getFileName() + ".jar");
+        Plugin updated = getServer().getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
+        updated.onLoad();
         Bukkit.getPluginManager().enablePlugin(updated);
         return updated;
     }

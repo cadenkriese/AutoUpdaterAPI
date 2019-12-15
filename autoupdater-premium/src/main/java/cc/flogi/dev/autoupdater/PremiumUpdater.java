@@ -39,6 +39,46 @@ public class PremiumUpdater implements Updater {
     private static User currentUser;
     private static SpigotSiteAPI siteAPI;
     private static WebClient webClient;
+    private Player initiator;
+    private Plugin plugin;
+    private String pluginFolderPath;
+    private String currentVersion;
+    private String newVersion;
+    private String pluginName;
+    private UpdateLocale locale;
+    private Resource resource;
+    private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {};
+    private boolean replace;
+    private int resourceId;
+    private int loginAttempts;
+    private long startingTime;
+    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
+        locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
+
+        pluginFolderPath = plugin.getDataFolder().getParent();
+        currentVersion = plugin.getDescription().getVersion();
+        loginAttempts = 1;
+        pluginName = locale.getPluginName();
+        this.resourceId = resourceId;
+        this.plugin = plugin;
+        this.initiator = initiator;
+        this.locale = locale;
+        this.replace = replace;
+    }
+    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+        locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
+
+        pluginFolderPath = plugin.getDataFolder().getParent();
+        currentVersion = plugin.getDescription().getVersion();
+        loginAttempts = 1;
+        pluginName = locale.getPluginName();
+        this.resourceId = resourceId;
+        this.plugin = plugin;
+        this.initiator = initiator;
+        this.locale = locale;
+        this.replace = replace;
+        this.endTask = endTask;
+    }
 
     protected static void init(JavaPlugin javaPlugin) {
         Logger logger = InternalCore.getLogger();
@@ -87,52 +127,6 @@ public class PremiumUpdater implements Updater {
     protected static void resetUser() {
         currentUser = null;
         UtilSpigotCreds.reset();
-    }
-
-    private Player initiator;
-    private Plugin plugin;
-
-    private String pluginFolderPath;
-    private String currentVersion;
-    private String newVersion;
-    private String pluginName;
-    private UpdateLocale locale;
-
-    private Resource resource;
-    private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {};
-
-    private boolean replace;
-    private int resourceId;
-    private int loginAttempts;
-    private long startingTime;
-
-    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
-        locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
-
-        pluginFolderPath = plugin.getDataFolder().getParent();
-        currentVersion = plugin.getDescription().getVersion();
-        loginAttempts = 1;
-        pluginName = locale.getPluginName();
-        this.resourceId = resourceId;
-        this.plugin = plugin;
-        this.initiator = initiator;
-        this.locale = locale;
-        this.replace = replace;
-    }
-
-    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
-
-        pluginFolderPath = plugin.getDataFolder().getParent();
-        currentVersion = plugin.getDescription().getVersion();
-        loginAttempts = 1;
-        pluginName = locale.getPluginName();
-        this.resourceId = resourceId;
-        this.plugin = plugin;
-        this.initiator = initiator;
-        this.locale = locale;
-        this.replace = replace;
-        this.endTask = endTask;
     }
 
     @Override public String getLatestVersion() {
@@ -283,92 +277,92 @@ public class PremiumUpdater implements Updater {
 
     protected void authenticate(boolean recall) {
         UtilThreading.async(() -> {
-                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING DECRYPT]", 10);
+            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING DECRYPT]", 10);
 
-                String username = UtilSpigotCreds.getUsername();
-                String password = UtilSpigotCreds.getPassword();
-                String twoFactor = UtilSpigotCreds.getTwoFactor();
+            String username = UtilSpigotCreds.getUsername();
+            String password = UtilSpigotCreds.getPassword();
+            String twoFactor = UtilSpigotCreds.getTwoFactor();
 
-                if (username == null || password == null) {
+            if (username == null || password == null) {
+                runGuis(recall);
+                return;
+            }
+
+            try {
+                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING AUTHENTICATION]", 15);
+                currentUser = siteAPI.getUserManager().authenticate(username, password);
+
+                if (currentUser == null) {
+                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]");
+                    UtilSpigotCreds.clearFile();
                     runGuis(recall);
                     return;
                 }
 
-                try {
-                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING AUTHENTICATION]", 15);
-                    currentUser = siteAPI.getUserManager().authenticate(username, password);
+                currentUser = currentUser;
+                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
+                InternalCore.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
-                    if (currentUser == null) {
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + "&c [INVALID CACHED CREDENTIALS]");
-                        UtilSpigotCreds.clearFile();
-                        runGuis(recall);
-                        return;
-                    }
+                if (recall)
+                    UtilThreading.syncDelayed(this::update, 40);
+            } catch (Exception ex) {
+                if (ex instanceof TwoFactorAuthenticationException) {
+                    try {
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]", 15);
+                        if (twoFactor == null) {
+                            requestTwoFactor(username, password, recall);
+                            return;
+                        }
 
-                    currentUser = currentUser;
-                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
-                    InternalCore.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
+                        currentUser = siteAPI.getUserManager().authenticate(username, password, twoFactor);
 
-                    if (recall)
-                        UtilThreading.syncDelayed(this::update, 40);
-                } catch (Exception ex) {
-                    if (ex instanceof TwoFactorAuthenticationException) {
-                        try {
-                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]", 15);
-                            if (twoFactor == null) {
-                                requestTwoFactor(username, password, recall);
-                                return;
-                            }
+                        if (currentUser == null) {
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                            UtilSpigotCreds.clearFile();
+                            runGuis(recall);
+                            return;
+                        }
 
-                            currentUser = siteAPI.getUserManager().authenticate(username, password, twoFactor);
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
+                        InternalCore.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
-                            if (currentUser == null) {
-                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
-                                UtilSpigotCreds.clearFile();
-                                runGuis(recall);
-                                return;
-                            }
-
-                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
-                            InternalCore.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
-
-                            if (recall)
-                                UtilThreading.sync(this::update);
-                        } catch (Exception otherException) {
-                            if (otherException instanceof InvalidCredentialsException) {
-                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
-                                UtilSpigotCreds.clearFile();
-                                runGuis(recall);
-                            } else if (otherException instanceof ConnectionFailedException) {
-                                UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
-                                InternalCore.get().printError(ex, "Error occurred while connecting to spigot. (#6)");
-                                endTask.run(false, otherException, null, pluginName);
-                            } else if (otherException instanceof TwoFactorAuthenticationException) {
-                                if (loginAttempts < 4) {
-                                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "/3]", 15);
-                                    loginAttempts++;
-                                    UtilThreading.syncDelayed(() -> authenticate(recall), 100);
-                                } else {
-                                    loginAttempts = 1;
-                                    InternalCore.get().printError(otherException);
-                                }
+                        if (recall)
+                            UtilThreading.sync(this::update);
+                    } catch (Exception otherException) {
+                        if (otherException instanceof InvalidCredentialsException) {
+                            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                            UtilSpigotCreds.clearFile();
+                            runGuis(recall);
+                        } else if (otherException instanceof ConnectionFailedException) {
+                            UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar());
+                            InternalCore.get().printError(ex, "Error occurred while connecting to spigot. (#6)");
+                            endTask.run(false, otherException, null, pluginName);
+                        } else if (otherException instanceof TwoFactorAuthenticationException) {
+                            if (loginAttempts < 4) {
+                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "/3]", 15);
+                                loginAttempts++;
+                                UtilThreading.syncDelayed(() -> authenticate(recall), 100);
                             } else {
+                                loginAttempts = 1;
                                 InternalCore.get().printError(otherException);
                             }
+                        } else {
+                            InternalCore.get().printError(otherException);
                         }
-                    } else if (ex instanceof InvalidCredentialsException) {
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
-                        UtilSpigotCreds.clearFile();
-                        runGuis(recall);
-                    } else if (ex instanceof ConnectionFailedException) {
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]", 15);
-                        InternalCore.get().printError(ex, "Error occurred while connecting to spigot. (#2)");
-                        endTask.run(false, ex, null, pluginName);
-                    } else {
-                        InternalCore.get().printError(ex);
                     }
+                } else if (ex instanceof InvalidCredentialsException) {
+                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
+                    UtilSpigotCreds.clearFile();
+                    runGuis(recall);
+                } else if (ex instanceof ConnectionFailedException) {
+                    UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]", 15);
+                    InternalCore.get().printError(ex, "Error occurred while connecting to spigot. (#2)");
+                    endTask.run(false, ex, null, pluginName);
+                } else {
+                    InternalCore.get().printError(ex);
                 }
-                });
+            }
+        });
     }
 
     /*

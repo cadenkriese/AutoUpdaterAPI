@@ -1,6 +1,5 @@
 package cc.flogi.dev.autoupdater;
 
-import cc.flogi.dev.autoupdater.InternalCore;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;

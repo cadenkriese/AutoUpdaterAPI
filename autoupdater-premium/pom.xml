@@ -29,7 +29,8 @@
             <artifactId>autoupdater-plugin</artifactId>
             <version>${currentversion}</version>
             <scope>system</scope>
-            <systemPath>${basedir}/../autoupdater-core/src/main/resources/autoupdater-plugin-${currentversion}.jar</systemPath>
+            <systemPath>${basedir}/../autoupdater-core/src/main/resources/autoupdater-plugin-${currentversion}.jar
+            </systemPath>
         </dependency>
         <!-- AnvilGUI -->
         <dependency>

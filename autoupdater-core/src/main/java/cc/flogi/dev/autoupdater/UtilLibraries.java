@@ -50,7 +50,7 @@ public class UtilLibraries {
             }
         }
 
-        String urlString = properties.ARTIFACTORY_URL + "autoupdater-premium/" + properties.VERSION + "/autoupdater-premium-3.0.1-SNAPSHOT.jar";
+        String urlString = properties.ARTIFACTORY_URL + "autoupdater-premium/" + properties.VERSION + "/autoupdater-premium-" + properties.VERSION + ".jar";
         String downloadPath = InternalCore.getDataFolder().getAbsolutePath() + "/libs/autoupdater-premium-" + properties.VERSION + ".jar";
         URL url = new URL(urlString);
 

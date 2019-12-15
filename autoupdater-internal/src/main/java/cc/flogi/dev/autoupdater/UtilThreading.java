@@ -1,6 +1,5 @@
 package cc.flogi.dev.autoupdater;
 
-import cc.flogi.dev.autoupdater.InternalCore;
 import org.bukkit.Bukkit;
 
 /**

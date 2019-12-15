@@ -1,7 +1,5 @@
 package cc.flogi.dev.autoupdater;
 
-import lombok.Getter;
-
 /**
  * @author Caden Kriese (flogic)
  *
@@ -12,6 +10,7 @@ enum UserAgent {
     SPIGET("AutoUpdaterAPI");
 
     private String agent;
+
     UserAgent(String agent) {
         this.agent = agent;
     }

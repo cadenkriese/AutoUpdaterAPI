@@ -18,7 +18,7 @@ public class PublicSpigotUpdater extends PublicUpdater {
     private final String resourceId;
 
     protected PublicSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
-        super(plugin, initiator, BASE_URL+resourceId+"/download", locale, replace);
+        super(plugin, initiator, BASE_URL + resourceId + "/download", locale, replace);
         url = BASE_URL + resourceId;
         this.resourceId = String.valueOf(resourceId);
 
@@ -26,7 +26,7 @@ public class PublicSpigotUpdater extends PublicUpdater {
     }
 
     @SneakyThrows protected PublicSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        super(plugin, initiator, BASE_URL+resourceId+"/download", locale, replace);
+        super(plugin, initiator, BASE_URL + resourceId + "/download", locale, replace);
         url = BASE_URL + resourceId;
         this.resourceId = String.valueOf(resourceId);
 
@@ -38,7 +38,6 @@ public class PublicSpigotUpdater extends PublicUpdater {
      * Pings spigot to retrieve the latest version of a plugin.
      *
      * @return The latest version of the plugin as a string.
-     *
      * @apiNote Makes a web request, will halt current thread shortly.
      */
     public String getLatestVersion() {

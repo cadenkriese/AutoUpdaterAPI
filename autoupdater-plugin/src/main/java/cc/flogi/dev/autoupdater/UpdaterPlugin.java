@@ -14,6 +14,7 @@ import java.net.URISyntaxException;
 
 @SuppressWarnings("UnstableApiUsage") public final class UpdaterPlugin extends JavaPlugin {
     private static UpdaterPlugin instance;
+
     public static UpdaterPlugin get() {
         return instance;
     }

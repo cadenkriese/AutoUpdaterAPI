@@ -14,13 +14,9 @@
     <packaging>jar</packaging>
 
     <name>autoupdater-plugin</name>
-
     <description>Briefly used utility for automatically updating plugins. If this plugin does not disappear quickly,
         please delete it from your plugins folder.
     </description>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <url>flogi.cc</url>
 
     <build>
@@ -64,8 +60,7 @@
                             <workingDirectory>${pom.basedir}/target/</workingDirectory>
                             <arguments>
                                 <argument>${currentversion}</argument>
-                                <argument>${basedir}/../autoupdater-public</argument>
-                                <argument>${basedir}/../autoupdater-premium</argument>
+                                <argument>${basedir}/../autoupdater-core</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -83,7 +78,7 @@
     <dependencies>
         <dependency>
             <groupId>cc.flogi.dev</groupId>
-            <artifactId>autoupdater-core</artifactId>
+            <artifactId>autoupdater-internal</artifactId>
             <version>${currentversion}</version>
         </dependency>
     </dependencies>

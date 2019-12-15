@@ -1,4 +1,4 @@
-package cc.flogi.dev.autoupdater.util;
+package cc.flogi.dev.autoupdater;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
  *
  * Created on 8/12/17
  */
-public class UtilReader {
+final class UtilReader {
     /**
      * Reads content from a URL.
      *

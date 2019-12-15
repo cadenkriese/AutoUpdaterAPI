@@ -1,7 +1,5 @@
 package cc.flogi.dev.autoupdater;
 
-import cc.flogi.dev.autoupdater.util.UtilPlugin;
-import cc.flogi.dev.autoupdater.util.UtilUI;
 import com.google.common.io.Files;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -41,7 +39,7 @@ import java.net.URISyntaxException;
                 Files.copy(pluginFile, cachedPlugin);
                 UtilPlugin.unload(plugin);
                 if (!pluginFile.delete())
-                    AutoUpdaterAPI.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
+                    InternalCore.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
             }
 
             Plugin updated = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
@@ -68,12 +66,12 @@ import java.net.URISyntaxException;
         try {
             File pluginFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
             if (!pluginFile.delete())
-                AutoUpdaterAPI.get().printPluginError(
+                InternalCore.get().printPluginError(
                         "Error occurred while self-destructing updater plugin utility.",
                         "Could not delete plugin jar file.");
             UtilPlugin.unload(this);
         } catch (Exception ex) {
-            AutoUpdaterAPI.get().printError(ex, "Error occurred while self-destructing updater plugin utility.");
+            InternalCore.get().printError(ex, "Error occurred while self-destructing updater plugin utility.");
         }
     }
 

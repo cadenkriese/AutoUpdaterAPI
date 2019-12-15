@@ -1,4 +1,4 @@
-package cc.flogi.dev.autoupdater.util;
+package cc.flogi.dev.autoupdater;
 
 import lombok.Getter;
 
@@ -7,7 +7,7 @@ import lombok.Getter;
  *
  * Created on 12/12/19
  */
-public enum UserAgent {
+enum UserAgent {
     CHROME("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36"),
     SPIGET("AutoUpdaterAPI");
 

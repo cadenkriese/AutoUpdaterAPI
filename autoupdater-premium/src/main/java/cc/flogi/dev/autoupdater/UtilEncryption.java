@@ -1,7 +1,5 @@
-package cc.flogi.dev.autoupdater.util;
+package cc.flogi.dev.autoupdater;
 
-import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
-import lombok.Getter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.RandomStringUtils;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -20,16 +18,14 @@ import java.security.NoSuchAlgorithmException;
  *
  * Created on 6/14/17
  */
-@SuppressWarnings("ResultOfMethodCallIgnored") class UtilEncryption {
-
-    @Getter private static UtilEncryption instance = new UtilEncryption();
+final class UtilEncryption {
     private static SecretKeySpec secretKey;
-    private File keyFile;
-    private FileConfiguration keyConfig;
+    private static File keyFile;
+    private static FileConfiguration keyConfig;
 
-    protected void init() {
+    protected static void init() {
         if (keyFile == null)
-            keyFile = new File(AutoUpdaterAPI.getDataFolder().getAbsolutePath() + "/keys.enc");
+            keyFile = new File(InternalCore.getDataFolder().getAbsolutePath() + "/keys.enc");
 
         if (!keyFile.getParentFile().exists())
             keyFile.getParentFile().mkdirs();
@@ -57,15 +53,15 @@ import java.security.NoSuchAlgorithmException;
 
             keyConfig.save(keyFile);
         } catch (IOException ex) {
-            AutoUpdaterAPI.get().printError(ex, "Error occurred while creating the encrypted file.");
+            InternalCore.get().printError(ex, "Error occurred while creating the encrypted file.");
         }
     }
 
-    protected void setKeyNumber(int number) {
+    protected static void setKeyNumber(int number) {
         setKey(keyConfig.getString(String.valueOf(number)));
     }
 
-    private void setKey(String myKey) {
+    private static void setKey(String myKey) {
         MessageDigest sha;
         try {
             byte[] key = myKey.getBytes(StandardCharsets.UTF_8);
@@ -74,11 +70,11 @@ import java.security.NoSuchAlgorithmException;
             key = java.util.Arrays.copyOf(key, 16);
             secretKey = new SecretKeySpec(key, "AES");
         } catch (NoSuchAlgorithmException ex) {
-            AutoUpdaterAPI.get().printError(ex);
+            InternalCore.get().printError(ex);
         }
     }
 
-    protected String encrypt(String strToEncrypt) {
+    protected static String encrypt(String strToEncrypt) {
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
 
@@ -86,20 +82,20 @@ import java.security.NoSuchAlgorithmException;
 
             return Base64.encodeBase64String(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception ex) {
-            AutoUpdaterAPI.get().printError(ex, "Error occurred while encrypting string.");
+            InternalCore.get().printError(ex, "Error occurred while encrypting string.");
         }
 
         return null;
     }
 
-    protected String decrypt(String strToDecrypt) {
+    protected static String decrypt(String strToDecrypt) {
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
 
             cipher.init(2, secretKey);
             return new String(cipher.doFinal(Base64.decodeBase64(strToDecrypt)));
         } catch (Exception ex) {
-            AutoUpdaterAPI.get().printError(ex, "Error occurred while encrypting string.");
+            InternalCore.get().printError(ex, "Error occurred while encrypting string.");
         }
 
         return null;

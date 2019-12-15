@@ -12,7 +12,7 @@ import java.lang.reflect.Field;
  * Created on 6/6/17
  */
 @Data @Builder @AllArgsConstructor
-public class UpdateLocale {
+final class UpdateLocale {
     //Name of the jar file that should be created (.jar will be added at the end)
     private String fileName = "plugin";
     //Name of the plugin AutoUpdater will try to enable after the download is complete
@@ -50,7 +50,7 @@ public class UpdateLocale {
                 }
             }
         } catch (IllegalAccessException ex) {
-            AutoUpdaterAPI.get().printError(ex);
+            InternalCore.get().printError(ex);
         }
     }
 }

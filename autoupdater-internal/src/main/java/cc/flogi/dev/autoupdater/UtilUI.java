@@ -1,6 +1,6 @@
-package cc.flogi.dev.autoupdater.util;
+package cc.flogi.dev.autoupdater;
 
-import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
+import cc.flogi.dev.autoupdater.InternalCore;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -15,7 +15,7 @@ import java.util.HashMap;
  *
  * Created on 2/27/18
  */
-public class UtilUI {
+final class UtilUI {
     private static final long ACTIONBAR_DEFAULT_DURATION = 40;
     private static HashMap<String, BukkitRunnable> currentTasks = new HashMap<>();
 
@@ -36,7 +36,7 @@ public class UtilUI {
                 @Override public void run() {
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(colorize(message)));
                 }
-            }.runTask(AutoUpdaterAPI.getPlugin());
+            }.runTask(InternalCore.getPlugin());
             return;
         }
 
@@ -74,9 +74,14 @@ public class UtilUI {
         };
 
         currentTasks.put(player.getUniqueId().toString(), actionBarRunnable);
-        actionBarRunnable.runTaskTimer(AutoUpdaterAPI.getPlugin(), 0L, ACTIONBAR_DEFAULT_DURATION);
+        actionBarRunnable.runTaskTimer(InternalCore.getPlugin(), 0L, ACTIONBAR_DEFAULT_DURATION);
     }
 
+    /**
+     * Clears the actionbar of a certain player.
+     *
+     * @param player The player to clear the actionbar of.
+     */
     public static void clearActionBar(Player player) {
         if (player == null)
             return;

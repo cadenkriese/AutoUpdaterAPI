@@ -7,33 +7,28 @@
         <groupId>cc.flogi.dev</groupId>
         <version>3.0.1-SNAPSHOT</version>
     </parent>
-
     <modelVersion>4.0.0</modelVersion>
+
     <artifactId>autoupdater-public</artifactId>
     <version>3.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <build>
-        <resources>
-            <resource>
-                <!-- Don't turn on filtering, corrupts and compiled artifacts in that dir -->
-                <directory>src/main/resources</directory>
-            </resource>
-        </resources>
-    </build>
+    <name>autoupdater-public</name>
+    <description>Internal implementation handling updating of publicly available resources.</description>
 
     <dependencies>
         <dependency>
             <groupId>cc.flogi.dev</groupId>
-            <artifactId>autoupdater-core</artifactId>
+            <artifactId>autoupdater-internal</artifactId>
             <version>${currentversion}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>cc.flogi.dev</groupId>
             <artifactId>autoupdater-plugin</artifactId>
             <version>${currentversion}</version>
             <scope>system</scope>
-            <systemPath>${basedir}/src/main/resources/autoupdater-plugin-${currentversion}.jar</systemPath>
+            <systemPath>${basedir}/../autoupdater-core/src/main/resources/autoupdater-plugin-${currentversion}.jar</systemPath>
         </dependency>
     </dependencies>
 </project>

@@ -1,6 +1,5 @@
-package cc.flogi.dev.autoupdater.util;
+package cc.flogi.dev.autoupdater;
 
-import cc.flogi.dev.autoupdater.AutoUpdaterAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
@@ -17,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
-public class UtilPlugin {
+final class UtilPlugin {
     /**
      * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
      *
@@ -65,7 +64,7 @@ public class UtilPlugin {
                 knownCommandsField.setAccessible(true);
                 commands = (Map<String, Command>) knownCommandsField.get(commandMap);
             } catch (NoSuchFieldException | IllegalAccessException ex) {
-                AutoUpdaterAPI.get().printError(ex);
+                InternalCore.get().printError(ex);
             }
         }
 
@@ -107,14 +106,18 @@ public class UtilPlugin {
                 pluginInitField.setAccessible(true);
                 pluginInitField.set(loader, null);
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
-                AutoUpdaterAPI.get().printError(ex);
+                InternalCore.get().printError(ex);
             }
 
             try {
-                //TODO Causes errors when trying to close your own classloader.
-                ((URLClassLoader) loader).close();
+                /* TODO
+                 * This causes major issues when closing your own classloader.
+                 * Try to figure out a cleaner way to do this.
+                 */
+                if (!plugin.getName().equalsIgnoreCase("autoupdater-plugin"))
+                    ((URLClassLoader) loader).close();
             } catch (IOException ex) {
-                AutoUpdaterAPI.get().printError(ex);
+                InternalCore.get().printError(ex);
             }
         }
 
@@ -124,9 +127,9 @@ public class UtilPlugin {
     }
 
     public static Plugin loadPlugin(File file) throws InvalidDescriptionException, InvalidPluginException {
-        Plugin plugin = AutoUpdaterAPI.getPlugin().getServer().getPluginManager().loadPlugin(file);
+        Plugin plugin = InternalCore.getPlugin().getServer().getPluginManager().loadPlugin(file);
         plugin.onLoad();
-        AutoUpdaterAPI.getPlugin().getServer().getPluginManager().enablePlugin(plugin);
+        InternalCore.getPlugin().getServer().getPluginManager().enablePlugin(plugin);
         return plugin;
     }
 }

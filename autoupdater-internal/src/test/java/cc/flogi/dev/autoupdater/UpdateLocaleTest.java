@@ -1,3 +1,5 @@
+package cc.flogi.dev.autoupdater;
+
 import cc.flogi.dev.autoupdater.UpdateLocale;
 import org.testng.Assert;
 import org.testng.annotations.Test;

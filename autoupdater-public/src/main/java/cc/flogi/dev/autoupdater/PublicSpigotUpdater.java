@@ -1,12 +1,13 @@
 package cc.flogi.dev.autoupdater;
 
-import cc.flogi.dev.autoupdater.util.UtilReader;
-import cc.flogi.dev.autoupdater.util.UtilUI;
+import lombok.SneakyThrows;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 /**
  * @author Caden Kriese (flogic)
+ *
+ * Performs updates for public Spigot plugins.
  *
  * Created on 12/12/19
  */
@@ -24,7 +25,7 @@ public class PublicSpigotUpdater extends PublicUpdater {
         setNewVersion(getLatestVersion());
     }
 
-    protected PublicSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    @SneakyThrows protected PublicSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         super(plugin, initiator, BASE_URL+resourceId+"/download", locale, replace);
         url = BASE_URL + resourceId;
         this.resourceId = String.valueOf(resourceId);
@@ -37,12 +38,14 @@ public class PublicSpigotUpdater extends PublicUpdater {
      * Pings spigot to retrieve the latest version of a plugin.
      *
      * @return The latest version of the plugin as a string.
+     *
+     * @apiNote Makes a web request, will halt current thread shortly.
      */
     public String getLatestVersion() {
         try {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (Exception exception) {
-            AutoUpdaterAPI.get().printError(exception);
+            InternalCore.get().printError(exception);
             UtilUI.sendActionBar(getInitiator(), getLocale().getUpdateFailedNoVar());
         }
 

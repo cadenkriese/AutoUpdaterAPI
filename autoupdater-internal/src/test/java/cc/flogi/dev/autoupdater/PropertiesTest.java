@@ -1,4 +1,6 @@
-import cc.flogi.dev.autoupdater.util.ProjectProperties;
+package cc.flogi.dev.autoupdater;
+
+import cc.flogi.dev.autoupdater.ProjectProperties;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

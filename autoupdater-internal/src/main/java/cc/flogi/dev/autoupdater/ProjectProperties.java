@@ -1,4 +1,4 @@
-package cc.flogi.dev.autoupdater.util;
+package cc.flogi.dev.autoupdater;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -8,24 +8,26 @@ import java.util.Properties;
  *
  * Created on 9/1/19
  */
-public class ProjectProperties {
-    public final String NAME;
-    public final String DESCRIPTION;
-    public final String URL;
-    public final String REPO_URL;
-    public final String AUTHOR;
-    public final String VERSION;
+final class ProjectProperties {
+    final String NAME;
+    final String DESCRIPTION;
+    final String URL;
+    final String REPO_URL;
+    final String ARTIFACTORY_URL;
+    final String AUTHOR;
+    final String VERSION;
 
-    public ProjectProperties(Properties properties) {
+    protected ProjectProperties(Properties properties) {
         NAME = properties.getProperty("name");
         DESCRIPTION = properties.getProperty("description");
         URL = properties.getProperty("url");
         REPO_URL = properties.getProperty("repo_url");
+        ARTIFACTORY_URL = properties.getProperty("artifactory_url");
         AUTHOR = properties.getProperty("author");
         VERSION = properties.getProperty("version");
     }
 
-    public static ProjectProperties from(String resource) {
+    protected static ProjectProperties from(String resource) {
         try {
             Properties properties = new Properties();
             properties.load(ProjectProperties.class.getResourceAsStream("/" + resource));
@@ -37,11 +39,11 @@ public class ProjectProperties {
         return null;
     }
 
-    public String getTitle() {
+    protected String getTitle() {
         return NAME + " V" + VERSION;
     }
 
-    public String getTitleWithAuthor() {
+    protected String getTitleWithAuthor() {
         return NAME + " V" + VERSION + " by " + AUTHOR;
     }
 }

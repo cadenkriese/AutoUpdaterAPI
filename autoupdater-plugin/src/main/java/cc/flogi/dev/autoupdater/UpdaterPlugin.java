@@ -9,8 +9,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 
 @SuppressWarnings("UnstableApiUsage") public final class UpdaterPlugin extends JavaPlugin {
     private static UpdaterPlugin instance;
@@ -25,8 +23,7 @@ import java.net.URISyntaxException;
         getLogger().info("AutoUpdaterAPI utility enabled.");
     }
 
-    public void updatePlugin(Plugin plugin, Player initiator, boolean replace, String pluginName, String pluginFolderPath, UpdateLocale locale, long startingTime, UpdaterRunnable endTask)
-            throws URISyntaxException, InvalidDescriptionException, InvalidPluginException, IOException {
+    public void updatePlugin(Plugin plugin, Player initiator, boolean replace, String pluginName, String pluginFolderPath, UpdateLocale locale, long startingTime, UpdaterRunnable endTask) {
         final File restoreFile = new File(getDataFolder().getParent() + locale.getFileName() + ".jar");
         File cachedPlugin = null;
 
@@ -43,6 +40,7 @@ import java.net.URISyntaxException;
                     InternalCore.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
             }
 
+
             Plugin updated = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
             endTask.run(true, null, updated, pluginName);
 
@@ -51,12 +49,15 @@ import java.net.URISyntaxException;
         } catch (Exception ex) {
             getLogger().severe("A critical exception occurred while initializing the plugin '" + pluginName + "'");
             if (replace) {
-                getLogger().severe("Attempting to re-initialize old version.");
-                Files.copy(cachedPlugin, restoreFile);
-                Plugin oldVersion = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
-                endTask.run(false, ex, oldVersion, pluginName);
-            } else
-                throw ex;
+                try {
+                    getLogger().severe("Attempting to re-initialize old version.");
+                    Files.copy(cachedPlugin, restoreFile);
+                    Plugin oldVersion = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
+                    endTask.run(false, ex, oldVersion, pluginName);
+                } catch (Exception ex1) {
+                    InternalCore.get().printError(ex1);
+                }
+            }
         } finally {
             cachedPlugin.delete();
             selfDestruct();

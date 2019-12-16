@@ -23,6 +23,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -207,7 +208,7 @@ public class PremiumUpdater implements Updater {
                     printDebug2(htmlPage);
                     if (htmlPage.asXml().contains("DDoS protection by Cloudflare")) {
                         UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[WAITING FOR CLOUDFLARE]", 20);
-                        webClient.waitForBackgroundJavaScript(8_000);
+                        webClient.waitForBackgroundJavaScript(10_000);
                     }
                     response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
                 }
@@ -294,6 +295,10 @@ public class PremiumUpdater implements Updater {
             }
 
             try {
+                //Spare the extra request
+                if (twoFactor != null)
+                    throw new TwoFactorAuthenticationException();
+
                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING AUTHENTICATION]", 15);
                 currentUser = siteAPI.getUserManager().authenticate(username, password);
 
@@ -308,11 +313,11 @@ public class PremiumUpdater implements Updater {
                 InternalCore.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
                 if (recall)
-                    UtilThreading.syncDelayed(this::update, 40);
+                    UtilThreading.sync(this::update);
             } catch (Exception ex) {
                 if (ex instanceof TwoFactorAuthenticationException) {
                     try {
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-ATTEMPTING AUTHENTICATION]", 15);
+                        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING 2FA AUTHENTICATION]", 15);
                         if (twoFactor == null) {
                             requestTwoFactor(username, password, recall);
                             return;
@@ -342,13 +347,18 @@ public class PremiumUpdater implements Updater {
                             InternalCore.get().printError(ex, "Error occurred while connecting to spigot. (#6)");
                             endTask.run(false, otherException, null, pluginName);
                         } else if (otherException instanceof TwoFactorAuthenticationException) {
-                            if (loginAttempts < 4) {
-                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "/3]", 15);
+                            if (currentUser != null) {
+                                UtilThreading.sync(this::update);
+                                return;
+                            }
+
+                            if (loginAttempts < 6) {
+                                UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RE-TRYING LOGIN IN 5s ATTEMPT #" + loginAttempts + "/5]", 15);
                                 loginAttempts++;
                                 UtilThreading.syncDelayed(() -> authenticate(recall), 100);
                             } else {
                                 loginAttempts = 1;
-                                InternalCore.get().printError(otherException);
+                                error(otherException, "All login attempts failed.");
                             }
                         } else {
                             InternalCore.get().printError(otherException);
@@ -376,12 +386,14 @@ public class PremiumUpdater implements Updater {
     private void runGuis(boolean recall) {
         UtilThreading.sync(() -> {
             UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]", 300);
+            AtomicBoolean validInput = new AtomicBoolean(false);
             new AnvilGUI.Builder()
                     .text("Spigot username")
                     .plugin(InternalCore.getPlugin())
                     .onComplete((Player player, String usernameInput) -> {
                         try {
                             if (siteAPI.getUserManager().getUserByName(usernameInput) != null) {
+                                validInput.set(true);
                                 requestPassword(usernameInput, recall);
                             } else if (usernameInput.contains("@") && usernameInput.contains(".")) {
                                 initiator.closeInventory();
@@ -399,13 +411,17 @@ public class PremiumUpdater implements Updater {
 
                         return AnvilGUI.Response.text("Success!");
                     })
-                    .onClose(player -> error(new InvalidCredentialsException(), "User closed GUI."))
+                    .onClose(player -> {
+                        if (!validInput.get())
+                            error(new InvalidCredentialsException(), "User closed GUI.");
+                    })
                     .open(initiator);
         });
     }
 
     private void requestPassword(String usernameInput, boolean recall) {
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]", 300);
+        AtomicBoolean validInput = new AtomicBoolean(false);
         new AnvilGUI.Builder()
                 .text("Spigot password")
                 .plugin(InternalCore.getPlugin())
@@ -420,6 +436,7 @@ public class PremiumUpdater implements Updater {
 
                         UtilThreading.syncDelayed(() -> authenticate(recall), 100);
                     } catch (TwoFactorAuthenticationException ex) {
+                        validInput.set(true);
                         requestTwoFactor(usernameInput, passwordInput, recall);
                     } catch (ConnectionFailedException ex) {
                         error(ex, "Error occurred while connecting to Spigot. (#3)");
@@ -432,12 +449,16 @@ public class PremiumUpdater implements Updater {
 
                     return AnvilGUI.Response.text("Success!");
                 })
-                .onClose(player -> error(new InvalidCredentialsException(), "User closed GUI."))
+                .onClose(player -> {
+                    if (!validInput.get())
+                        error(new InvalidCredentialsException(), "User closed GUI.");
+                })
                 .open(initiator);
     }
 
     private void requestTwoFactor(String usernameInput, String passwordInput, boolean recall) {
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]", 300);
+        AtomicBoolean validInput = new AtomicBoolean(false);
         new AnvilGUI.Builder().plugin(InternalCore.getPlugin())
                 .text("Spigot two factor secret")
                 .onComplete((Player player, String twoFactorInput) -> {
@@ -450,6 +471,7 @@ public class PremiumUpdater implements Updater {
                         UtilSpigotCreds.setTwoFactor(twoFactorInput);
                         UtilSpigotCreds.saveFile();
 
+                        validInput.set(true);
                         UtilThreading.syncDelayed(() -> authenticate(recall), 100);
 
                         return AnvilGUI.Response.text("Logging in, close GUI.");
@@ -458,7 +480,10 @@ public class PremiumUpdater implements Updater {
                         return AnvilGUI.Response.text("Authentication failed");
                     }
                 })
-                .onClose(player -> error(new InvalidCredentialsException(), "User closed GUI."))
+                .onClose(player -> {
+                    if (!validInput.get())
+                        error(new InvalidCredentialsException(), "User closed GUI.");
+                })
                 .open(initiator);
     }
 

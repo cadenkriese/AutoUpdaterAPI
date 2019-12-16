@@ -47,8 +47,8 @@ public class UtilLibraries {
                 if (file.getName().contains(properties.VERSION) && file.length() > 10_000_000) {
                     addURL(file);
                     return;
-                } else
-                    file.delete();
+                } else if (!file.delete())
+                    throw new IOException("Failed to delete old resource file.");
             }
         }
 

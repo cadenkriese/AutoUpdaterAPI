@@ -23,6 +23,7 @@ public class PublicSpigotUpdater extends PublicUpdater {
         this.resourceId = String.valueOf(resourceId);
 
         setNewVersion(getLatestVersion());
+        locale.updateVariables(plugin.getName(), getCurrentVersion(), getNewVersion());
     }
 
     @SneakyThrows protected PublicSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
@@ -31,6 +32,7 @@ public class PublicSpigotUpdater extends PublicUpdater {
         this.resourceId = String.valueOf(resourceId);
 
         setNewVersion(getLatestVersion());
+        locale.updateVariables(plugin.getName(), getCurrentVersion(), getNewVersion());
     }
 
 
@@ -45,7 +47,7 @@ public class PublicSpigotUpdater extends PublicUpdater {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (Exception exception) {
             InternalCore.get().printError(exception);
-            UtilUI.sendActionBar(getInitiator(), getLocale().getUpdateFailedNoVar());
+            UtilUI.sendActionBar(getInitiator(), getLocale().getUpdateFailed());
         }
 
         return "";

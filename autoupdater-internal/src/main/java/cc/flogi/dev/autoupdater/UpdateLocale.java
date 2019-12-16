@@ -17,11 +17,11 @@ import java.lang.reflect.Field;
     private String fileName = "plugin";
     //Name of the plugin AutoUpdater will try to enable after the download is complete
     private String pluginName = "plugin";
-    private String updating = "&f&lUPDATING &1&l%plugin% &b&lV%old_version% &a&l» &b&l%new_version%";
+    private String updating = "&f&lUPDATING &1&l%plugin% &b&l%old_version% &a&l» &b&l%new_version%";
     private String updatingNoVar = "&f&lUPDATING PLUGIN...";
-    private String updatingDownload = "&f&lUPDATING &1&l%plugin% &b&lV%old_version% &a&l» &b&lV%new_version% &8| %download_bar% &8| &a%download_percent%";
-    private String updateComplete = "&f&lUPDATED &1&l%plugin% &f&lTO &b&lV%new_version% &7&o(%elapsed_time%s)";
-    private String updateFailedNoVar = "&c&lUPDATE FAILED";
+    private String updatingDownload = "&f&lDOWNLOADING &1&l%plugin% &b&l%new_version% &8| %download_bar% &8| &a%download_percent%";
+    private String updateComplete = "&f&lUPDATED &1&l%plugin% &f&lTO &b&l%new_version% &7&o(%elapsed_time%s)";
+    private String updateFailed = "&c&lUPDATE FAILED";
 
     public UpdateLocale() {}
 

@@ -117,8 +117,8 @@ import java.nio.file.StandardCopyOption;
                 fos.close();
 
                 initializePlugin();
-            } catch (Exception ex) {
-                error(ex, "Error occurred while updating " + pluginName + ".", newVersion);
+            } catch (IOException ex) {
+                error(ex, "Error occurred while updating " + pluginName + ".", "IO EXCEPTION");
             }
         });
     }
@@ -131,7 +131,7 @@ import java.nio.file.StandardCopyOption;
         try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception ex) {
-            error(ex, ex.getMessage(), newVersion);
+            error(ex, ex.getMessage());
         }
 
         UtilThreading.sync(() -> {
@@ -144,14 +144,20 @@ import java.nio.file.StandardCopyOption;
                 UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
                         pluginFolderPath, locale, startingTime, endTask);
             } catch (Exception ex) {
-                error(ex, ex.getMessage(), newVersion);
+                error(ex, ex.getMessage());
             }
         });
     }
 
     private void error(Exception ex, String errorMessage, String shortErrorMessage) {
         InternalCore.get().printError(ex, errorMessage);
-        UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar() + " &8[" + shortErrorMessage + "&8]", 10);
+        UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[" + shortErrorMessage + "&8]", 10);
+        endTask.run(false, ex, null, pluginName);
+    }
+
+    private void error(Exception ex, String message) {
+        InternalCore.get().printError(ex, message);
+        UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[CHECK CONSOLE]");
         endTask.run(false, ex, null, pluginName);
     }
 }

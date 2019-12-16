@@ -31,11 +31,10 @@ import java.util.logging.Logger;
 /**
  * @author Caden Kriese (flogic)
  *
- * Performs the update task for premium Spigot plugins.
+ * Performs updates for premium Spigot plugins.
  *
  * Created on 6/6/17
  */
-
 public class PremiumUpdater implements Updater {
 
     private static User currentUser;
@@ -56,7 +55,6 @@ public class PremiumUpdater implements Updater {
 
     protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
-
         pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
         loginAttempts = 1;
@@ -70,7 +68,6 @@ public class PremiumUpdater implements Updater {
 
     protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
-
         pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
         loginAttempts = 1;
@@ -90,12 +87,14 @@ public class PremiumUpdater implements Updater {
         UtilEncryption.init();
 
         UtilThreading.async(() -> {
-            try {
-                LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log",
-                        "org.apache.commons.logging.impl.NoOpLog");
-                Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
-            } catch (Exception ex) {
-                InternalCore.get().printError(ex, "Unable to turn off HTMLUnit logging!.");
+            if (!InternalCore.DEBUG) {
+                try {
+                    LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log",
+                            "org.apache.commons.logging.impl.NoOpLog");
+                    Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
+                } catch (Exception ex) {
+                    InternalCore.get().printError(ex, "Unable to turn off HTMLUnit logging!.");
+                }
             }
 
             //Setup web client
@@ -107,7 +106,8 @@ public class PremiumUpdater implements Updater {
             webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
             webClient.getOptions().setThrowExceptionOnScriptError(false);
             webClient.getOptions().setPrintContentOnFailingStatusCode(false);
-            Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
+            if (!InternalCore.DEBUG)
+                Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
 
             logger.info("Initializing connection with Spigot...");
 
@@ -163,7 +163,7 @@ public class PremiumUpdater implements Updater {
 
         if (currentUser == null) {
             authenticate(true);
-            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATING SPIGOT ACCOUNT]", 5);
+            UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[AUTHENTICATING SPIGOT ACCOUNT]", 5);
             return;
         }
 
@@ -179,8 +179,9 @@ public class PremiumUpdater implements Updater {
         }
 
         if (resource == null) {
-            UtilUI.sendActionBar(initiator, "&c&lUPDATE FAILED &8[YOU HAVE NOT BOUGHT THAT PLUGIN]", 10);
-            endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
+            error(new Exception("Error occurred while updating premium plugin."),
+                    "The current spigot user has not purchased the plugin '" + pluginName + "'",
+                    "YOU HAVE NOT BOUGHT THAT PLUGIN");
             return;
         }
 
@@ -262,17 +263,18 @@ public class PremiumUpdater implements Updater {
             File targetFile = new File(plugin.getDataFolder().getParent() + corePluginFile);
             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             is.close();
+
             UtilThreading.sync(() -> {
                 //Enable plugin and perform update task.
                 try {
-                    UpdaterPlugin updaterPlugin = (UpdaterPlugin) Bukkit.getPluginManager().loadPlugin(targetFile);
-                    if (updaterPlugin == null)
+                    UtilPlugin.loadPlugin(targetFile);
+                    if (Bukkit.getPluginManager().getPlugin("autoupdater-plugin") == null)
                         throw new FileNotFoundException("Unable to locate updater plugin.");
-                    Bukkit.getPluginManager().enablePlugin(updaterPlugin);
-                    updaterPlugin.updatePlugin(plugin, initiator, replace, pluginName,
+
+                    UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
                             pluginFolderPath, locale, startingTime, endTask);
                 } catch (Exception ex) {
-                    error(ex, ex.getMessage(), "FAILED TO INITIALIZE PLUGIN");
+                    error(ex, ex.getMessage());
                 }
             });
         } catch (Exception ex) {
@@ -381,14 +383,14 @@ public class PremiumUpdater implements Updater {
     private void runGuis(boolean recall) {
         UtilThreading.sync(() -> {
             UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]", 300);
-            AtomicBoolean validInput = new AtomicBoolean(false);
+            AtomicBoolean inputProvided = new AtomicBoolean(false);
             new AnvilGUI.Builder()
                     .text("Spigot username")
                     .plugin(InternalCore.getPlugin())
                     .onComplete((Player player, String usernameInput) -> {
+                        inputProvided.set(true);
                         try {
                             if (siteAPI.getUserManager().getUserByName(usernameInput) != null) {
-                                validInput.set(true);
                                 requestPassword(usernameInput, recall);
                             } else if (usernameInput.contains("@") && usernameInput.contains(".")) {
                                 UtilUI.sendActionBar(initiator, "&cEmails aren't supported!", 10);
@@ -405,7 +407,7 @@ public class PremiumUpdater implements Updater {
 
                         return AnvilGUI.Response.text("Success!");
                     }).onClose(player -> {
-                if (!validInput.get())
+                if (!inputProvided.get())
                     error(new StoppedByUserException(), "User closed GUI.", "GUI CLOSED");
             }).open(initiator);
         });
@@ -413,19 +415,17 @@ public class PremiumUpdater implements Updater {
 
     private void requestPassword(String usernameInput, boolean recall) {
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]", 300);
-        AtomicBoolean validInput = new AtomicBoolean(false);
+        AtomicBoolean inputProvided = new AtomicBoolean(false);
         new AnvilGUI.Builder()
                 .text("Spigot password")
                 .plugin(InternalCore.getPlugin())
                 .onComplete((player, passwordInput) -> {
-                    validInput.set(true);
+                    inputProvided.set(true);
                     try {
                         currentUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput);
 
                         if (currentUser == null)
                             throw new InvalidCredentialsException();
-                        else
-                            Bukkit.broadcastMessage("NOT NULL USER, NAME = "+currentUser.getUsername());
 
                         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]", 10);
                         UtilSpigotCreds.setUsername(usernameInput);
@@ -446,40 +446,42 @@ public class PremiumUpdater implements Updater {
 
                     return AnvilGUI.Response.text("Success!");
                 }).onClose(player -> {
-            if (!validInput.get())
+            if (!inputProvided.get())
                 error(new StoppedByUserException(), "User closed GUI.", "GUI CLOSED");
         }).open(initiator);
     }
 
     private void requestTwoFactor(String usernameInput, String passwordInput, boolean recall) {
-        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]", 300);
-        AtomicBoolean validInput = new AtomicBoolean(false);
+        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]", 600);
+        AtomicBoolean inputProvided = new AtomicBoolean(false);
         new AnvilGUI.Builder().plugin(InternalCore.getPlugin())
-                .text("Spigot two factor secret")
+                .text("Spigot 2FA secret")
                 .onComplete((Player player, String twoFactorInput) -> {
-                    validInput.set(true);
+                    inputProvided.set(true);
                     try {
                         currentUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput, twoFactorInput);
                         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ENCRYPTING CREDENTIALS]", 10);
+
+                        if (currentUser == null)
+                            throw new InvalidCredentialsException();
 
                         UtilSpigotCreds.setUsername(usernameInput);
                         UtilSpigotCreds.setPassword(passwordInput);
                         UtilSpigotCreds.setTwoFactor(twoFactorInput);
                         UtilSpigotCreds.saveFile();
 
-                        if (currentUser == null)
-                            throw new InvalidCredentialsException();
-
                         if (recall)
                             UtilThreading.syncDelayed(this::update, 50);
                         return AnvilGUI.Response.text("Logging in, close GUI.");
+                    } catch (InvalidCredentialsException | TwoFactorAuthenticationException ex) {
+                        return AnvilGUI.Response.text("Invalid key.");
                     } catch (Exception ex) {
                         initiator.closeInventory();
                         error(ex, "Error occurred while authenticating Spigot user.");
-                        return AnvilGUI.Response.text("Authentication failed");
+                        return AnvilGUI.Response.text("Authentication failed.");
                     }
                 }).onClose(player -> {
-            if (!validInput.get())
+            if (!inputProvided.get())
                 error(new StoppedByUserException(), "User closed GUI.", "GUI CLOSED");
         }).open(initiator);
     }
@@ -490,18 +492,18 @@ public class PremiumUpdater implements Updater {
 
     private void error(Exception ex, String message) {
         InternalCore.get().printError(ex, message);
-        UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar() + " &8[CHECK CONSOLE]");
+        UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[CHECK CONSOLE]");
         endTask.run(false, ex, null, pluginName);
     }
 
     private void error(Exception ex, String errorMessage, String shortErrorMessage) {
         InternalCore.get().printError(ex, errorMessage);
-        UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar() + " &8[" + shortErrorMessage + "&8]", 10);
+        UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[" + shortErrorMessage + "&8]", 10);
         endTask.run(false, ex, null, pluginName);
     }
 
     /*
-     * DEBUG MESSAGES
+     * DEBUG MESSAGES - Messy code ahead.
      */
 
     @SuppressWarnings("DuplicatedCode") private void printDebug() {

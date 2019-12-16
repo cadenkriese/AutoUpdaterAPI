@@ -25,7 +25,7 @@ final class UtilEncryption {
 
     protected static void init() {
         if (keyFile == null)
-            keyFile = new File(InternalCore.getDataFolder().getAbsolutePath() + "/keys.enc");
+            keyFile = new File(InternalCore.getDataFolder().getAbsolutePath() + "/.keys.enc");
 
         if (!keyFile.getParentFile().exists())
             keyFile.getParentFile().mkdirs();
@@ -45,8 +45,8 @@ final class UtilEncryption {
             keyConfig.set("3", RandomStringUtils.randomAscii(20));
 
         try {
-            if (!keyFile.exists())
-                keyFile.createNewFile();
+            if (!keyFile.exists() && !keyFile.createNewFile())
+                throw new IOException("Key file generation failed.");
 
             keyFile.setReadable(true, true);
             keyFile.setWritable(true, true);

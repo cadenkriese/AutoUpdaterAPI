@@ -52,6 +52,7 @@ public class PremiumUpdater implements Updater {
     private int resourceId;
     private int loginAttempts;
     private long startingTime;
+
     protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
@@ -65,6 +66,7 @@ public class PremiumUpdater implements Updater {
         this.locale = locale;
         this.replace = replace;
     }
+
     protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
@@ -92,7 +94,7 @@ public class PremiumUpdater implements Updater {
                         "org.apache.commons.logging.impl.NoOpLog");
                 Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
             } catch (Exception ex) {
-                InternalCore.get().printError(ex, "Unable to turn off HTML unit logging!.");
+                InternalCore.get().printError(ex, "Unable to turn off HTMLUnit logging!.");
             }
 
             //Setup web client
@@ -106,7 +108,7 @@ public class PremiumUpdater implements Updater {
             webClient.getOptions().setPrintContentOnFailingStatusCode(false);
             java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
 
-            logger.info("Initializing connection with spigot...");
+            logger.info("Initializing connection with Spigot...");
 
             //Spigot Site API
             siteAPI = new SpigotSiteCore();
@@ -118,6 +120,8 @@ public class PremiumUpdater implements Updater {
             } catch (Exception ex) {
                 InternalCore.get().printError(ex, "Error occurred while initializing the spigot site API.");
             }
+
+            logger.info("Connected to Spigot.");
         });
     }
 
@@ -203,7 +207,6 @@ public class PremiumUpdater implements Updater {
                     printDebug2(htmlPage);
                     if (htmlPage.asXml().contains("DDoS protection by Cloudflare")) {
                         UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[WAITING FOR CLOUDFLARE]", 20);
-                        InternalCore.getLogger().info("Arrived at DDoS protection screen.");
                         webClient.waitForBackgroundJavaScript(8_000);
                     }
                     response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
@@ -372,7 +375,7 @@ public class PremiumUpdater implements Updater {
 
     private void runGuis(boolean recall) {
         UtilThreading.sync(() -> {
-            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]", 120);
+            UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING USERNAME]", 300);
             new AnvilGUI.Builder()
                     .text("Spigot username")
                     .plugin(InternalCore.getPlugin())
@@ -395,16 +398,18 @@ public class PremiumUpdater implements Updater {
                         }
 
                         return AnvilGUI.Response.text("Success!");
-                    }).open(initiator);
+                    })
+                    .onClose(player -> error(new InvalidCredentialsException(), "User closed GUI."))
+                    .open(initiator);
         });
     }
 
     private void requestPassword(String usernameInput, boolean recall) {
-        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]", 120);
+        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PASSWORD]", 300);
         new AnvilGUI.Builder()
                 .text("Spigot password")
                 .plugin(InternalCore.getPlugin())
-                .onComplete(((player, passwordInput) -> {
+                .onComplete((player, passwordInput) -> {
                     try {
                         currentUser = siteAPI.getUserManager().authenticate(usernameInput, passwordInput);
 
@@ -426,11 +431,13 @@ public class PremiumUpdater implements Updater {
                     }
 
                     return AnvilGUI.Response.text("Success!");
-                })).open(initiator);
+                })
+                .onClose(player -> error(new InvalidCredentialsException(), "User closed GUI."))
+                .open(initiator);
     }
 
     private void requestTwoFactor(String usernameInput, String passwordInput, boolean recall) {
-        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]", 120);
+        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]", 300);
         new AnvilGUI.Builder().plugin(InternalCore.getPlugin())
                 .text("Spigot two factor secret")
                 .onComplete((Player player, String twoFactorInput) -> {
@@ -450,7 +457,9 @@ public class PremiumUpdater implements Updater {
                         error(ex, "Error occurred while authenticating Spigot user.");
                         return AnvilGUI.Response.text("Authentication failed");
                     }
-                }).open(initiator);
+                })
+                .onClose(player -> error(new InvalidCredentialsException(), "User closed GUI."))
+                .open(initiator);
     }
 
     /*

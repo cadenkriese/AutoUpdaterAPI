@@ -20,7 +20,7 @@ public class LibraryDownloadTest {
         File file = File.createTempFile("auapi-premium-", ".jar");
         try {
             UtilLibraries.downloadLibrary(file);
-            System.out.println("LENGTH = "+file.length());
+            System.out.println("DOWNLOADED PLUGIN LENGTH = " + file.length());
             Assert.assertTrue(file.length() > minSize);
         } finally {
             file.delete();

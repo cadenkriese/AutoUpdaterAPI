@@ -31,10 +31,10 @@ public class AutoUpdaterAPI {
         if (premiumSupport) {
             UtilThreading.async(() -> {
                 try {
-                    UtilLibraries.downloadPremiumSupport(new File(InternalCore.getDataFolder().getPath()+"/libs/"));
+                    UtilLibraries.downloadPremiumSupport(new File(InternalCore.getDataFolder().getPath() + "/libs/"));
                     PremiumUpdater.init(plugin);
                 } catch (IOException ex) {
-                    InternalCore.get().printError(ex);
+                    InternalCore.get().printError(ex, "Error occurred while setting up support for premium resources.");
                 }
             });
         }

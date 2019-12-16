@@ -6,6 +6,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * AutoUpdaterAPI
@@ -48,6 +50,30 @@ public class AutoUpdaterAPI {
      */
     public static void resetUser() {
         PremiumUpdater.resetUser();
+    }
+
+    /**
+     * Controls if the API should print large amounts of debug data.
+     *
+     * @param enabled Should debug logging be enabled or not.
+     */
+    public static void setDebug(boolean enabled) {
+        InternalCore.DEBUG = enabled;
+
+        if (enabled) {
+            Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.INFO);
+            Logger.getLogger("com.gargoylesoftware").setLevel(Level.INFO);
+        }
+    }
+
+    /**
+     * Disable internal metrics reporting from the API.
+     *
+     * Note that all metrics reporting are anonymous and web requests
+     * made have a minimal impact on performance.
+     */
+    public static void disableMetrics() {
+        InternalCore.METRICS = false;
     }
 
     /**

@@ -15,8 +15,8 @@ import java.util.logging.Logger;
  */
 public final class InternalCore {
     public final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
-    public static final boolean DEBUG = false;
-    public static final boolean METRICS = true;
+    static boolean DEBUG = false;
+    static boolean METRICS = true;
 
     private static InternalCore instance;
     @Getter private static Plugin plugin;

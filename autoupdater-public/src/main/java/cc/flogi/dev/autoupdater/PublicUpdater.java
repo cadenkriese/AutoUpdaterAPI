@@ -66,18 +66,13 @@ import java.nio.file.StandardCopyOption;
         return newVersion;
     }
 
-    /**
-     * Begins the update process, this will disable and delete the current instance of the plugin being updated.
-     */
     @Override public void update() {
         startingTime = System.currentTimeMillis();
 
         locale.updateVariables(plugin.getName(), currentVersion, newVersion);
 
         if (newVersion.equalsIgnoreCase(currentVersion)) {
-            InternalCore.get().printPluginError("Error occurred while updating " + pluginName + "!", "Plugin is up to date!");
-            UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " [PLUGIN IS UP TO DATE]");
-            endTask.run(false, null, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
+            error(new Exception("Error occurred while updating plugin."), "Plugin is up to date!", "PLUGIN IS UP TO DATE");
             return;
         }
 
@@ -154,11 +149,9 @@ import java.nio.file.StandardCopyOption;
         });
     }
 
-    private void error(Exception ex, String message, String newVersion) {
-        InternalCore.get().printError(ex, message);
-        UtilUI.sendActionBar(initiator, UtilText.format(locale.getUpdateFailed(),
-                "old_version", currentVersion,
-                "new_version", newVersion));
-        endTask.run(false, ex, Bukkit.getPluginManager().getPlugin(pluginName), pluginName);
+    private void error(Exception ex, String errorMessage, String shortErrorMessage) {
+        InternalCore.get().printError(ex, errorMessage);
+        UtilUI.sendActionBar(initiator, locale.getUpdateFailedNoVar() + " &8[" + shortErrorMessage + "&8]", 10);
+        endTask.run(false, ex, null, pluginName);
     }
 }

@@ -14,7 +14,7 @@ import java.util.HashMap;
  *
  * Created on 2/27/18
  */
-final class UtilUI {
+public final class UtilUI {
     private static final long ACTIONBAR_DEFAULT_DURATION = 40;
     private static HashMap<String, BukkitRunnable> currentTasks = new HashMap<>();
 

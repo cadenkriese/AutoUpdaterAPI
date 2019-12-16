@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
-final class UtilPlugin {
+public final class UtilPlugin {
     /**
      * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
      *

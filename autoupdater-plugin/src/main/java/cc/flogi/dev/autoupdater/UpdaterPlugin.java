@@ -78,7 +78,6 @@ import java.net.URISyntaxException;
 
     private Plugin initializePlugin(String pluginName, String pluginFolderPath, UpdateLocale locale, UpdaterRunnable endTask)
             throws InvalidDescriptionException, InvalidPluginException {
-        Bukkit.broadcastMessage("LOADING PLUGIN AT " + pluginFolderPath + "/" + locale.getFileName() + ".jar");
         Plugin updated = getServer().getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
         updated.onLoad();
         Bukkit.getPluginManager().enablePlugin(updated);

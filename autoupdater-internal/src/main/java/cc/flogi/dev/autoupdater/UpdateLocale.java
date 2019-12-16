@@ -11,7 +11,8 @@ import java.lang.reflect.Field;
  *
  * Created on 6/6/17
  */
-@Data @Builder @AllArgsConstructor final class UpdateLocale {
+//TODO maybe convert to interface that is implemented by public and premium versions.
+@Data @Builder @AllArgsConstructor public final class UpdateLocale {
     //Name of the jar file that should be created (.jar will be added at the end)
     private String fileName = "plugin";
     //Name of the plugin AutoUpdater will try to enable after the download is complete

@@ -181,6 +181,7 @@ public class PremiumUpdater implements Updater {
         }
 
         UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]", 20);
+        downloadResource();
     }
 
     @Override public void downloadResource() {
@@ -244,6 +245,7 @@ public class PremiumUpdater implements Updater {
                 fos.close();
 
                 printDebug3(downloadedFileSize, completeFileSize);
+                initializePlugin();
             } catch (Exception ex) {
                 error(ex, "Error occurred while updating premium resource.", newVersion);
             }
@@ -299,7 +301,6 @@ public class PremiumUpdater implements Updater {
                     return;
                 }
 
-                currentUser = currentUser;
                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
                 InternalCore.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 

@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -33,37 +34,45 @@ public class UtilLibraries {
         ADD_URL_METHOD = addUrlMethod;
     }
 
-    protected static void downloadPremiumSupport() throws IOException {
-        File dataFolder = new File(InternalCore.getDataFolder().getAbsolutePath() + "/libs");
-        if (!dataFolder.exists() && !dataFolder.mkdirs())
+    protected static void downloadPremiumSupport(File location) throws IOException {
+        if (!location.exists() && !location.mkdirs())
             throw new IOException("Failed to create directories");
 
         ProjectProperties properties = InternalCore.PROPERTIES;
 
         //Cleanup unused versions.
-        for (File file : dataFolder.listFiles()) {
+        for (File file : location.listFiles()) {
             if (file.getName().contains("autoupdater-premium")) {
-                if (file.getName().contains(properties.VERSION)) {
+                //Ensure we're adding the correct version and not a corrupt download.
+                if (file.getName().contains(properties.VERSION) && file.length() > 10_000_000) {
                     addURL(file);
+                    return;
                 } else
                     file.delete();
             }
         }
 
-        String urlString = properties.ARTIFACTORY_URL + "autoupdater-premium/" + properties.VERSION + "/autoupdater-premium-" + properties.VERSION + ".jar";
-        String downloadPath = InternalCore.getDataFolder().getAbsolutePath() + "/libs/autoupdater-premium-" + properties.VERSION + ".jar";
-        URL url = new URL(urlString);
+        File downloadLocation = new File(location.getAbsolutePath() + "/autoupdater-premium-" + properties.VERSION + ".jar");
+        downloadLibrary(downloadLocation);
+        addURL(downloadLocation);
+    }
 
-        ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-        FileOutputStream fileOutputStream = new FileOutputStream(downloadPath);
+    protected static void downloadLibrary(File location) throws IOException {
+        ProjectProperties properties = InternalCore.PROPERTIES;
+
+        String urlString = properties.ARTIFACTORY_URL + "autoupdater-premium/" + properties.VERSION + "/autoupdater-premium-" + properties.VERSION + ".jar";
+        URL url = new URL(urlString);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("User-Agent", UserAgent.CHROME.toString());
+
+        ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream());
+        FileOutputStream fileOutputStream = new FileOutputStream(location.getAbsolutePath());
         FileChannel fileChannel = fileOutputStream.getChannel();
         fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
 
         readableByteChannel.close();
         fileOutputStream.close();
         fileChannel.close();
-
-        addURL(new File(downloadPath));
     }
 
     private static void addURL(File file) throws MalformedURLException {

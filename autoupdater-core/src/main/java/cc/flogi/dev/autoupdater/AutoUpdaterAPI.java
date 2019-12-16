@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -30,7 +31,7 @@ public class AutoUpdaterAPI {
         if (premiumSupport) {
             UtilThreading.async(() -> {
                 try {
-                    UtilLibraries.downloadPremiumSupport();
+                    UtilLibraries.downloadPremiumSupport(new File(InternalCore.getDataFolder().getPath()+"/libs/"));
                     PremiumUpdater.init(plugin);
                 } catch (IOException ex) {
                     InternalCore.get().printError(ex);
@@ -43,6 +44,7 @@ public class AutoUpdaterAPI {
      * Resets the current user used in {@link PremiumUpdater}
      *
      * @apiNote Requires premiumSupport to be set to true on startup.
+     * @since 3.0.1
      */
     public static void resetUser() {
         PremiumUpdater.resetUser();
@@ -55,6 +57,7 @@ public class AutoUpdaterAPI {
      *
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @apiNote This method will make minecraft version sensitive calls, please ensure that the version you're working on is supported by {@link net.wesjd.anvilgui.AnvilGUI}.
+     * @since 3.0.1
      */
     public static void promptLogin(Player player) {
         new PremiumUpdater(null, null, 1, new UpdateLocale(), false).authenticate(false);
@@ -70,8 +73,9 @@ public class AutoUpdaterAPI {
      * @param replace   Should the old version of the plugin be deleted and disabled.
      *
      * @return An instantiated {@link PublicUpdater}.
+     * @since 3.0.1
      */
-    public PublicUpdater createPublicUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace) {
+    public Updater createPublicUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace) {
         return new PublicUpdater(plugin, initiator, url, locale, replace);
     }
 
@@ -86,8 +90,9 @@ public class AutoUpdaterAPI {
      * @param endTask   Runnable that will run once the update has completed.
      *
      * @return An instantiated {@link PublicUpdater}.
+     * @since 3.0.1
      */
-    public PublicUpdater createPublicUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    public Updater createPublicUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         return new PublicUpdater(plugin, initiator, url, locale, replace, endTask);
     }
 
@@ -105,8 +110,9 @@ public class AutoUpdaterAPI {
      * @param replace    Should the old version of the plugin be deleted and disabled.
      *
      * @return An instantiated {@link PublicSpigotUpdater}.
+     * @since 3.0.1
      */
-    public PublicSpigotUpdater createSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+    public Updater createSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
         return new PublicSpigotUpdater(plugin, initiator, resourceId, locale, replace);
     }
 
@@ -121,8 +127,9 @@ public class AutoUpdaterAPI {
      * @param endTask    Runnable that will run once the update has completed.
      *
      * @return An instantiated {@link PublicSpigotUpdater}.
+     * @since 3.0.1
      */
-    public PublicSpigotUpdater createSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    public Updater createSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         return new PublicSpigotUpdater(plugin, initiator, resourceId, locale, replace, endTask);
     }
 
@@ -139,7 +146,7 @@ public class AutoUpdaterAPI {
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
-    public PremiumUpdater createPremiumUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+    public Updater createPremiumUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
         return new PremiumUpdater(initiator, plugin, resourceId, locale, replace);
     }
 
@@ -157,7 +164,7 @@ public class AutoUpdaterAPI {
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
-    public PremiumUpdater createPremiumUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    public Updater createPremiumUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         return new PremiumUpdater(initiator, plugin, resourceId, locale, replace, endTask);
     }
 }

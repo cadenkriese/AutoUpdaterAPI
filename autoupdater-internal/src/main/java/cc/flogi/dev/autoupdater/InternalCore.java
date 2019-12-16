@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 /**
  * Class holding internal API information.
  */
-final class InternalCore {
+public final class InternalCore {
     public final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
     public static final boolean DEBUG = false;
     public static final boolean METRICS = true;

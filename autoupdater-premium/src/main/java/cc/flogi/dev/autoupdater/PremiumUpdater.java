@@ -18,7 +18,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.junit.runner.notification.StoppedByUserException;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -408,7 +407,7 @@ public class PremiumUpdater implements Updater {
                         return AnvilGUI.Response.text("Success!");
                     }).onClose(player -> {
                 if (!inputProvided.get())
-                    error(new StoppedByUserException(), "User closed GUI.", "GUI CLOSED");
+                    error(new Exception("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
             }).open(initiator);
         });
     }
@@ -447,7 +446,7 @@ public class PremiumUpdater implements Updater {
                     return AnvilGUI.Response.text("Success!");
                 }).onClose(player -> {
             if (!inputProvided.get())
-                error(new StoppedByUserException(), "User closed GUI.", "GUI CLOSED");
+                error(new Exception("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
         }).open(initiator);
     }
 
@@ -482,7 +481,7 @@ public class PremiumUpdater implements Updater {
                     }
                 }).onClose(player -> {
             if (!inputProvided.get())
-                error(new StoppedByUserException(), "User closed GUI.", "GUI CLOSED");
+                error(new Exception("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
         }).open(initiator);
     }
 

@@ -31,15 +31,10 @@ public final class UtilUI {
         clearActionBar(player);
 
         if (!Bukkit.isPrimaryThread()) {
-            new BukkitRunnable() {
-                @Override public void run() {
-                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(colorize(message)));
-                }
-            }.runTask(InternalCore.getPlugin());
-            return;
+            UtilThreading.sync(() -> actionBar(player, message));
         }
 
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(colorize(message)));
+        actionBar(player, message);
     }
 
     /**
@@ -63,7 +58,7 @@ public final class UtilUI {
 
             @Override public void run() {
                 if (player != null && player.isOnline() && displayedDuration < totalDuration) {
-                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(colorize(message)));
+                    actionBar(player, message);
                     displayedDuration += ACTIONBAR_DEFAULT_DURATION;
                 } else {
                     currentTasks.remove(uuid);
@@ -90,7 +85,7 @@ public final class UtilUI {
             currentTasks.remove(player.getUniqueId().toString());
         }
 
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(""));
+        actionBar(player, "");
     }
 
     /**
@@ -143,6 +138,23 @@ public final class UtilUI {
     }
 
     /**
+     * Formats a string with the variables in order.
+     *
+     * @param toFormat The string to replace variables in.
+     * @param variables The variables to replace in order of "key", "value", "key", "value", etc.
+     * @return The formatted string with the variables replaced.
+     */
+    public static String format(String toFormat, String... variables) {
+        for (int i = 0; i < variables.length; i += 2) {
+            String variable = "%" + variables[i] + "%";
+            String replacement = variables[i + 1];
+
+            toFormat = toFormat.replace(variable, replacement);
+        }
+        return toFormat;
+    }
+
+    /**
      * Shorthand notation for ${@link ChatColor#translateAlternateColorCodes(char, String)}.
      *
      * @param string The string to be colorized.
@@ -162,5 +174,14 @@ public final class UtilUI {
             buf[i] = ch;
         }
         return new String(buf);
+    }
+
+    private static void actionBar(Player player, String message) {
+        message = colorize(message);
+        if (Bukkit.getVersion().contains("Paper")) {
+            player.sendActionBar(message);
+        } else {
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+        }
     }
 }

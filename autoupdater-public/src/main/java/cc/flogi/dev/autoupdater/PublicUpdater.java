@@ -105,7 +105,7 @@ import java.nio.file.StandardCopyOption;
                     if (downloadedFileSize % (grabSize * 5) == 0) {
                         String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
                         final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
-                        UtilUI.sendActionBar(initiator, UtilText.format(locale.getUpdatingDownload() + " &8[DOWNLOADING]",
+                        UtilUI.sendActionBar(initiator, UtilUI.format(locale.getUpdatingDownload() + " &8[DOWNLOADING]",
                                 "%download_bar%", bar,
                                 "%download_percent%", currentPercent + "%"));
                     }
@@ -118,7 +118,7 @@ import java.nio.file.StandardCopyOption;
 
                 initializePlugin();
             } catch (IOException ex) {
-                error(ex, "Error occurred while updating " + pluginName + ".", "IO EXCEPTION");
+                error(ex, "Error occurred while updating " + pluginName + ".", "PLUGIN NOT FOUND");
             }
         });
     }

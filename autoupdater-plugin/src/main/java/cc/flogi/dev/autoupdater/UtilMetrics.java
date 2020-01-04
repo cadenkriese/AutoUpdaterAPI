@@ -84,7 +84,16 @@ public final class UtilMetrics {
 
                 int responseCode = conn.getResponseCode();
 
-                if (responseCode != 200 && AutoUpdaterInternal.DEBUG)
+                if (responseCode == 401) {
+                    try (InputStream is = conn.getInputStream()) {
+                        String responseBody = buildStringFromInputStream(is);
+
+                        if (responseBody.contains("token has expired")) {
+                            token = null;
+                            sendRequest(requestMethod, urlString, body);
+                        }
+                    }
+                } else if (responseCode != 200 && AutoUpdaterInternal.DEBUG)
                     System.out.println("Metrics request failed code = " + responseCode);
             } finally {
                 conn.disconnect();
@@ -120,15 +129,19 @@ public final class UtilMetrics {
      */
     static String readFrom(String url) throws IOException {
         try (InputStream is = new URL(url).openStream()) {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-
-            int cp;
-            while ((cp = rd.read()) != -1) {
-                sb.append((char) cp);
-            }
-            return sb.toString();
+            return buildStringFromInputStream(is);
         }
+    }
+
+    private static String buildStringFromInputStream(InputStream inputStream) throws IOException {
+        BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder();
+
+        int cp;
+        while ((cp = rd.read()) != -1) {
+            sb.append((char) cp);
+        }
+        return sb.toString();
     }
 
     @AllArgsConstructor @Getter @Setter

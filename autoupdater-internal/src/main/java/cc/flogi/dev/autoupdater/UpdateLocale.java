@@ -9,10 +9,16 @@ import java.lang.reflect.Field;
 /**
  * @author Caden Kriese (flogic)
  *
+ * Used for managing messages sent to users during the update process,
+ * use it to add your own localization or stylistic changes.
+ *
+ * Note that all messages are sent through action bars.
+ * Also, download progress bars are unlikely to most downloads occurring extremely quickly.
+ *
  * Created on 6/6/17
  */
-//TODO maybe convert to interface that is implemented by public and premium versions.
-@Data @Builder @AllArgsConstructor public final class UpdateLocale {
+@Data @Builder @AllArgsConstructor
+public final class UpdateLocale {
     //Name of the jar file that should be created (.jar will be added at the end)
     private String fileName = "plugin";
     //Name of the plugin AutoUpdater will try to enable after the download is complete

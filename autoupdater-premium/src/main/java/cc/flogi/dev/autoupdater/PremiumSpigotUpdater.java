@@ -18,10 +18,15 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -34,7 +39,7 @@ import java.util.logging.Logger;
  *
  * Created on 6/6/17
  */
-public class PremiumUpdater implements Updater {
+public class PremiumSpigotUpdater implements Updater {
 
     private static User currentUser;
     private static SpigotSiteAPI siteAPI;
@@ -46,26 +51,21 @@ public class PremiumUpdater implements Updater {
     private String pluginName;
     private UpdateLocale locale;
     private Resource resource;
-    private UpdaterRunnable endTask = (successful, ex, updatedPlugin, pluginName) -> {};
+    private UpdaterRunnable endTask;
     private boolean replace;
     private int resourceId;
     private int loginAttempts;
     private long startingTime;
 
-    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
-        locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
-        pluginFolderPath = plugin.getDataFolder().getParent();
-        currentVersion = plugin.getDescription().getVersion();
-        loginAttempts = 1;
-        pluginName = locale.getPluginName();
-        this.resourceId = resourceId;
-        this.plugin = plugin;
-        this.initiator = initiator;
-        this.locale = locale;
-        this.replace = replace;
+    private UtilMetrics.SpigotPlugin pluginMetrics;
+    private UtilMetrics.PluginUpdate updateMetrics;
+
+    protected PremiumSpigotUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
+        this(initiator, plugin, resourceId, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {
+        });
     }
 
-    protected PremiumUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    protected PremiumSpigotUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
         pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
@@ -115,7 +115,7 @@ public class PremiumUpdater implements Updater {
             try {
                 if (UtilSpigotCreds.getUsername() != null && UtilSpigotCreds.getPassword() != null) {
                     logger.info("Stored credentials detected, attempting login.");
-                    new PremiumUpdater(null, javaPlugin, 1, new UpdateLocale(), false).authenticate(false);
+                    new PremiumSpigotUpdater(null, javaPlugin, 1, new UpdateLocale(), false).authenticate(false);
                 }
             } catch (Exception ex) {
                 InternalCore.get().printError(ex, "Error occurred while initializing the spigot site API.");
@@ -133,129 +133,175 @@ public class PremiumUpdater implements Updater {
         UtilSpigotCreds.reset();
     }
 
-    @Override public String getLatestVersion() {
+    @Override
+    public String getLatestVersion() {
         try {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (Exception ex) {
             error(ex, "Error occurred while retrieving the latest version of a premium resource.");
+            return null;
         }
-        return "";
     }
 
-    @Override public void update() {
-        startingTime = System.currentTimeMillis();
+    @Override
+    public String getDownloadUrlString() {
+        if (resource == null) {
+            try {
+                resource = siteAPI.getResourceManager().getResourceById(resourceId);
+            } catch (ConnectionFailedException ex) {
+                error(ex, "Error occurred while retrieving the download url of a premium resource.");
+                return null;
+            }
+        }
 
+        return resource.getDownloadURL();
+    }
+
+    @Override
+    public void handleMetrics() {
+        try {
+            String spigetResponse = UtilReader.readFrom("https://api.spiget.org/v2/resources/" + resourceId);
+            JSONParser parser = new JSONParser();
+            JSONObject json = (JSONObject) parser.parse(spigetResponse);
+
+            String resourceName = (String) json.get("name");
+            String[] supportedVersions = (String[]) ((JSONArray) json.get("testedVersions")).stream()
+                    .map(String::valueOf)
+                    .toArray(String[]::new);
+            Date uploadDate = new Date(((Integer) json.get("releaseDate")) * 1000);
+            Double averageRating = (Double) ((JSONObject) json.get("rating")).get("average");
+            Double price = (Double) json.get("price");
+            String currency = (String) json.get("currency");
+            String downloadUrl = "https://spigotmc.org/" + ((JSONObject) json.get("file")).get("url");
+
+            pluginMetrics = new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
+                    downloadUrl, resourceName, resourceId, averageRating, uploadDate, supportedVersions,
+                    true, price, currency);
+        } catch (IOException | ParseException ex) {
+            if (InternalCore.DEBUG)
+                InternalCore.get().printError(ex);
+        }
+    }
+
+    @Override
+    public void update() {
+        startingTime = System.currentTimeMillis();
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PLUGIN INFO]");
 
-        String newVersion = getLatestVersion();
-        locale.updateVariables(plugin.getName(), currentVersion, newVersion);
-
-        if (currentVersion.equalsIgnoreCase(newVersion)) {
-            error(new Exception("Error occurred while updating premium resource."), "Plugin already up to date.", "PLUGIN UP TO DATE");
-            return;
-        }
-
-        if (locale.getPluginName() != null)
-            pluginName = locale.getPluginName();
-
-        locale.setFileName(locale.getFileName());
-
-        if (currentUser == null) {
-            authenticate(true);
-            UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[AUTHENTICATING SPIGOT ACCOUNT]", 5);
-            return;
-        }
-
-        try {
-            for (Resource resource : siteAPI.getResourceManager().getPurchasedResources(currentUser)) {
-                if (resource.getResourceId() == resourceId) {
-                    this.resource = resource;
-                }
-            }
-        } catch (ConnectionFailedException ex) {
-            error(ex, "Error occurred while connecting to spigot.", "CONNECTION FAILED");
-            return;
-        }
-
-        if (resource == null) {
-            error(new Exception("Error occurred while updating premium plugin."),
-                    "The current spigot user has not purchased the plugin '" + pluginName + "'",
-                    "YOU HAVE NOT BOUGHT THAT PLUGIN");
-            return;
-        }
-
-        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]", 20);
-        downloadResource();
-    }
-
-    @Override public void downloadResource() {
         UtilThreading.async(() -> {
-            try {
-                printDebug();
-                Map<String, String> cookies = ((SpigotUser) currentUser).getCookies();
-
-                cookies.forEach((key, value) -> webClient.getCookieManager().addCookie(
-                        new Cookie("spigotmc.org", key, value)));
-
-                webClient.waitForBackgroundJavaScript(10_000);
-                webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-                Page page = webClient.getPage(siteAPI.getResourceManager().getResourceById(resourceId, currentUser).getDownloadURL());
-                WebResponse response = page.getEnclosingWindow().getEnclosedPage().getWebResponse();
-
-                if (page instanceof HtmlPage) {
-                    HtmlPage htmlPage = (HtmlPage) page;
-                    printDebug2(htmlPage);
-                    if (htmlPage.asXml().contains("DDoS protection by Cloudflare")) {
-                        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[WAITING FOR CLOUDFLARE]", 20);
-                        webClient.waitForBackgroundJavaScript(10_000);
-                    }
-                    response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
-                }
-
-                String contentLength = response.getResponseHeaderValue("content-length");
-                int completeFileSize = 0;
-                int grabSize = 2048;
-                if (contentLength != null)
-                    completeFileSize = Integer.parseInt(contentLength);
-
-                printDebug1(page, response, webClient);
-
-                BufferedInputStream in = new BufferedInputStream(response.getContentAsStream());
-                FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
-                BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
-
-                byte[] data = new byte[grabSize];
-                long downloadedFileSize = 0;
-                int grabbed;
-                while ((grabbed = in.read(data, 0, grabSize)) >= 0) {
-                    downloadedFileSize += grabbed;
-
-                    //Don't send action bar for every grab we're not trying to crash any clients (or servers) here.
-                    if (downloadedFileSize % (grabSize * 5) == 0 && completeFileSize > 0) {
-                        String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
-                        final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
-
-                        UtilUI.sendActionBar(initiator, locale.getUpdatingDownload()
-                                                                .replace("%download_bar%", bar)
-                                                                .replace("%download_percent%", currentPercent + "%")
-                                                                + " &8[DOWNLOADING RESOURCE]");
-                    }
-                    bout.write(data, 0, grabbed);
-                }
-
-                bout.close();
-                in.close();
-                fos.close();
-
-                printDebug3(downloadedFileSize, completeFileSize);
-                initializePlugin();
-            } catch (Exception ex) {
-                error(ex, "Error occurred while updating premium resource.");
+            if (currentUser == null) {
+                authenticate(true);
+                UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[AUTHENTICATING SPIGOT ACCOUNT]", 5);
+                return;
             }
+
+            try {
+                if (resource == null)
+                    resource = siteAPI.getResourceManager().getResourceById(resourceId);
+
+                if (!currentUser.getPurchasedResources().contains(resource)) {
+                    error(new Exception("Error occurred while updating premium plugin."),
+                            "The current spigot user has not purchased the plugin '" + pluginName + "'",
+                            "YOU HAVE NOT BOUGHT THAT PLUGIN");
+                    return;
+                }
+            } catch (ConnectionFailedException ex) {
+                error(ex, "Error occurred while connecting to spigot.", "CONNECTION FAILED");
+                return;
+            }
+
+            updateMetrics = new UtilMetrics.PluginUpdate(new Date(),
+                    new UtilMetrics.PluginUpdateVersion(currentVersion, getLatestVersion()));
+
+            String newVersion = getLatestVersion();
+            locale.updateVariables(plugin.getName(), currentVersion, newVersion);
+
+            if (currentVersion.equalsIgnoreCase(newVersion)) {
+                error(new Exception("Error occurred while updating premium resource."), "Plugin already up to date.", "PLUGIN UP TO DATE");
+                return;
+            }
+
+            if (locale.getPluginName() != null)
+                pluginName = locale.getPluginName();
+            locale.setFileName(locale.getFileName());
+
+            //Metrics on another seperate thread to avoid slowing update.
+            UtilThreading.async(this::handleMetrics);
+
+            UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]", 20);
+            downloadResource();
         });
     }
 
-    @Override public void initializePlugin() {
+    @Override
+    public void downloadResource() {
+        try {
+            printDebug();
+            Map<String, String> cookies = ((SpigotUser) currentUser).getCookies();
+
+            cookies.forEach((key, value) -> webClient.getCookieManager().addCookie(
+                    new Cookie("spigotmc.org", key, value)));
+
+            webClient.waitForBackgroundJavaScript(10_000);
+            webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+            Page page = webClient.getPage(getDownloadUrlString());
+            WebResponse response = page.getEnclosingWindow().getEnclosedPage().getWebResponse();
+
+            if (page instanceof HtmlPage) {
+                HtmlPage htmlPage = (HtmlPage) page;
+                printDebug2(htmlPage);
+                if (htmlPage.asXml().contains("DDoS protection by Cloudflare")) {
+                    UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[WAITING FOR CLOUDFLARE]", 20);
+                    webClient.waitForBackgroundJavaScript(10_000);
+                }
+                response = htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse();
+            }
+
+            String contentLength = response.getResponseHeaderValue("content-length");
+            int completeFileSize = 0;
+            int grabSize = 2048;
+            if (contentLength != null)
+                completeFileSize = Integer.parseInt(contentLength);
+
+            printDebug1(page, response, webClient);
+
+            BufferedInputStream in = new BufferedInputStream(response.getContentAsStream());
+            FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
+            BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
+
+            byte[] data = new byte[grabSize];
+            long downloadedFileSize = 0;
+            int grabbed;
+            while ((grabbed = in.read(data, 0, grabSize)) >= 0) {
+                downloadedFileSize += grabbed;
+
+                //Don't send action bar for every grab we're not trying to crash any clients (or servers) here.
+                if (downloadedFileSize % (grabSize * 5) == 0 && completeFileSize > 0) {
+                    String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
+                    final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
+
+                    UtilUI.sendActionBar(initiator, locale.getUpdatingDownload()
+                            .replace("%download_bar%", bar)
+                            .replace("%download_percent%", currentPercent + "%")
+                            + " &8[DOWNLOADING RESOURCE]");
+                }
+                bout.write(data, 0, grabbed);
+            }
+
+            bout.close();
+            in.close();
+            fos.close();
+            updateMetrics.setSize((long) completeFileSize);
+
+            printDebug3(downloadedFileSize, completeFileSize);
+            initializePlugin();
+        } catch (Exception ex) {
+            error(ex, "Error occurred while updating premium resource.");
+        }
+    }
+
+    @Override
+    public void initializePlugin() {
         //Copy plugin utility from src/main/resources
         String corePluginFile = "/autoupdater-plugin-" + InternalCore.PROPERTIES.VERSION + ".jar";
         try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
@@ -271,7 +317,7 @@ public class PremiumUpdater implements Updater {
                         throw new FileNotFoundException("Unable to locate updater plugin.");
 
                     UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
-                            pluginFolderPath, locale, startingTime, endTask);
+                            pluginFolderPath, locale, startingTime, endTask, pluginMetrics, updateMetrics);
                 } catch (Exception ex) {
                     error(ex, ex.getMessage());
                 }
@@ -505,7 +551,8 @@ public class PremiumUpdater implements Updater {
      * DEBUG MESSAGES - Messy code ahead.
      */
 
-    @SuppressWarnings("DuplicatedCode") private void printDebug() {
+    @SuppressWarnings("DuplicatedCode")
+    private void printDebug() {
         if (InternalCore.DEBUG) {
             InternalCore.getLogger().info("\n\n\n\n\n\n============== BEGIN PREMIUM PLUGIN DEBUG ==============");
             InternalCore.getLogger().info("AUTHENTICATED: " + currentUser.isAuthenticated());
@@ -514,7 +561,8 @@ public class PremiumUpdater implements Updater {
         }
     }
 
-    @SuppressWarnings("DuplicatedCode") private void printDebug1(Page page, WebResponse response, WebClient webClient) {
+    @SuppressWarnings("DuplicatedCode")
+    private void printDebug1(Page page, WebResponse response, WebClient webClient) {
         if (InternalCore.DEBUG) {
             if (pluginName != null)
                 InternalCore.getLogger().info("PLUGIN = " + pluginName);
@@ -559,7 +607,8 @@ public class PremiumUpdater implements Updater {
         }
     }
 
-    @SuppressWarnings("DuplicatedCode") private void printDebug2(HtmlPage htmlPage) {
+    @SuppressWarnings("DuplicatedCode")
+    private void printDebug2(HtmlPage htmlPage) {
         if (InternalCore.DEBUG) {
             InternalCore.getLogger().info("---- EARLY HTML OUTPUT ----");
             InternalCore.getLogger().info("\nPAGETYPE = HtmlPage");

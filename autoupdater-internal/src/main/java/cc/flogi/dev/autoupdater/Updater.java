@@ -7,11 +7,25 @@ package cc.flogi.dev.autoupdater;
  */
 public interface Updater {
     /**
-     * Retrieves the latest version of the plugin from spigot.
+     * Retrieves the latest version of the plugin.
      *
-     * @return The latest version of the resource on spigot.
+     * @return The latest version of the plugin.
      */
     String getLatestVersion();
+
+    /**
+     * Retrieves the download URL String of the plugin.
+     *
+     * @return The download URL String of the plugin.
+     */
+    String getDownloadUrlString();
+
+    /**
+     * Handles the metrics interactions (if any).
+     *
+     * @apiNote Called after initial data has been retrieved, such as latest version.
+     */
+    void handleMetrics();
 
     /**
      * Performs the update task on the plugin.

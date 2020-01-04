@@ -23,7 +23,11 @@ import java.io.File;
         getLogger().info("AutoUpdaterAPI utility enabled.");
     }
 
-    public void updatePlugin(Plugin plugin, Player initiator, boolean replace, String pluginName, String pluginFolderPath, UpdateLocale locale, long startingTime, UpdaterRunnable endTask) {
+    public void updatePlugin(Plugin plugin, Player initiator, boolean replace, String pluginName,
+                             String pluginFolderPath, UpdateLocale locale, long startingTime,
+                             UpdaterRunnable endTask, UtilMetrics.Plugin pluginMetrics,
+                             UtilMetrics.PluginUpdate updateMetrics) {
+        //Lot of messy variables due to transferring a whole class worth of information into one method call.
         final File restoreFile = new File(getDataFolder().getParent() + locale.getFileName() + ".jar");
         File cachedPlugin = null;
 
@@ -40,14 +44,19 @@ import java.io.File;
                     InternalCore.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
             }
 
-
             Plugin updated = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
             endTask.run(true, null, updated, pluginName);
 
             double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
             UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
+
+            updateMetrics.setUpdateDuration(elapsedTimeSeconds);
+            UtilThreading.async(() -> UtilMetrics.sendUpdateInfo(pluginMetrics, updateMetrics));
         } catch (Exception ex) {
             getLogger().severe("A critical exception occurred while initializing the plugin '" + pluginName + "'");
+
+            ex.printStackTrace();
+
             if (replace) {
                 try {
                     getLogger().severe("Attempting to re-initialize old version.");

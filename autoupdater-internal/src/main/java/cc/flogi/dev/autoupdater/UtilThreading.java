@@ -7,7 +7,7 @@ import org.bukkit.Bukkit;
  *
  * Created on 12/12/19
  */
-final class UtilThreading {
+public final class UtilThreading {
     public static void async(Runnable runnable) {
         Bukkit.getScheduler().runTaskAsynchronously(InternalCore.getPlugin(), runnable);
     }

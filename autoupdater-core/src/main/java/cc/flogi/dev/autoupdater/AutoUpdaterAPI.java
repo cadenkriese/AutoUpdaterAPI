@@ -33,7 +33,7 @@ public class AutoUpdaterAPI {
             UtilThreading.async(() -> {
                 try {
                     UtilLibraries.downloadPremiumSupport(new File(AutoUpdaterInternal.getDataFolder().getPath() + "/libs/"));
-                    PremiumSpigotUpdater.init(plugin);
+                    PremiumSpigotPluginUpdater.init(plugin);
                 } catch (IOException ex) {
                     AutoUpdaterInternal.get().printError(ex, "Error occurred while setting up support for premium resources.");
                 }
@@ -42,13 +42,13 @@ public class AutoUpdaterAPI {
     }
 
     /**
-     * Resets the current user used in {@link PremiumSpigotUpdater}
+     * Resets the current user used in {@link PremiumSpigotPluginUpdater}
      *
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
     public static void resetUser() {
-        PremiumSpigotUpdater.resetUser();
+        PremiumSpigotPluginUpdater.resetUser();
     }
 
     /**
@@ -84,11 +84,11 @@ public class AutoUpdaterAPI {
      * @since 3.0.1
      */
     public static void promptLogin(Player player) {
-        new PremiumSpigotUpdater(null, null, 1, new UpdateLocale(), false).authenticate(false);
+        new PremiumSpigotPluginUpdater(null, null, 1, new UpdateLocale(), false).authenticate(false);
     }
 
     /**
-     * Instantiate a {@link PublicUpdater}.
+     * Instantiate a {@link PublicPluginUpdater}.
      *
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
@@ -96,15 +96,15 @@ public class AutoUpdaterAPI {
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param newVersion The latest version of the resource.
-     * @return An instantiated {@link PublicUpdater}.
+     * @return An instantiated {@link PublicPluginUpdater}.
      * @since 3.0.1
      */
-    public Updater createPublicUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion) {
-        return new PublicUpdater(plugin, initiator, url, locale, replace, newVersion);
+    public Updater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion) {
+        return new PublicPluginUpdater(plugin, initiator, url, locale, replace, newVersion);
     }
 
     /**
-     * Instantiate a {@link PublicUpdater}.
+     * Instantiate a {@link PublicPluginUpdater}.
      *
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
@@ -113,11 +113,11 @@ public class AutoUpdaterAPI {
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      * @param newVersion The latest version of the resource.
-     * @return An instantiated {@link PublicUpdater}.
+     * @return An instantiated {@link PublicPluginUpdater}.
      * @since 3.0.1
      */
-    public Updater createPublicUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
-        return new PublicUpdater(plugin, initiator, url, locale, replace, newVersion, endTask);
+    public Updater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
+        return new PublicPluginUpdater(plugin, initiator, url, locale, replace, newVersion, endTask);
     }
 
     /*
@@ -125,22 +125,22 @@ public class AutoUpdaterAPI {
      */
 
     /**
-     * Instantiate a {@link PublicSpigotUpdater}.
+     * Instantiate a {@link PublicSpigotPluginUpdater}.
      *
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param replace    Should the old version of the plugin be deleted and disabled.
-     * @return An instantiated {@link PublicSpigotUpdater}.
+     * @return An instantiated {@link PublicSpigotPluginUpdater}.
      * @since 3.0.1
      */
-    public Updater createSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
-        return new PublicSpigotUpdater(plugin, initiator, resourceId, locale, replace);
+    public Updater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, locale, replace);
     }
 
     /**
-     * Instantiate a {@link PublicSpigotUpdater}.
+     * Instantiate a {@link PublicSpigotPluginUpdater}.
      *
      * @param plugin     The plugin that should be updated (If updating yourself).
      * @param initiator  The player that initiated the update (set to null if there is none).
@@ -148,27 +148,27 @@ public class AutoUpdaterAPI {
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
-     * @return An instantiated {@link PublicSpigotUpdater}.
+     * @return An instantiated {@link PublicSpigotPluginUpdater}.
      * @since 3.0.1
      */
-    public Updater createSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        return new PublicSpigotUpdater(plugin, initiator, resourceId, locale, replace, endTask);
+    public Updater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, locale, replace, endTask);
     }
 
     /**
-     * Instantiate a {@link PremiumSpigotUpdater}.
+     * Instantiate a {@link PremiumSpigotPluginUpdater}.
      *
      * @param initiator  The player that started this action (if there is none set to null).
      * @param plugin     The instance of the outdated plugin.
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param replace    Should the old version of the plugin be deleted and disabled.
-     * @return An instantiated {@link PremiumSpigotUpdater}.
+     * @return An instantiated {@link PremiumSpigotPluginUpdater}.
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
-    public Updater createPremiumSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
-        return new PremiumSpigotUpdater(initiator, plugin, resourceId, locale, replace);
+    public Updater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, locale, replace);
     }
 
     /**
@@ -180,11 +180,11 @@ public class AutoUpdaterAPI {
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
-     * @return An instantiated {@link PremiumSpigotUpdater}.
+     * @return An instantiated {@link PremiumSpigotPluginUpdater}.
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
-    public Updater createPremiumSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        return new PremiumSpigotUpdater(initiator, plugin, resourceId, locale, replace, endTask);
+    public Updater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, locale, replace, endTask);
     }
 }

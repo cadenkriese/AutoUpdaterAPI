@@ -21,17 +21,17 @@ import java.nio.file.StandardCopyOption;
  *
  * Created on 12/12/19
  */
-public class PublicSpigotUpdater extends PublicUpdater {
+public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
     public static final String BASE_URL = "https://api.spiget.org/v2/resources/";
 
     private final String url;
     private final int resourceId;
 
-    protected PublicSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+    protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
         this(plugin, initiator, resourceId, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
-    protected PublicSpigotUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         super(plugin, initiator, BASE_URL + resourceId + "/download", locale, replace);
         url = BASE_URL + resourceId;
         this.resourceId = resourceId;

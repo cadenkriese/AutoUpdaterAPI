@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  *
  * Created on 6/6/17
  */
-public class PremiumSpigotUpdater implements Updater {
+public class PremiumSpigotPluginUpdater implements Updater {
 
     private static User currentUser;
     private static SpigotSiteAPI siteAPI;
@@ -54,11 +54,11 @@ public class PremiumSpigotUpdater implements Updater {
     private int loginAttempts;
     private long startingTime;
 
-    protected PremiumSpigotUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
+    protected PremiumSpigotPluginUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
         this(initiator, plugin, resourceId, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
-    protected PremiumSpigotUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    protected PremiumSpigotPluginUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
         pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
@@ -108,7 +108,7 @@ public class PremiumSpigotUpdater implements Updater {
             try {
                 if (UtilSpigotCreds.getUsername() != null && UtilSpigotCreds.getPassword() != null) {
                     logger.info("Stored credentials detected, attempting login.");
-                    new PremiumSpigotUpdater(null, javaPlugin, 1, new UpdateLocale(), false).authenticate(false);
+                    new PremiumSpigotPluginUpdater(null, javaPlugin, 1, new UpdateLocale(), false).authenticate(false);
                 }
             } catch (Exception ex) {
                 AutoUpdaterInternal.get().printError(ex, "Error occurred while initializing the spigot site API.");

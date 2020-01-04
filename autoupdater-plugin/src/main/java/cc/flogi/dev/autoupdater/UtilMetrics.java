@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * @author Caden Kriese (flogic)
  *
- * Created on 1/1/20
+ * Created on 01/01/2020
  */
 public final class UtilMetrics {
     private static final String SPIGET_BASE_URL = "https://api.flogi.cc/plugins";

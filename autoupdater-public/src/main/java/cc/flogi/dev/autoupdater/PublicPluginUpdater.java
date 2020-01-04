@@ -20,7 +20,7 @@ import java.nio.file.StandardCopyOption;
  * Created on 6/14/17
  */
 @Getter
-public class PublicUpdater implements Updater {
+public class PublicPluginUpdater implements Updater {
     protected final Player initiator;
     protected final Plugin plugin;
     protected final UpdaterRunnable endTask;
@@ -34,21 +34,21 @@ public class PublicUpdater implements Updater {
     protected String downloadUrlString;
     protected String newVersion;
 
-    protected PublicUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace, String newVersion) {
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace, String newVersion) {
         this(plugin, initiator, downloadUrlString, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
         this.newVersion = newVersion;
     }
 
-    protected PublicUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
         this(plugin, initiator, downloadUrlString, locale, replace, endTask);
         this.newVersion = newVersion;
     }
 
-    protected PublicUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace) {
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace) {
         this(plugin, initiator, downloadUrlString, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
-    protected PublicUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         locale.updateVariables(plugin.getName(), plugin.getDescription().getVersion(), null);
 
         pluginFolderPath = plugin.getDataFolder().getParent();

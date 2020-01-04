@@ -7,28 +7,28 @@ import org.bukkit.Bukkit;
  *
  * Created on 12/12/19
  */
-public final class UtilThreading {
-    public static void async(Runnable runnable) {
-        Bukkit.getScheduler().runTaskAsynchronously(InternalCore.getPlugin(), runnable);
+final class UtilThreading {
+    static void async(Runnable runnable) {
+        Bukkit.getScheduler().runTaskAsynchronously(AutoUpdaterInternal.getPlugin(), runnable);
     }
 
-    public static void asyncDelayed(Runnable runnable, long delay) {
-        Bukkit.getScheduler().runTaskLaterAsynchronously(InternalCore.getPlugin(), runnable, delay);
+    static void asyncDelayed(Runnable runnable, long delay) {
+        Bukkit.getScheduler().runTaskLaterAsynchronously(AutoUpdaterInternal.getPlugin(), runnable, delay);
     }
 
-    public static void asyncRepeating(Runnable runnable, long delay, long period) {
-        Bukkit.getScheduler().runTaskTimerAsynchronously(InternalCore.getPlugin(), runnable, delay, period);
+    static void asyncRepeating(Runnable runnable, long delay, long period) {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(AutoUpdaterInternal.getPlugin(), runnable, delay, period);
     }
 
-    public static void sync(Runnable runnable) {
-        Bukkit.getScheduler().runTask(InternalCore.getPlugin(), runnable);
+    static void sync(Runnable runnable) {
+        Bukkit.getScheduler().runTask(AutoUpdaterInternal.getPlugin(), runnable);
     }
 
-    public static void syncDelayed(Runnable runnable, long delay) {
-        Bukkit.getScheduler().runTaskLater(InternalCore.getPlugin(), runnable, delay);
+    static void syncDelayed(Runnable runnable, long delay) {
+        Bukkit.getScheduler().runTaskLater(AutoUpdaterInternal.getPlugin(), runnable, delay);
     }
 
-    public static void syncRepeating(Runnable runnable, long delay, long period) {
-        Bukkit.getScheduler().runTaskTimer(InternalCore.getPlugin(), runnable, delay, period);
+    static void syncRepeating(Runnable runnable, long delay, long period) {
+        Bukkit.getScheduler().runTaskTimer(AutoUpdaterInternal.getPlugin(), runnable, delay, period);
     }
 }

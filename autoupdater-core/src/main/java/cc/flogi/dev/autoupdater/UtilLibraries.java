@@ -38,7 +38,7 @@ public class UtilLibraries {
         if (!location.exists() && !location.mkdirs())
             throw new IOException("Failed to create directories");
 
-        ProjectProperties properties = InternalCore.PROPERTIES;
+        ProjectProperties properties = AutoUpdaterInternal.PROPERTIES;
 
         //Cleanup unused versions.
         for (File file : location.listFiles()) {
@@ -58,7 +58,7 @@ public class UtilLibraries {
     }
 
     protected static void downloadLibrary(File location) throws IOException {
-        ProjectProperties properties = InternalCore.PROPERTIES;
+        ProjectProperties properties = AutoUpdaterInternal.PROPERTIES;
 
         String urlString = properties.ARTIFACTORY_URL + "autoupdater-premium/" + properties.VERSION + "/autoupdater-premium-" + properties.VERSION + ".jar";
         URL url = new URL(urlString);

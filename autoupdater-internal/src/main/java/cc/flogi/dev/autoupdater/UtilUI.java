@@ -68,7 +68,7 @@ public final class UtilUI {
         };
 
         currentTasks.put(player.getUniqueId().toString(), actionBarRunnable);
-        actionBarRunnable.runTaskTimer(InternalCore.getPlugin(), 0L, ACTIONBAR_DEFAULT_DURATION);
+        actionBarRunnable.runTaskTimer(AutoUpdaterInternal.getPlugin(), 0L, ACTIONBAR_DEFAULT_DURATION);
     }
 
     /**
@@ -127,12 +127,11 @@ public final class UtilUI {
      * @param barChar     The character the progress bar is made out of.
      * @param used        The color representing the used section of the bar.
      * @param free        The color representing the free section of the bar.
-     *
      * @return The generated progress bar.
      */
     public static String progressBar(int barSize, double numerator, double denominator, char barChar, ChatColor used, ChatColor free) {
         String bar = repeat(barChar, barSize);
-        int usedAmount = (int) (numerator / denominator * barSize);
+        int usedAmount = (int) (numerator / denominator * (double) barSize);
         bar = used + bar.substring(0, usedAmount) + free + bar.substring(usedAmount);
         return bar;
     }
@@ -140,7 +139,7 @@ public final class UtilUI {
     /**
      * Formats a string with the variables in order.
      *
-     * @param toFormat The string to replace variables in.
+     * @param toFormat  The string to replace variables in.
      * @param variables The variables to replace in order of "key", "value", "key", "value", etc.
      * @return The formatted string with the variables replaced.
      */
@@ -158,7 +157,6 @@ public final class UtilUI {
      * Shorthand notation for ${@link ChatColor#translateAlternateColorCodes(char, String)}.
      *
      * @param string The string to be colorized.
-     *
      * @return The colorized string.
      */
     public static String colorize(String string) {

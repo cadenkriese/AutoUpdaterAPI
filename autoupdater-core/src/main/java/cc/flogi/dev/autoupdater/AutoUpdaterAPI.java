@@ -27,15 +27,15 @@ public class AutoUpdaterAPI {
      * it will create a ton of overhead logic you don't want getting in the way of a relatively simple task.
      */
     public AutoUpdaterAPI(JavaPlugin plugin, boolean premiumSupport) {
-        new InternalCore(plugin);
+        new AutoUpdaterInternal(plugin);
 
         if (premiumSupport) {
             UtilThreading.async(() -> {
                 try {
-                    UtilLibraries.downloadPremiumSupport(new File(InternalCore.getDataFolder().getPath() + "/libs/"));
+                    UtilLibraries.downloadPremiumSupport(new File(AutoUpdaterInternal.getDataFolder().getPath() + "/libs/"));
                     PremiumSpigotUpdater.init(plugin);
                 } catch (IOException ex) {
-                    InternalCore.get().printError(ex, "Error occurred while setting up support for premium resources.");
+                    AutoUpdaterInternal.get().printError(ex, "Error occurred while setting up support for premium resources.");
                 }
             });
         }
@@ -57,7 +57,7 @@ public class AutoUpdaterAPI {
      * @param enabled Should debug logging be enabled or not.
      */
     public static void setDebug(boolean enabled) {
-        InternalCore.DEBUG = enabled;
+        AutoUpdaterInternal.DEBUG = enabled;
 
         if (enabled) {
             Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.INFO);
@@ -72,7 +72,7 @@ public class AutoUpdaterAPI {
      * made have a minimal impact on performance.
      */
     public static void disableMetrics() {
-        InternalCore.METRICS = false;
+        AutoUpdaterInternal.METRICS = false;
     }
 
     /**

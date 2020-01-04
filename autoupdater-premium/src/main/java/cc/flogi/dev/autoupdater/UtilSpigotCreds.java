@@ -17,7 +17,7 @@ final class UtilSpigotCreds {
     private static FileConfiguration infoConfig;
 
     protected static void init() {
-        infoFile = new File(InternalCore.getDataFolder().getAbsolutePath() + "/.creds/info.enc");
+        infoFile = new File(AutoUpdaterInternal.getDataFolder().getAbsolutePath() + "/.creds/info.enc");
         if (!infoFile.getParentFile().exists())
             infoFile.getParentFile().mkdirs();
         infoConfig = YamlConfiguration.loadConfiguration(infoFile);
@@ -29,7 +29,7 @@ final class UtilSpigotCreds {
                 infoFile.createNewFile();
                 infoConfig.save(infoFile);
             } catch (IOException ex) {
-                InternalCore.get().printError(ex, "Error occurred while creating the encrypted file.");
+                AutoUpdaterInternal.get().printError(ex, "Error occurred while creating the encrypted file.");
             }
         }
     }
@@ -41,14 +41,14 @@ final class UtilSpigotCreds {
 
             init();
         } else
-            InternalCore.get().printPluginError("Error occurred while resetting credentials.", "Info file deletion failed.");
+            AutoUpdaterInternal.get().printPluginError("Error occurred while resetting credentials.", "Info file deletion failed.");
     }
 
     protected static void saveFile() {
         try {
             infoConfig.save(infoFile);
         } catch (IOException ex) {
-            InternalCore.get().printError(ex, "Error occurred while creating the encrypted file.");
+            AutoUpdaterInternal.get().printError(ex, "Error occurred while creating the encrypted file.");
         }
     }
 
@@ -61,12 +61,12 @@ final class UtilSpigotCreds {
                     infoConfig.set(UtilEncryption.encrypt("password"), null);
                     infoConfig.set(UtilEncryption.encrypt("twoFactorSecret"), null);
                 } catch (Exception ex) {
-                    InternalCore.get().printError(ex);
+                    AutoUpdaterInternal.get().printError(ex);
                 }
 
                 saveFile();
             }
-        }.runTask(InternalCore.getPlugin());
+        }.runTask(AutoUpdaterInternal.getPlugin());
     }
 
 

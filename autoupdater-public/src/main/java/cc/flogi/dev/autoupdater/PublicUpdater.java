@@ -11,7 +11,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Date;
 
 /**
  * @author Caden Kriese (flogic)
@@ -31,15 +30,12 @@ public class PublicUpdater implements Updater {
     protected final String pluginName;
     protected final boolean replace;
 
-    private long startingTime;
+    protected long startingTime;
     protected String downloadUrlString;
-    protected UtilMetrics.Plugin pluginMetrics;
-    protected UtilMetrics.PluginUpdate updateMetrics;
     protected String newVersion;
 
     protected PublicUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace, String newVersion) {
-        this(plugin, initiator, downloadUrlString, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {
-        });
+        this(plugin, initiator, downloadUrlString, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
         this.newVersion = newVersion;
     }
 
@@ -49,8 +45,7 @@ public class PublicUpdater implements Updater {
     }
 
     protected PublicUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace) {
-        this(plugin, initiator, downloadUrlString, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {
-        });
+        this(plugin, initiator, downloadUrlString, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
     protected PublicUpdater(Plugin plugin, Player initiator, String downloadUrlString, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
@@ -73,13 +68,6 @@ public class PublicUpdater implements Updater {
     }
 
     @Override
-    public void handleMetrics() {
-        pluginMetrics = new UtilMetrics.Plugin(plugin.getName(), plugin.getDescription().getDescription(), downloadUrlString);
-        updateMetrics = new UtilMetrics.PluginUpdate(new Date(),
-                new UtilMetrics.PluginUpdateVersion(currentVersion, newVersion));
-    }
-
-    @Override
     public void update() {
         startingTime = System.currentTimeMillis();
 
@@ -93,8 +81,6 @@ public class PublicUpdater implements Updater {
                 error(new Exception("Error occurred while updating plugin."), "Plugin is up to date!", "PLUGIN IS UP TO DATE");
                 return;
             }
-
-            handleMetrics();
 
             downloadResource();
         });
@@ -124,7 +110,7 @@ public class PublicUpdater implements Updater {
             while ((grab = in.read(data, 0, grabSize)) >= 0) {
                 downloadedFileSize += grab;
                 if (downloadedFileSize % (grabSize * 5) == 0) {
-                    String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
+                    String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.GREEN, ChatColor.RED);
                     final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
                     UtilUI.sendActionBar(initiator, UtilUI.format(locale.getUpdatingDownload() + " &8[DOWNLOADING]",
                             "%download_bar%", bar,
@@ -132,8 +118,6 @@ public class PublicUpdater implements Updater {
                 }
                 bout.write(data, 0, grab);
             }
-
-            updateMetrics.setSize(completeFileSize);
 
             bout.close();
             in.close();
@@ -148,8 +132,8 @@ public class PublicUpdater implements Updater {
     @Override
     public void initializePlugin() {
         //Copy plugin utility from src/main/resources
-        String corePluginFile = "/autoupdater-plugin-" + InternalCore.PROPERTIES.VERSION + ".jar";
-        File targetFile = new File(InternalCore.getDataFolder().getAbsolutePath() + corePluginFile);
+        String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterInternal.PROPERTIES.VERSION + ".jar";
+        File targetFile = new File(AutoUpdaterInternal.getDataFolder().getParent() + corePluginFile);
         targetFile.getParentFile().mkdirs();
         try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -165,7 +149,7 @@ public class PublicUpdater implements Updater {
                     throw new FileNotFoundException("Unable to locate updater plugin.");
 
                 UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
-                        pluginFolderPath, locale, startingTime, endTask, pluginMetrics, updateMetrics);
+                        pluginFolderPath, locale, startingTime, downloadUrlString, null, endTask);
             } catch (Exception ex) {
                 error(ex, ex.getMessage());
             }
@@ -173,13 +157,13 @@ public class PublicUpdater implements Updater {
     }
 
     protected void error(Exception ex, String errorMessage, String shortErrorMessage) {
-        InternalCore.get().printError(ex, errorMessage);
+        AutoUpdaterInternal.get().printError(ex, errorMessage);
         UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[" + shortErrorMessage + "&8]", 10);
         endTask.run(false, ex, null, pluginName);
     }
 
     protected void error(Exception ex, String message) {
-        InternalCore.get().printError(ex, message);
+        AutoUpdaterInternal.get().printError(ex, message);
         UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[CHECK CONSOLE]");
         endTask.run(false, ex, null, pluginName);
     }

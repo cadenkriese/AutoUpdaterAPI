@@ -64,7 +64,7 @@ public final class UtilPlugin {
                 knownCommandsField.setAccessible(true);
                 commands = (Map<String, Command>) knownCommandsField.get(commandMap);
             } catch (NoSuchFieldException | IllegalAccessException ex) {
-                InternalCore.get().printError(ex);
+                AutoUpdaterInternal.get().printError(ex);
             }
         }
 
@@ -106,7 +106,7 @@ public final class UtilPlugin {
                 pluginInitField.setAccessible(true);
                 pluginInitField.set(loader, null);
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
-                InternalCore.get().printError(ex);
+                AutoUpdaterInternal.get().printError(ex);
             }
 
             try {
@@ -117,7 +117,7 @@ public final class UtilPlugin {
                 if (!plugin.getName().equalsIgnoreCase("autoupdater-plugin"))
                     ((URLClassLoader) loader).close();
             } catch (IOException ex) {
-                InternalCore.get().printError(ex);
+                AutoUpdaterInternal.get().printError(ex);
             }
         }
 
@@ -127,9 +127,9 @@ public final class UtilPlugin {
     }
 
     public static Plugin loadPlugin(File file) throws InvalidDescriptionException, InvalidPluginException {
-        Plugin plugin = InternalCore.getPlugin().getServer().getPluginManager().loadPlugin(file);
+        Plugin plugin = AutoUpdaterInternal.getPlugin().getServer().getPluginManager().loadPlugin(file);
         plugin.onLoad();
-        InternalCore.getPlugin().getServer().getPluginManager().enablePlugin(plugin);
+        AutoUpdaterInternal.getPlugin().getServer().getPluginManager().enablePlugin(plugin);
         return plugin;
     }
 }

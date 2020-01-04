@@ -25,7 +25,7 @@ final class UtilEncryption {
 
     protected static void init() {
         if (keyFile == null)
-            keyFile = new File(InternalCore.getDataFolder().getAbsolutePath() + "/.keys.enc");
+            keyFile = new File(AutoUpdaterInternal.getDataFolder().getAbsolutePath() + "/.keys.enc");
 
         if (!keyFile.getParentFile().exists())
             keyFile.getParentFile().mkdirs();
@@ -53,7 +53,7 @@ final class UtilEncryption {
 
             keyConfig.save(keyFile);
         } catch (IOException ex) {
-            InternalCore.get().printError(ex, "Error occurred while creating the encrypted file.");
+            AutoUpdaterInternal.get().printError(ex, "Error occurred while creating the encrypted file.");
         }
     }
 
@@ -70,7 +70,7 @@ final class UtilEncryption {
             key = java.util.Arrays.copyOf(key, 16);
             secretKey = new SecretKeySpec(key, "AES");
         } catch (NoSuchAlgorithmException ex) {
-            InternalCore.get().printError(ex);
+            AutoUpdaterInternal.get().printError(ex);
         }
     }
 
@@ -82,7 +82,7 @@ final class UtilEncryption {
 
             return Base64.encodeBase64String(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception ex) {
-            InternalCore.get().printError(ex, "Error occurred while encrypting string.");
+            AutoUpdaterInternal.get().printError(ex, "Error occurred while encrypting string.");
         }
 
         return null;
@@ -95,7 +95,7 @@ final class UtilEncryption {
             cipher.init(2, secretKey);
             return new String(cipher.doFinal(Base64.decodeBase64(strToDecrypt)));
         } catch (Exception ex) {
-            InternalCore.get().printError(ex, "Error occurred while encrypting string.");
+            AutoUpdaterInternal.get().printError(ex, "Error occurred while encrypting string.");
         }
 
         return null;

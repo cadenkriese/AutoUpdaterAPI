@@ -21,13 +21,6 @@ public interface Updater {
     String getDownloadUrlString();
 
     /**
-     * Handles the metrics interactions (if any).
-     *
-     * @apiNote Called after initial data has been retrieved, such as latest version.
-     */
-    void handleMetrics();
-
-    /**
      * Performs the update task on the plugin.
      *
      * @apiNote This method automatically calls {@link Updater#downloadResource()},

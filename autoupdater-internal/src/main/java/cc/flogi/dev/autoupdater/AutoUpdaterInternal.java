@@ -13,17 +13,17 @@ import java.util.logging.Logger;
 /**
  * Class holding internal API information.
  */
-public final class InternalCore {
+public final class AutoUpdaterInternal {
     public final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
-    static boolean DEBUG = false;
-    static boolean METRICS = true;
+    public static boolean DEBUG = false;
+    public static boolean METRICS = true;
 
-    private static InternalCore instance;
+    private static AutoUpdaterInternal instance;
     @Getter private static Plugin plugin;
     @Getter private static File dataFolder;
     @Getter private static Logger logger = Logger.getLogger("AutoUpdaterAPI");
 
-    public InternalCore(JavaPlugin javaPlugin) {
+    AutoUpdaterInternal(JavaPlugin javaPlugin) {
         instance = this;
         plugin = javaPlugin;
         dataFolder = new File(plugin.getDataFolder().getParent() + "/.auapi/");
@@ -33,14 +33,19 @@ public final class InternalCore {
         Objects.requireNonNull(PROPERTIES);
     }
 
-    public static InternalCore get() {
+    /**
+     * Provide internal API utilities.
+     *
+     * @return Instance of internal API utility class.
+     */
+    public static AutoUpdaterInternal get() {
         return instance;
     }
 
-    public void printError(Exception ex) {
+    void printError(Exception ex) {
         logger.warning("An error has occurred.");
         logger.warning("If you cannot figure out this error on your own please copy and paste " +
-                               "\neverything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
+                "\neverything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
         logger.warning("\n============== BEGIN ERROR ==============");
         logger.warning("API VERSION: " + PROPERTIES.getTitle());
         logger.warning("\nERROR MESSAGE: " + ex.getMessage());
@@ -49,10 +54,10 @@ public final class InternalCore {
         logger.warning("\n============== END ERROR ==============");
     }
 
-    public void printError(Exception ex, String extraInfo) {
+    void printError(Exception ex, String extraInfo) {
         logger.warning("An error has occurred.");
         logger.warning("If you cannot figure out this error on your own please copy and paste " +
-                               "\neverything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
+                "\neverything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
         logger.warning("\n============== BEGIN ERROR ==============");
         logger.warning("API VERSION: " + PROPERTIES.getTitle());
         logger.warning("\nAPI MESSAGE: " + extraInfo);
@@ -62,7 +67,7 @@ public final class InternalCore {
         logger.warning("\n============== END ERROR ==============");
     }
 
-    public void printPluginError(String header, String message) {
+    void printPluginError(String header, String message) {
         logger.warning("============== BEGIN ERROR ==============");
         logger.warning(header);
         logger.warning("\nAPI VERSION: " + PROPERTIES.getTitle());

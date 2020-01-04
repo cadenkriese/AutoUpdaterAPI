@@ -55,7 +55,7 @@ public final class UpdateLocale {
                 }
             }
         } catch (IllegalAccessException ex) {
-            InternalCore.get().printError(ex);
+            AutoUpdaterInternal.get().printError(ex);
         }
     }
 }

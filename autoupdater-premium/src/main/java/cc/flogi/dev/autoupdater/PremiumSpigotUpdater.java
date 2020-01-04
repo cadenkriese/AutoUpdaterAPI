@@ -18,15 +18,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -48,6 +44,7 @@ public class PremiumSpigotUpdater implements Updater {
     private Plugin plugin;
     private String pluginFolderPath;
     private String currentVersion;
+    private String downloadUrl;
     private String pluginName;
     private UpdateLocale locale;
     private Resource resource;
@@ -57,12 +54,8 @@ public class PremiumSpigotUpdater implements Updater {
     private int loginAttempts;
     private long startingTime;
 
-    private UtilMetrics.SpigotPlugin pluginMetrics;
-    private UtilMetrics.PluginUpdate updateMetrics;
-
     protected PremiumSpigotUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace) {
-        this(initiator, plugin, resourceId, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {
-        });
+        this(initiator, plugin, resourceId, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
     protected PremiumSpigotUpdater(Player initiator, Plugin plugin, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
@@ -80,19 +73,19 @@ public class PremiumSpigotUpdater implements Updater {
     }
 
     protected static void init(JavaPlugin javaPlugin) {
-        Logger logger = InternalCore.getLogger();
+        Logger logger = AutoUpdaterInternal.getLogger();
 
         UtilSpigotCreds.init();
         UtilEncryption.init();
 
         UtilThreading.async(() -> {
-            if (!InternalCore.DEBUG) {
+            if (!AutoUpdaterInternal.DEBUG) {
                 try {
                     LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log",
                             "org.apache.commons.logging.impl.NoOpLog");
                     Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
                 } catch (Exception ex) {
-                    InternalCore.get().printError(ex, "Unable to turn off HTMLUnit logging!.");
+                    AutoUpdaterInternal.get().printError(ex, "Unable to turn off HTMLUnit logging!.");
                 }
             }
 
@@ -105,7 +98,7 @@ public class PremiumSpigotUpdater implements Updater {
             webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
             webClient.getOptions().setThrowExceptionOnScriptError(false);
             webClient.getOptions().setPrintContentOnFailingStatusCode(false);
-            if (!InternalCore.DEBUG)
+            if (!AutoUpdaterInternal.DEBUG)
                 Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
 
             logger.info("Initializing connection with Spigot...");
@@ -118,7 +111,7 @@ public class PremiumSpigotUpdater implements Updater {
                     new PremiumSpigotUpdater(null, javaPlugin, 1, new UpdateLocale(), false).authenticate(false);
                 }
             } catch (Exception ex) {
-                InternalCore.get().printError(ex, "Error occurred while initializing the spigot site API.");
+                AutoUpdaterInternal.get().printError(ex, "Error occurred while initializing the spigot site API.");
             }
 
             logger.info("Connected to Spigot.");
@@ -147,7 +140,7 @@ public class PremiumSpigotUpdater implements Updater {
     public String getDownloadUrlString() {
         if (resource == null) {
             try {
-                resource = siteAPI.getResourceManager().getResourceById(resourceId);
+                resource = siteAPI.getResourceManager().getResourceById(resourceId, currentUser);
             } catch (ConnectionFailedException ex) {
                 error(ex, "Error occurred while retrieving the download url of a premium resource.");
                 return null;
@@ -158,48 +151,23 @@ public class PremiumSpigotUpdater implements Updater {
     }
 
     @Override
-    public void handleMetrics() {
-        try {
-            String spigetResponse = UtilReader.readFrom("https://api.spiget.org/v2/resources/" + resourceId);
-            JSONParser parser = new JSONParser();
-            JSONObject json = (JSONObject) parser.parse(spigetResponse);
-
-            String resourceName = (String) json.get("name");
-            String[] supportedVersions = (String[]) ((JSONArray) json.get("testedVersions")).stream()
-                    .map(String::valueOf)
-                    .toArray(String[]::new);
-            Date uploadDate = new Date(((Integer) json.get("releaseDate")) * 1000);
-            Double averageRating = (Double) ((JSONObject) json.get("rating")).get("average");
-            Double price = (Double) json.get("price");
-            String currency = (String) json.get("currency");
-            String downloadUrl = "https://spigotmc.org/" + ((JSONObject) json.get("file")).get("url");
-
-            pluginMetrics = new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
-                    downloadUrl, resourceName, resourceId, averageRating, uploadDate, supportedVersions,
-                    true, price, currency);
-        } catch (IOException | ParseException ex) {
-            if (InternalCore.DEBUG)
-                InternalCore.get().printError(ex);
-        }
-    }
-
-    @Override
     public void update() {
         startingTime = System.currentTimeMillis();
-        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PLUGIN INFO]");
+        UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PLUGIN INFO]", 10);
 
         UtilThreading.async(() -> {
             if (currentUser == null) {
                 authenticate(true);
-                UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[AUTHENTICATING SPIGOT ACCOUNT]", 5);
+                UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[AUTHENTICATING SPIGOT ACCOUNT]", 10);
                 return;
             }
 
             try {
                 if (resource == null)
-                    resource = siteAPI.getResourceManager().getResourceById(resourceId);
+                    resource = siteAPI.getResourceManager().getResourceById(resourceId, currentUser);
 
-                if (!currentUser.getPurchasedResources().contains(resource)) {
+                List<Resource> purchasedResources = siteAPI.getResourceManager().getPurchasedResources(currentUser);
+                if (purchasedResources.stream().noneMatch(res -> res.getResourceId() == resourceId)) {
                     error(new Exception("Error occurred while updating premium plugin."),
                             "The current spigot user has not purchased the plugin '" + pluginName + "'",
                             "YOU HAVE NOT BOUGHT THAT PLUGIN");
@@ -209,9 +177,6 @@ public class PremiumSpigotUpdater implements Updater {
                 error(ex, "Error occurred while connecting to spigot.", "CONNECTION FAILED");
                 return;
             }
-
-            updateMetrics = new UtilMetrics.PluginUpdate(new Date(),
-                    new UtilMetrics.PluginUpdateVersion(currentVersion, getLatestVersion()));
 
             String newVersion = getLatestVersion();
             locale.updateVariables(plugin.getName(), currentVersion, newVersion);
@@ -224,9 +189,6 @@ public class PremiumSpigotUpdater implements Updater {
             if (locale.getPluginName() != null)
                 pluginName = locale.getPluginName();
             locale.setFileName(locale.getFileName());
-
-            //Metrics on another seperate thread to avoid slowing update.
-            UtilThreading.async(this::handleMetrics);
 
             UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[ATTEMPTING DOWNLOAD]", 20);
             downloadResource();
@@ -244,7 +206,8 @@ public class PremiumSpigotUpdater implements Updater {
 
             webClient.waitForBackgroundJavaScript(10_000);
             webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-            Page page = webClient.getPage(getDownloadUrlString());
+            downloadUrl = getDownloadUrlString();
+            Page page = webClient.getPage(downloadUrl);
             WebResponse response = page.getEnclosingWindow().getEnclosedPage().getWebResponse();
 
             if (page instanceof HtmlPage) {
@@ -277,12 +240,12 @@ public class PremiumSpigotUpdater implements Updater {
 
                 //Don't send action bar for every grab we're not trying to crash any clients (or servers) here.
                 if (downloadedFileSize % (grabSize * 5) == 0 && completeFileSize > 0) {
-                    String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.RED, ChatColor.GREEN);
+                    String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.GREEN, ChatColor.RED);
                     final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
 
-                    UtilUI.sendActionBar(initiator, locale.getUpdatingDownload()
-                            .replace("%download_bar%", bar)
-                            .replace("%download_percent%", currentPercent + "%")
+                    UtilUI.sendActionBar(initiator, UtilUI.format(locale.getUpdatingDownload(),
+                            "download_bar", bar,
+                            "download_percent", currentPercent + "%")
                             + " &8[DOWNLOADING RESOURCE]");
                 }
                 bout.write(data, 0, grabbed);
@@ -291,7 +254,6 @@ public class PremiumSpigotUpdater implements Updater {
             bout.close();
             in.close();
             fos.close();
-            updateMetrics.setSize((long) completeFileSize);
 
             printDebug3(downloadedFileSize, completeFileSize);
             initializePlugin();
@@ -303,28 +265,28 @@ public class PremiumSpigotUpdater implements Updater {
     @Override
     public void initializePlugin() {
         //Copy plugin utility from src/main/resources
-        String corePluginFile = "/autoupdater-plugin-" + InternalCore.PROPERTIES.VERSION + ".jar";
+        String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterInternal.PROPERTIES.VERSION + ".jar";
+        File targetFile = new File(AutoUpdaterInternal.getDataFolder().getParent() + corePluginFile);
+        targetFile.getParentFile().mkdirs();
         try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
-            File targetFile = new File(plugin.getDataFolder().getParent() + corePluginFile);
             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            is.close();
-
-            UtilThreading.sync(() -> {
-                //Enable plugin and perform update task.
-                try {
-                    UtilPlugin.loadPlugin(targetFile);
-                    if (Bukkit.getPluginManager().getPlugin("autoupdater-plugin") == null)
-                        throw new FileNotFoundException("Unable to locate updater plugin.");
-
-                    UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
-                            pluginFolderPath, locale, startingTime, endTask, pluginMetrics, updateMetrics);
-                } catch (Exception ex) {
-                    error(ex, ex.getMessage());
-                }
-            });
         } catch (Exception ex) {
             error(ex, ex.getMessage());
         }
+
+        UtilThreading.sync(() -> {
+            //Enable plugin and perform update task.
+            try {
+                UtilPlugin.loadPlugin(targetFile);
+                if (Bukkit.getPluginManager().getPlugin("autoupdater-plugin") == null)
+                    throw new FileNotFoundException("Unable to locate updater plugin.");
+
+                UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
+                        pluginFolderPath, locale, startingTime, downloadUrl, resourceId, endTask);
+            } catch (Exception ex) {
+                error(ex, ex.getMessage());
+            }
+        });
     }
 
     protected void authenticate(boolean recall) {
@@ -356,7 +318,7 @@ public class PremiumSpigotUpdater implements Updater {
                 }
 
                 UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
-                InternalCore.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
+                AutoUpdaterInternal.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
                 if (recall)
                     UtilThreading.sync(this::update);
@@ -379,7 +341,7 @@ public class PremiumSpigotUpdater implements Updater {
                         }
 
                         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[AUTHENTICATION SUCCESSFUL]");
-                        InternalCore.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
+                        AutoUpdaterInternal.getLogger().info("Successfully logged in to Spigot as user '" + username + "'.");
 
                         if (recall)
                             UtilThreading.sync(this::update);
@@ -431,7 +393,7 @@ public class PremiumSpigotUpdater implements Updater {
             AtomicBoolean inputProvided = new AtomicBoolean(false);
             new AnvilGUI.Builder()
                     .text("Spigot username")
-                    .plugin(InternalCore.getPlugin())
+                    .plugin(AutoUpdaterInternal.getPlugin())
                     .onComplete((Player player, String usernameInput) -> {
                         inputProvided.set(true);
                         try {
@@ -463,7 +425,7 @@ public class PremiumSpigotUpdater implements Updater {
         AtomicBoolean inputProvided = new AtomicBoolean(false);
         new AnvilGUI.Builder()
                 .text("Spigot password")
-                .plugin(InternalCore.getPlugin())
+                .plugin(AutoUpdaterInternal.getPlugin())
                 .onComplete((player, passwordInput) -> {
                     inputProvided.set(true);
                     try {
@@ -499,7 +461,7 @@ public class PremiumSpigotUpdater implements Updater {
     private void requestTwoFactor(String usernameInput, String passwordInput, boolean recall) {
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING TWO FACTOR SECRET]", 600);
         AtomicBoolean inputProvided = new AtomicBoolean(false);
-        new AnvilGUI.Builder().plugin(InternalCore.getPlugin())
+        new AnvilGUI.Builder().plugin(AutoUpdaterInternal.getPlugin())
                 .text("Spigot 2FA secret")
                 .onComplete((Player player, String twoFactorInput) -> {
                     inputProvided.set(true);
@@ -536,13 +498,13 @@ public class PremiumSpigotUpdater implements Updater {
      */
 
     private void error(Exception ex, String message) {
-        InternalCore.get().printError(ex, message);
+        AutoUpdaterInternal.get().printError(ex, message);
         UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[CHECK CONSOLE]");
         endTask.run(false, ex, null, pluginName);
     }
 
     private void error(Exception ex, String errorMessage, String shortErrorMessage) {
-        InternalCore.get().printError(ex, errorMessage);
+        AutoUpdaterInternal.get().printError(ex, errorMessage);
         UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[" + shortErrorMessage + "&8]", 10);
         endTask.run(false, ex, null, pluginName);
     }
@@ -553,82 +515,82 @@ public class PremiumSpigotUpdater implements Updater {
 
     @SuppressWarnings("DuplicatedCode")
     private void printDebug() {
-        if (InternalCore.DEBUG) {
-            InternalCore.getLogger().info("\n\n\n\n\n\n============== BEGIN PREMIUM PLUGIN DEBUG ==============");
-            InternalCore.getLogger().info("AUTHENTICATED: " + currentUser.isAuthenticated());
-            InternalCore.getLogger().info("COOKIES: ");
-            ((SpigotUser) currentUser).getCookies().forEach((k, v) -> InternalCore.getLogger().info("\t" + k + " | " + v));
+        if (AutoUpdaterInternal.DEBUG) {
+            AutoUpdaterInternal.getLogger().info("\n\n\n\n\n\n============== BEGIN PREMIUM PLUGIN DEBUG ==============");
+            AutoUpdaterInternal.getLogger().info("AUTHENTICATED: " + currentUser.isAuthenticated());
+            AutoUpdaterInternal.getLogger().info("COOKIES: ");
+            ((SpigotUser) currentUser).getCookies().forEach((k, v) -> AutoUpdaterInternal.getLogger().info("\t" + k + " | " + v));
         }
     }
 
     @SuppressWarnings("DuplicatedCode")
     private void printDebug1(Page page, WebResponse response, WebClient webClient) {
-        if (InternalCore.DEBUG) {
+        if (AutoUpdaterInternal.DEBUG) {
             if (pluginName != null)
-                InternalCore.getLogger().info("PLUGIN = " + pluginName);
+                AutoUpdaterInternal.getLogger().info("PLUGIN = " + pluginName);
 
             if (page instanceof HtmlPage) {
-                InternalCore.getLogger().info("\n\nPAGETYPE = HtmlPage");
+                AutoUpdaterInternal.getLogger().info("\n\nPAGETYPE = HtmlPage");
                 HtmlPage htmlPage = (HtmlPage) page;
 
-                InternalCore.getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
-                InternalCore.getLogger().info("HISTORY: ");
+                AutoUpdaterInternal.getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
+                AutoUpdaterInternal.getLogger().info("HISTORY: ");
                 for (int i = 0; i < page.getEnclosingWindow().getHistory().getLength(); i++) {
-                    InternalCore.getLogger().info(htmlPage.getEnclosingWindow().getHistory().getUrl(i).toString());
+                    AutoUpdaterInternal.getLogger().info(htmlPage.getEnclosingWindow().getHistory().getUrl(i).toString());
                 }
-                InternalCore.getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
-                htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> InternalCore.getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
+                AutoUpdaterInternal.getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
+                htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterInternal.getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
             } else if (page instanceof UnexpectedPage) {
-                InternalCore.getLogger().info("\n\nPAGETYPE = UnexpectedPage");
+                AutoUpdaterInternal.getLogger().info("\n\nPAGETYPE = UnexpectedPage");
                 UnexpectedPage unexpectedPage = (UnexpectedPage) page;
-                InternalCore.getLogger().info("PREVIOUS STATUS CODE = " + unexpectedPage.getWebResponse().getStatusCode());
-                InternalCore.getLogger().info("HISTORY: ");
+                AutoUpdaterInternal.getLogger().info("PREVIOUS STATUS CODE = " + unexpectedPage.getWebResponse().getStatusCode());
+                AutoUpdaterInternal.getLogger().info("HISTORY: ");
                 for (int i = 0; i < page.getEnclosingWindow().getHistory().getLength(); i++) {
-                    InternalCore.getLogger().info(page.getEnclosingWindow().getHistory().getUrl(i).toString());
+                    AutoUpdaterInternal.getLogger().info(page.getEnclosingWindow().getHistory().getUrl(i).toString());
                 }
-                InternalCore.getLogger().info("STATUS CODE = " + unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
-                InternalCore.getLogger().info("NAME | VALUE");
-                unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> InternalCore.getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
+                AutoUpdaterInternal.getLogger().info("STATUS CODE = " + unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
+                AutoUpdaterInternal.getLogger().info("NAME | VALUE");
+                unexpectedPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterInternal.getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
             }
 
-            InternalCore.getLogger().info("\n\nPAGETYPE = Page");
-            InternalCore.getLogger().info("HISTORY: ");
+            AutoUpdaterInternal.getLogger().info("\n\nPAGETYPE = Page");
+            AutoUpdaterInternal.getLogger().info("HISTORY: ");
             for (int i = 0; i < page.getEnclosingWindow().getHistory().getLength(); i++) {
-                InternalCore.getLogger().info(page.getEnclosingWindow().getHistory().getUrl(i).toString());
+                AutoUpdaterInternal.getLogger().info(page.getEnclosingWindow().getHistory().getUrl(i).toString());
             }
-            InternalCore.getLogger().info("PREVIOUS STATUS CODE = " + page.getWebResponse().getStatusCode());
-            InternalCore.getLogger().info("STATUS CODE = " + response.getStatusCode());
-            InternalCore.getLogger().info("CONTENT TYPE = " + response.getContentType());
-            InternalCore.getLogger().info("STATUS MESSAGE = " + response.getStatusMessage());
-            InternalCore.getLogger().info("LOAD TIME = " + response.getLoadTime());
-            InternalCore.getLogger().info("CURRENT URL = " + webClient.getCurrentWindow().getEnclosedPage().getUrl());
-            InternalCore.getLogger().info("NAME | VALUE");
-            response.getResponseHeaders().forEach(nvpair -> InternalCore.getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
+            AutoUpdaterInternal.getLogger().info("PREVIOUS STATUS CODE = " + page.getWebResponse().getStatusCode());
+            AutoUpdaterInternal.getLogger().info("STATUS CODE = " + response.getStatusCode());
+            AutoUpdaterInternal.getLogger().info("CONTENT TYPE = " + response.getContentType());
+            AutoUpdaterInternal.getLogger().info("STATUS MESSAGE = " + response.getStatusMessage());
+            AutoUpdaterInternal.getLogger().info("LOAD TIME = " + response.getLoadTime());
+            AutoUpdaterInternal.getLogger().info("CURRENT URL = " + webClient.getCurrentWindow().getEnclosedPage().getUrl());
+            AutoUpdaterInternal.getLogger().info("NAME | VALUE");
+            response.getResponseHeaders().forEach(nvpair -> AutoUpdaterInternal.getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
         }
     }
 
     @SuppressWarnings("DuplicatedCode")
     private void printDebug2(HtmlPage htmlPage) {
-        if (InternalCore.DEBUG) {
-            InternalCore.getLogger().info("---- EARLY HTML OUTPUT ----");
-            InternalCore.getLogger().info("\nPAGETYPE = HtmlPage");
+        if (AutoUpdaterInternal.DEBUG) {
+            AutoUpdaterInternal.getLogger().info("---- EARLY HTML OUTPUT ----");
+            AutoUpdaterInternal.getLogger().info("\nPAGETYPE = HtmlPage");
 
-            InternalCore.getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
-            InternalCore.getLogger().info("HISTORY: ");
+            AutoUpdaterInternal.getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
+            AutoUpdaterInternal.getLogger().info("HISTORY: ");
             for (int i = 0; i < htmlPage.getEnclosingWindow().getHistory().getLength(); i++) {
-                InternalCore.getLogger().info(htmlPage.getEnclosingWindow().getHistory().getUrl(i).toString());
+                AutoUpdaterInternal.getLogger().info(htmlPage.getEnclosingWindow().getHistory().getUrl(i).toString());
             }
-            InternalCore.getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
-            InternalCore.getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
-            htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> InternalCore.getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
-            InternalCore.getLogger().info("\n---- EARLY HTML OUTPUT ----");
+            AutoUpdaterInternal.getLogger().info("PREVIOUS STATUS CODE = " + htmlPage.getWebResponse().getStatusCode());
+            AutoUpdaterInternal.getLogger().info("STATUS CODE = " + htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getStatusCode());
+            htmlPage.getEnclosingWindow().getEnclosedPage().getWebResponse().getResponseHeaders().forEach(nvpair -> AutoUpdaterInternal.getLogger().info(nvpair.getName() + " | " + nvpair.getValue()));
+            AutoUpdaterInternal.getLogger().info("\n---- EARLY HTML OUTPUT ----");
         }
     }
 
     private void printDebug3(long downloadedFileSize, int completeFileSize) {
-        if (InternalCore.DEBUG) {
-            InternalCore.getLogger().info("FINISHED WITH " + downloadedFileSize + "/" + completeFileSize + " (" + String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100) + "%)");
-            InternalCore.getLogger().info("============== END PREMIUM PLUGIN DEBUG =======");
+        if (AutoUpdaterInternal.DEBUG) {
+            AutoUpdaterInternal.getLogger().info("FINISHED WITH " + downloadedFileSize + "/" + completeFileSize + " (" + String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100) + "%)");
+            AutoUpdaterInternal.getLogger().info("============== END PREMIUM PLUGIN DEBUG =======");
         }
     }
 }

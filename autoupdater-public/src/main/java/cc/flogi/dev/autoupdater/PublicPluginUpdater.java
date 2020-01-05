@@ -1,9 +1,12 @@
 package cc.flogi.dev.autoupdater;
 
+import cc.flogi.dev.autoupdater.exceptions.NoUpdateFoundException;
 import lombok.Getter;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.InvalidDescriptionException;
+import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 
 import java.io.*;
@@ -78,7 +81,7 @@ public class PublicPluginUpdater implements Updater {
             locale.updateVariables(plugin.getName(), currentVersion, newVersion);
 
             if (newVersion.equalsIgnoreCase(currentVersion)) {
-                error(new Exception("Error occurred while updating plugin."), "Plugin is up to date!", "PLUGIN IS UP TO DATE");
+                error(new NoUpdateFoundException("Error occurred while updating plugin."), "Plugin is up to date!", "PLUGIN IS UP TO DATE");
                 return;
             }
 
@@ -137,8 +140,9 @@ public class PublicPluginUpdater implements Updater {
         targetFile.getParentFile().mkdirs();
         try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             error(ex, ex.getMessage());
+            return;
         }
 
         UtilThreading.sync(() -> {
@@ -150,20 +154,24 @@ public class PublicPluginUpdater implements Updater {
 
                 UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
                         pluginFolderPath, locale, startingTime, downloadUrlString, null, endTask);
-            } catch (Exception ex) {
+            } catch (FileNotFoundException | InvalidPluginException | InvalidDescriptionException ex) {
                 error(ex, ex.getMessage());
             }
         });
     }
 
     protected void error(Exception ex, String errorMessage, String shortErrorMessage) {
-        AutoUpdaterInternal.get().printError(ex, errorMessage);
+        if (AutoUpdaterInternal.DEBUG)
+            AutoUpdaterInternal.get().printError(ex, errorMessage);
+
         UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[" + shortErrorMessage + "&8]", 10);
         endTask.run(false, ex, null, pluginName);
     }
 
     protected void error(Exception ex, String message) {
-        AutoUpdaterInternal.get().printError(ex, message);
+        if (AutoUpdaterInternal.DEBUG)
+            AutoUpdaterInternal.get().printError(ex, message);
+
         UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[CHECK CONSOLE]");
         endTask.run(false, ex, null, pluginName);
     }

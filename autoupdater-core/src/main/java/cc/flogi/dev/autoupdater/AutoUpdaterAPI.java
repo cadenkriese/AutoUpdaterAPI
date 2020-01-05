@@ -99,7 +99,7 @@ public class AutoUpdaterAPI {
      * @return An instantiated {@link PublicPluginUpdater}.
      * @since 3.0.1
      */
-    public Updater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion) {
+    public PublicPluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion) {
         return new PublicPluginUpdater(plugin, initiator, url, locale, replace, newVersion);
     }
 
@@ -116,7 +116,7 @@ public class AutoUpdaterAPI {
      * @return An instantiated {@link PublicPluginUpdater}.
      * @since 3.0.1
      */
-    public Updater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
+    public PublicPluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
         return new PublicPluginUpdater(plugin, initiator, url, locale, replace, newVersion, endTask);
     }
 
@@ -135,7 +135,7 @@ public class AutoUpdaterAPI {
      * @return An instantiated {@link PublicSpigotPluginUpdater}.
      * @since 3.0.1
      */
-    public Updater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+    public PublicSpigotPluginUpdater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
         return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, locale, replace);
     }
 
@@ -151,7 +151,7 @@ public class AutoUpdaterAPI {
      * @return An instantiated {@link PublicSpigotPluginUpdater}.
      * @since 3.0.1
      */
-    public Updater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    public PublicSpigotPluginUpdater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, locale, replace, endTask);
     }
 

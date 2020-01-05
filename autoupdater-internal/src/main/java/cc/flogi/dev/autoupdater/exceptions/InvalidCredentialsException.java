@@ -5,4 +5,8 @@ package cc.flogi.dev.autoupdater.exceptions;
  *
  * Created on 01/04/2020
  */
-public class InvalidCredentialsException extends Exception {}
+public class InvalidCredentialsException extends Exception {
+    public InvalidCredentialsException(String message) {
+        super(message);
+    }
+}

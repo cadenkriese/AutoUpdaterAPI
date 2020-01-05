@@ -24,7 +24,7 @@ import java.util.List;
  * Created on 01/01/2020
  */
 public final class UtilMetrics {
-    private static final String SPIGET_BASE_URL = "https://api.flogi.cc/plugins";
+    private static final String API_BASE_URL = "https://api.flogi.cc/plugins";
     private static final Gson GSON = new GsonBuilder()
             .setDateFormat("yyyy-MM-dd HH:mm:ss")
             .create();
@@ -38,18 +38,18 @@ public final class UtilMetrics {
             boolean dbContainsPlugin = dbContainsPlugin(plugin.getName());
             if (dbContainsPlugin) {
                 plugin.setUpdates(null);
-                sendRequest("POST", SPIGET_BASE_URL + "/" + plugin.name + "/updates", GSON.toJson(update));
-                sendRequest("PUT", SPIGET_BASE_URL + "/" + plugin.name, GSON.toJson(plugin));
+                sendRequest("POST", API_BASE_URL + "/" + plugin.name + "/updates", GSON.toJson(update));
+                sendRequest("PUT", API_BASE_URL + "/" + plugin.name, GSON.toJson(plugin));
             } else {
                 plugin.setUpdates(Collections.singletonList(update));
-                sendRequest("POST", SPIGET_BASE_URL + "?type=" + type, GSON.toJson(plugin));
+                sendRequest("POST", API_BASE_URL + "?type=" + type, GSON.toJson(plugin));
             }
         }
     }
 
     private static boolean dbContainsPlugin(String pluginName) {
         try {
-            readFrom(SPIGET_BASE_URL + "/" + pluginName);
+            readFrom(API_BASE_URL + "/" + pluginName);
             return true;
         } catch (IOException ex) {
             //Print weird exceptions, FileNotFound is expected on 404.
@@ -108,7 +108,7 @@ public final class UtilMetrics {
         if (token == null || LocalDateTime.now().isAfter(expirationDate)) {
             try {
                 JsonParser parser = new JsonParser();
-                JsonObject obj = parser.parse(readFrom(SPIGET_BASE_URL + "/auth")).getAsJsonObject();
+                JsonObject obj = parser.parse(readFrom(API_BASE_URL + "/auth")).getAsJsonObject();
                 token = obj.get("token").getAsString();
                 expirationDate = LocalDateTime.now().plusDays(7);
             } catch (IOException ex) {

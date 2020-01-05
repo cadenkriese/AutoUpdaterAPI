@@ -8,6 +8,9 @@ import be.maximvdw.spigotsite.api.user.User;
 import be.maximvdw.spigotsite.api.user.exceptions.InvalidCredentialsException;
 import be.maximvdw.spigotsite.api.user.exceptions.TwoFactorAuthenticationException;
 import be.maximvdw.spigotsite.user.SpigotUser;
+import cc.flogi.dev.autoupdater.exceptions.NoUpdateFoundException;
+import cc.flogi.dev.autoupdater.exceptions.ResourceNotPurchasedException;
+import cc.flogi.dev.autoupdater.exceptions.UserExitException;
 import com.gargoylesoftware.htmlunit.*;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.util.Cookie;
@@ -16,6 +19,8 @@ import net.wesjd.anvilgui.AnvilGUI;
 import org.apache.commons.logging.LogFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.InvalidDescriptionException;
+import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -168,7 +173,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
 
                 List<Resource> purchasedResources = siteAPI.getResourceManager().getPurchasedResources(currentUser);
                 if (purchasedResources.stream().noneMatch(res -> res.getResourceId() == resourceId)) {
-                    error(new Exception("Error occurred while updating premium plugin."),
+                    error(new ResourceNotPurchasedException("Error occurred while updating premium plugin."),
                             "The current spigot user has not purchased the plugin '" + pluginName + "'",
                             "YOU HAVE NOT BOUGHT THAT PLUGIN");
                     return;
@@ -182,7 +187,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
             locale.updateVariables(plugin.getName(), currentVersion, newVersion);
 
             if (currentVersion.equalsIgnoreCase(newVersion)) {
-                error(new Exception("Error occurred while updating premium resource."), "Plugin already up to date.", "PLUGIN UP TO DATE");
+                error(new NoUpdateFoundException("Error occurred while updating premium resource."), "Plugin already up to date.", "PLUGIN UP TO DATE");
                 return;
             }
 
@@ -257,7 +262,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
 
             printDebug3(downloadedFileSize, completeFileSize);
             initializePlugin();
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             error(ex, "Error occurred while updating premium resource.");
         }
     }
@@ -270,7 +275,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
         targetFile.getParentFile().mkdirs();
         try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             error(ex, ex.getMessage());
         }
 
@@ -283,7 +288,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
 
                 UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
                         pluginFolderPath, locale, startingTime, downloadUrl, resourceId, endTask);
-            } catch (Exception ex) {
+            } catch (FileNotFoundException | InvalidPluginException | InvalidDescriptionException ex) {
                 error(ex, ex.getMessage());
             }
         });
@@ -322,8 +327,8 @@ public class PremiumSpigotPluginUpdater implements Updater {
 
                 if (recall)
                     UtilThreading.sync(this::update);
-            } catch (Exception ex) {
-                if (ex instanceof TwoFactorAuthenticationException) {
+            } catch (Exception firstException) {
+                if (firstException instanceof TwoFactorAuthenticationException) {
                     try {
                         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[ATTEMPTING 2FA AUTHENTICATION]", 15);
                         if (twoFactor == null) {
@@ -345,14 +350,14 @@ public class PremiumSpigotPluginUpdater implements Updater {
 
                         if (recall)
                             UtilThreading.sync(this::update);
-                    } catch (Exception otherException) {
-                        if (otherException instanceof InvalidCredentialsException) {
+                    } catch (Exception secondException) {
+                        if (secondException instanceof InvalidCredentialsException) {
                             UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                             UtilSpigotCreds.clearFile();
                             runGuis(recall);
-                        } else if (otherException instanceof ConnectionFailedException) {
-                            error(ex, "Error occurred while connecting to spigot.", "CONNECTION FAILED");
-                        } else if (otherException instanceof TwoFactorAuthenticationException) {
+                        } else if (secondException instanceof ConnectionFailedException) {
+                            error(firstException, "Error occurred while connecting to spigot.", "CONNECTION FAILED");
+                        } else if (secondException instanceof TwoFactorAuthenticationException) {
                             if (currentUser != null) {
                                 UtilThreading.sync(this::update);
                                 return;
@@ -364,20 +369,20 @@ public class PremiumSpigotPluginUpdater implements Updater {
                                 UtilThreading.syncDelayed(() -> authenticate(recall), 100);
                             } else {
                                 loginAttempts = 1;
-                                error(otherException, "All login attempts failed.", "LOGIN FAILED");
+                                error(secondException, "All login attempts failed.", "LOGIN FAILED");
                             }
                         } else {
-                            error(otherException, "Error occurred while authenticating.");
+                            error(secondException, "Error occurred while authenticating.");
                         }
                     }
-                } else if (ex instanceof InvalidCredentialsException) {
+                } else if (firstException instanceof InvalidCredentialsException) {
                     UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &c[INVALID CACHED CREDENTIALS]");
                     UtilSpigotCreds.clearFile();
                     runGuis(recall);
-                } else if (ex instanceof ConnectionFailedException) {
-                    error(ex, "Error occurred while connecting to spigot.", "CONNECTION FAILED");
+                } else if (firstException instanceof ConnectionFailedException) {
+                    error(firstException, "Error occurred while connecting to spigot.", "CONNECTION FAILED");
                 } else {
-                    error(ex, "Error occurred while authenticating.");
+                    error(firstException, "Error occurred while authenticating.");
                 }
             }
         });
@@ -415,7 +420,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
                         return AnvilGUI.Response.text("Success!");
                     }).onClose(player -> {
                 if (!inputProvided.get())
-                    error(new Exception("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
+                    error(new UserExitException("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
             }).open(initiator);
         });
     }
@@ -454,7 +459,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
                     return AnvilGUI.Response.text("Success!");
                 }).onClose(player -> {
             if (!inputProvided.get())
-                error(new Exception("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
+                error(new UserExitException("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
         }).open(initiator);
     }
 
@@ -489,7 +494,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
                     }
                 }).onClose(player -> {
             if (!inputProvided.get())
-                error(new Exception("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
+                error(new UserExitException("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
         }).open(initiator);
     }
 
@@ -498,13 +503,17 @@ public class PremiumSpigotPluginUpdater implements Updater {
      */
 
     private void error(Exception ex, String message) {
-        AutoUpdaterInternal.get().printError(ex, message);
+        if (AutoUpdaterInternal.DEBUG)
+            AutoUpdaterInternal.get().printError(ex, message);
+
         UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[CHECK CONSOLE]");
         endTask.run(false, ex, null, pluginName);
     }
 
     private void error(Exception ex, String errorMessage, String shortErrorMessage) {
-        AutoUpdaterInternal.get().printError(ex, errorMessage);
+        if (AutoUpdaterInternal.DEBUG)
+            AutoUpdaterInternal.get().printError(ex, errorMessage);
+        
         UtilUI.sendActionBar(initiator, locale.getUpdateFailed() + " &8[" + shortErrorMessage + "&8]", 10);
         endTask.run(false, ex, null, pluginName);
     }

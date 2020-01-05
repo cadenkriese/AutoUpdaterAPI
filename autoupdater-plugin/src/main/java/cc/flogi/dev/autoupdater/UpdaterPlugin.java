@@ -133,8 +133,8 @@ public final class UpdaterPlugin extends JavaPlugin {
             Long categoryId = (Long) ((JSONObject) json.get("category")).get("id");
             String categoryInfo = UtilMetrics.readFrom(SPIGET_BASE_URL + "categories/" + categoryId);
             String categoryName = (String) ((JSONObject) parser.parse(categoryInfo)).get("name");
-            String[] supportedVersions = (String[]) ((JSONArray) json.get("testedVersions")).stream()
-                    .map(String::valueOf).toArray(String[]::new);
+            JSONArray supportedVersionsObj = (JSONArray) json.get("testedVersions");
+            String[] supportedVersions = (String[]) supportedVersionsObj.toArray(new String[]{});
             Date uploadDate = new Date(((long) json.get("releaseDate")) * 1000);
             Double averageRating = (Double) ((JSONObject) json.get("rating")).get("average");
             String downloadUrl = SPIGOT_BASE_URL + ((JSONObject) json.get("file")).get("url");

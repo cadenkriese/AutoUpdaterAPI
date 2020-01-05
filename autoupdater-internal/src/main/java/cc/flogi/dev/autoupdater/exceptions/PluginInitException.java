@@ -5,8 +5,8 @@ package cc.flogi.dev.autoupdater.exceptions;
  *
  * Created on 01/04/2020
  */
-public class UserExitException extends Exception {
-    public UserExitException(String message) {
+public class PluginInitException extends Exception {
+    public PluginInitException(String message) {
         super(message);
     }
 }

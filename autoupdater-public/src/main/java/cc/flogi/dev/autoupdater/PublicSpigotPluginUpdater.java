@@ -1,8 +1,12 @@
 package cc.flogi.dev.autoupdater;
 
+import cc.flogi.dev.autoupdater.exceptions.ResourceIsPremiumException;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.InvalidDescriptionException;
+import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -22,19 +26,37 @@ import java.nio.file.StandardCopyOption;
  * Created on 12/12/19
  */
 public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
-    public static final String BASE_URL = "https://api.spiget.org/v2/resources/";
+    private static final String SPIGET_BASE_URL = "https://api.spiget.org/v2/resources/";
+    private static final JSONParser JSON_PARSER = new JSONParser();
 
     private final String url;
     private final int resourceId;
+
+    private String spigetResponse;
+    private String[] supportedVersions;
 
     protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
         this(plugin, initiator, resourceId, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
     protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        super(plugin, initiator, BASE_URL + resourceId + "/download", locale, replace);
-        url = BASE_URL + resourceId;
+        super(plugin, initiator, SPIGET_BASE_URL + resourceId + "/download", locale, replace);
+        this.url = SPIGET_BASE_URL + resourceId;
         this.resourceId = resourceId;
+
+        UtilThreading.async(() -> {
+            try {
+                spigetResponse = UtilReader.readFrom(url);
+
+                JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
+                if ((Boolean) json.get("premium"))
+                    error(new ResourceIsPremiumException("Error occurred while updating premium plugin."),
+                            "Plugin is premium.", "PLUGIN IS PREMIUM");
+
+            } catch (IOException | ParseException ex) {
+                error(ex, "Error occurred while retrieving Spigot plugin info.");
+            }
+        });
     }
 
     /**
@@ -48,26 +70,52 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
             return downloadUrlString;
 
         try {
-            String spigetResponse = UtilReader.readFrom("https://api.spiget.org/v2/resources/" + resourceId);
-            JSONParser parser = new JSONParser();
-            JSONObject json = (JSONObject) parser.parse(spigetResponse);
+            JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
 
-            if ((Boolean) json.get("premium"))
-                error(new Exception("Error occurred while updating premium plugin."), "Plugin is premium.",
-                        "PLUGIN IS PREMIUM");
-
+            String urlString;
             if ((Boolean) json.get("external"))
-                downloadUrlString = "https://spigotmc.org/" + ((JSONObject) json.get("file")).get("url");
+                urlString = "https://spigotmc.org/" + ((JSONObject) json.get("file")).get("url");
             else
-                downloadUrlString = BASE_URL + resourceId + "/download";
+                urlString = SPIGET_BASE_URL + resourceId + "/download";
 
-            return downloadUrlString;
-        } catch (ParseException | IOException ex) {
-            if (AutoUpdaterInternal.DEBUG)
-                AutoUpdaterInternal.get().printError(ex);
-
+            downloadUrlString = urlString;
+            return urlString;
+        } catch (ParseException ex) {
+            error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
             return null;
         }
+    }
+
+    /**
+     * Returns the plugins supported versions from Spigot.
+     *
+     * @return The list of supported Minecraft versions as listed on the plugin Spigot page.
+     */
+    public String[] getSupportedVersions() {
+        if (supportedVersions != null)
+            return supportedVersions;
+
+        try {
+            JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
+            JSONArray supportedVersionsObj = (JSONArray) json.get("testedVersions");
+            return (String[]) supportedVersionsObj.toArray(new String[]{});
+        } catch (ParseException ex) {
+            error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
+            return null;
+        }
+    }
+
+    /**
+     * Checks if the current MC version is supported by this plugin.
+     *
+     * @return If the current version is listed as supported in the resource's Spigot page.
+     */
+    public boolean currentVersionSupported() {
+        for (String string : getSupportedVersions()) {
+            if (Bukkit.getVersion().contains(string))
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -80,13 +128,10 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
     public String getLatestVersion() {
         try {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
-        } catch (Exception ex) {
-            AutoUpdaterInternal.get().printError(ex, "Error occurred while retrieving the latest update.");
-            UtilUI.sendActionBar(getInitiator(), getLocale().getUpdateFailed() + " &8[CHECK CONSOLE]");
-            getEndTask().run(false, ex, null, getPluginName());
+        } catch (IOException ex) {
+            error(ex, "Error occurred while retrieving the latest update.");
+            return null;
         }
-
-        return "";
     }
 
     //Mostly duplicate code, just sending spigot resourceId to UpdaterPlugin.
@@ -98,8 +143,9 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
         targetFile.getParentFile().mkdirs();
         try (InputStream is = getClass().getResourceAsStream(corePluginFile)) {
             Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             error(ex, ex.getMessage());
+            return;
         }
 
         UtilThreading.sync(() -> {
@@ -111,7 +157,7 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
 
                 UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
                         pluginFolderPath, locale, startingTime, downloadUrlString, resourceId, endTask);
-            } catch (Exception ex) {
+            } catch (FileNotFoundException | InvalidDescriptionException | InvalidPluginException ex) {
                 error(ex, ex.getMessage());
             }
         });

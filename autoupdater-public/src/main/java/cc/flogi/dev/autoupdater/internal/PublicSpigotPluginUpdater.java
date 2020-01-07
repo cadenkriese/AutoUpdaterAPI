@@ -1,5 +1,6 @@
 package cc.flogi.dev.autoupdater.internal;
 
+import cc.flogi.dev.autoupdater.api.SpigotPluginUpdater;
 import cc.flogi.dev.autoupdater.api.UpdateLocale;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import cc.flogi.dev.autoupdater.api.exceptions.ResourceIsPremiumException;
@@ -19,15 +20,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 
 /**
  * @author Caden Kriese (flogic)
  *
- * Performs updates for public Spigot plugins.
+ * Performs updates and handles information for public Spigot plugins.
+ * Note that the plugin information is requested once when the class is instantiated.
+ * This class is not designed to be kept around in runtime for extended periods of time.
  *
  * Created on 12/12/19
  */
-public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
+public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements SpigotPluginUpdater {
     private static final String SPIGET_BASE_URL = "https://api.spiget.org/v2/resources/";
     private static final JSONParser JSON_PARSER = new JSONParser();
 
@@ -36,6 +40,7 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
 
     private String spigetResponse;
     private String[] supportedVersions;
+    private Double averageRating;
 
     protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
         this(plugin, initiator, resourceId, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
@@ -61,13 +66,7 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
         });
     }
 
-    /**
-     * Pings spiget to get the download URL of a resource.
-     *
-     * @return The download URL of a resource, or null if an error occurs.
-     */
-    @Override
-    public String getDownloadUrlString() {
+    @Override public String getDownloadUrlString() {
         if (downloadUrlString != null)
             return downloadUrlString;
 
@@ -88,19 +87,34 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
         }
     }
 
-    /**
-     * Returns the plugins supported versions from Spigot.
-     *
-     * @return The list of supported Minecraft versions as listed on the plugin Spigot page.
-     */
-    public String[] getSupportedVersions() {
+    @Override public String[] getSupportedVersions() {
         if (supportedVersions != null)
             return supportedVersions;
 
         try {
             JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
             JSONArray supportedVersionsObj = (JSONArray) json.get("testedVersions");
-            return (String[]) supportedVersionsObj.toArray(new String[]{});
+            supportedVersions = (String[]) supportedVersionsObj.toArray(new String[]{});
+            return supportedVersions;
+        } catch (ParseException ex) {
+            error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
+            return null;
+        }
+    }
+
+    @Override public Boolean currentVersionSupported() {
+        return Arrays.stream(getSupportedVersions()).anyMatch(ver -> Bukkit.getVersion().contains(ver));
+    }
+
+    @Override public Double getAverageRating() {
+        if (averageRating != null)
+            return averageRating;
+
+        try {
+            JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
+            JSONObject supportedVersionsObj = (JSONObject) json.get("rating");
+            averageRating = (Double) json.get("average");
+            return averageRating;
         } catch (ParseException ex) {
             error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
             return null;
@@ -108,26 +122,9 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
     }
 
     /**
-     * Checks if the current MC version is supported by this plugin.
-     *
-     * @return If the current version is listed as supported in the resource's Spigot page.
+     * @implNote  Makes a web request, will halt current thread shortly (if run synchronously).
      */
-    public boolean currentVersionSupported() {
-        for (String string : getSupportedVersions()) {
-            if (Bukkit.getVersion().contains(string))
-                return true;
-        }
-        return false;
-    }
-
-    /**
-     * Pings spigot to retrieve the latest version of a plugin.
-     *
-     * @return The latest version of the plugin as a string.
-     * @apiNote Makes a web request, will halt current thread shortly (if run synchronously).
-     */
-    @Override
-    public String getLatestVersion() {
+    @Override public String getLatestVersion() {
         try {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (IOException ex) {
@@ -137,8 +134,7 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater {
     }
 
     //Mostly duplicate code, just sending spigot resourceId to UpdaterPlugin.
-    @Override
-    public void initializePlugin() {
+    @Override public void initializePlugin() {
         //Copy plugin utility from src/main/resources
         String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterInternal.PROPERTIES.VERSION + ".jar";
         File targetFile = new File(AutoUpdaterInternal.getDataFolder().getAbsolutePath() + corePluginFile);

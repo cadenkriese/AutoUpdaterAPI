@@ -1,7 +1,7 @@
 package cc.flogi.dev.autoupdater.internal;
 
 import cc.flogi.dev.autoupdater.api.UpdateLocale;
-import cc.flogi.dev.autoupdater.api.Updater;
+import cc.flogi.dev.autoupdater.api.PluginUpdater;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -91,7 +91,7 @@ public class AutoUpdaterAPI {
     }
 
     /**
-     * Instantiate a {@link PublicPluginUpdater}.
+     * Instantiate a {@link cc.flogi.dev.autoupdater.internal.PublicPluginUpdater}.
      *
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
@@ -99,15 +99,15 @@ public class AutoUpdaterAPI {
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param newVersion The latest version of the resource.
-     * @return An instantiated {@link PublicPluginUpdater}.
+     * @return An instantiated {@link cc.flogi.dev.autoupdater.internal.PublicPluginUpdater}.
      * @since 3.0.1
      */
-    public PublicPluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion) {
+    public PluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion) {
         return new PublicPluginUpdater(plugin, initiator, url, locale, replace, newVersion);
     }
 
     /**
-     * Instantiate a {@link PublicPluginUpdater}.
+     * Instantiate a {@link cc.flogi.dev.autoupdater.internal.PublicPluginUpdater}.
      *
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
@@ -116,10 +116,10 @@ public class AutoUpdaterAPI {
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      * @param newVersion The latest version of the resource.
-     * @return An instantiated {@link PublicPluginUpdater}.
+     * @return An instantiated {@link cc.flogi.dev.autoupdater.internal.PublicPluginUpdater}.
      * @since 3.0.1
      */
-    public PublicPluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
+    public PluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
         return new PublicPluginUpdater(plugin, initiator, url, locale, replace, newVersion, endTask);
     }
 
@@ -170,7 +170,7 @@ public class AutoUpdaterAPI {
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
-    public Updater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+    public PluginUpdater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
         return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, locale, replace);
     }
 
@@ -187,7 +187,7 @@ public class AutoUpdaterAPI {
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
-    public Updater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    public PluginUpdater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, locale, replace, endTask);
     }
 }

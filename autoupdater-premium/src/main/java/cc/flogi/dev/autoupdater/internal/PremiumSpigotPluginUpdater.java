@@ -8,8 +8,8 @@ import be.maximvdw.spigotsite.api.user.User;
 import be.maximvdw.spigotsite.api.user.exceptions.InvalidCredentialsException;
 import be.maximvdw.spigotsite.api.user.exceptions.TwoFactorAuthenticationException;
 import be.maximvdw.spigotsite.user.SpigotUser;
+import cc.flogi.dev.autoupdater.api.SpigotPluginUpdater;
 import cc.flogi.dev.autoupdater.api.UpdateLocale;
-import cc.flogi.dev.autoupdater.api.Updater;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import cc.flogi.dev.autoupdater.api.exceptions.NoUpdateFoundException;
 import cc.flogi.dev.autoupdater.api.exceptions.ResourceNotPurchasedException;
@@ -26,10 +26,15 @@ import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,7 +48,9 @@ import java.util.logging.Logger;
  *
  * Created on 6/6/17
  */
-public class PremiumSpigotPluginUpdater implements Updater {
+public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
+    private static final String SPIGET_BASE_URL = "https://api.spiget.org/v2/resources/";
+    private static final JSONParser JSON_PARSER = new JSONParser();
 
     private static User currentUser;
     private static SpigotSiteAPI siteAPI;
@@ -125,16 +132,12 @@ public class PremiumSpigotPluginUpdater implements Updater {
         });
     }
 
-    /**
-     * Resets the current user.
-     */
     protected static void resetUser() {
         currentUser = null;
         UtilSpigotCreds.reset();
     }
 
-    @Override
-    public String getLatestVersion() {
+    @Override public String getLatestVersion() {
         try {
             return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (Exception ex) {
@@ -143,22 +146,33 @@ public class PremiumSpigotPluginUpdater implements Updater {
         }
     }
 
-    @Override
-    public String getDownloadUrlString() {
-        if (resource == null) {
-            try {
-                resource = siteAPI.getResourceManager().getResourceById(resourceId, currentUser);
-            } catch (ConnectionFailedException ex) {
-                error(ex, "Error occurred while retrieving the download url of a premium resource.");
-                return null;
-            }
-        }
-
-        return resource.getDownloadURL();
+    @Override public String getDownloadUrlString() {
+        return getResource().getDownloadURL();
     }
 
-    @Override
-    public void update() {
+    /**
+     * @implNote Makes a web request.
+     */
+    @Override public String[] getSupportedVersions() {
+        try {
+            JSONObject json = (JSONObject) JSON_PARSER.parse(UtilReader.readFrom(SPIGET_BASE_URL + "resources/" + resourceId));
+            JSONArray supportedVersionsObj = (JSONArray) json.get("testedVersions");
+            return (String[]) supportedVersionsObj.toArray(new String[]{});
+        } catch (ParseException | IOException ex) {
+            error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
+            return null;
+        }
+    }
+
+    @Override public Boolean currentVersionSupported() {
+        return Arrays.stream(getSupportedVersions()).anyMatch(ver -> Bukkit.getVersion().contains(ver));
+    }
+
+    @Override public Double getAverageRating() {
+        return (double) getResource().getAverageRating();
+    }
+
+    @Override public void update() {
         startingTime = System.currentTimeMillis();
         UtilUI.sendActionBar(initiator, locale.getUpdatingNoVar() + " &8[RETRIEVING PLUGIN INFO]", 10);
 
@@ -170,9 +184,6 @@ public class PremiumSpigotPluginUpdater implements Updater {
             }
 
             try {
-                if (resource == null)
-                    resource = siteAPI.getResourceManager().getResourceById(resourceId, currentUser);
-
                 List<Resource> purchasedResources = siteAPI.getResourceManager().getPurchasedResources(currentUser);
                 if (purchasedResources.stream().noneMatch(res -> res.getResourceId() == resourceId)) {
                     error(new ResourceNotPurchasedException("Error occurred while updating premium plugin."),
@@ -202,8 +213,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
         });
     }
 
-    @Override
-    public void downloadResource() {
+    @Override public void downloadResource() {
         try {
             printDebug();
             Map<String, String> cookies = ((SpigotUser) currentUser).getCookies();
@@ -269,8 +279,7 @@ public class PremiumSpigotPluginUpdater implements Updater {
         }
     }
 
-    @Override
-    public void initializePlugin() {
+    @Override public void initializePlugin() {
         //Copy plugin utility from src/main/resources
         String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterInternal.PROPERTIES.VERSION + ".jar";
         File targetFile = new File(AutoUpdaterInternal.getDataFolder().getParent() + corePluginFile);
@@ -498,6 +507,17 @@ public class PremiumSpigotPluginUpdater implements Updater {
             if (!inputProvided.get())
                 error(new UserExitException("Error occurred while retrieving user input."), "User closed GUI.", "GUI CLOSED");
         }).open(initiator);
+    }
+
+    private Resource getResource() {
+        if (resource == null) {
+            try {
+                resource = siteAPI.getResourceManager().getResourceById(resourceId, currentUser);
+            } catch (ConnectionFailedException ex) {
+                error(ex, "Error occurred while retrieving the download url of a premium resource.");
+            }
+        }
+        return null;
     }
 
     /*

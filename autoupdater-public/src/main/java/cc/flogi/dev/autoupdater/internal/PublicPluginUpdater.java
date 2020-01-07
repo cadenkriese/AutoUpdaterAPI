@@ -1,7 +1,7 @@
 package cc.flogi.dev.autoupdater.internal;
 
+import cc.flogi.dev.autoupdater.api.PluginUpdater;
 import cc.flogi.dev.autoupdater.api.UpdateLocale;
-import cc.flogi.dev.autoupdater.api.Updater;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import cc.flogi.dev.autoupdater.api.exceptions.NoUpdateFoundException;
 import lombok.Getter;
@@ -26,7 +26,7 @@ import java.nio.file.StandardCopyOption;
  * Created on 6/14/17
  */
 @Getter
-public class PublicPluginUpdater implements Updater {
+public class PublicPluginUpdater implements PluginUpdater {
     protected final Player initiator;
     protected final Plugin plugin;
     protected final UpdaterRunnable endTask;

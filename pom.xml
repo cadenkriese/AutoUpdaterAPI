@@ -127,7 +127,7 @@
     </repositories>
 
     <dependencies>
-        <!--Spigot API-->
+        <!--Paper API-->
         <dependency>
             <groupId>com.destroystokyo.paper</groupId>
             <artifactId>paper-api</artifactId>

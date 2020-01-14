@@ -1,9 +1,6 @@
 package cc.flogi.dev.autoupdater.internal;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,11 +9,10 @@ import lombok.Setter;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Caden Kriese (flogic)
@@ -35,11 +31,14 @@ public final class UtilMetrics {
     public static void sendUpdateInfo(Plugin plugin, PluginUpdate update) {
         if (AutoUpdaterInternal.METRICS) {
             String type = plugin instanceof SpigotPlugin ? "spigot" : "public";
-            boolean dbContainsPlugin = dbContainsPlugin(plugin.getName());
-            if (dbContainsPlugin) {
+
+            if (plugin.getId() == null)
+                plugin.setId(getPluginID(plugin));
+
+            if (plugin.getId() != null) {
                 plugin.setUpdates(null);
-                sendRequest("POST", API_BASE_URL + "/plugins/" + plugin.name + "/updates", GSON.toJson(update));
-                sendRequest("PUT", API_BASE_URL + "/plugins/" + plugin.name, GSON.toJson(plugin));
+                sendRequest("POST", API_BASE_URL + "/plugins/" + plugin.getId() + "/updates", GSON.toJson(update));
+                sendRequest("PUT", API_BASE_URL + "/plugins/" + plugin.getId(), GSON.toJson(plugin));
             } else {
                 plugin.setUpdates(Collections.singletonList(update));
                 sendRequest("POST", API_BASE_URL + "/plugins?type=" + type, GSON.toJson(plugin));
@@ -47,25 +46,69 @@ public final class UtilMetrics {
         }
     }
 
-    private static boolean dbContainsPlugin(String pluginName) {
+    private static UUID getPluginID(Plugin plugin) {
+        StringBuilder params = new StringBuilder();
+        Set<Map.Entry<String, JsonElement>> jsonPlugin;
+
+        //Remove categories that are subject to change.
+        if (plugin instanceof SpigotPlugin) {
+            SpigotPlugin spigotPlugin = new SpigotPlugin((SpigotPlugin) plugin);
+            spigotPlugin.setDescription(null);
+            spigotPlugin.setDownloadUrl(null);
+            spigotPlugin.setUpdates(null);
+            spigotPlugin.setAverageRating(null);
+            spigotPlugin.setCurrency(null);
+            spigotPlugin.setPrice(null);
+            spigotPlugin.setSupportedVersions(null);
+            spigotPlugin.setCategory(null);
+
+            jsonPlugin = GSON.toJsonTree(spigotPlugin).getAsJsonObject().entrySet();
+        } else {
+            Plugin publicPlugin = new Plugin(plugin);
+            publicPlugin.setDescription(null);
+            publicPlugin.setDownloadUrl(null);
+            publicPlugin.setUpdates(null);
+
+            jsonPlugin = GSON.toJsonTree(publicPlugin).getAsJsonObject().entrySet();
+        }
+
         try {
-            readFrom(API_BASE_URL + "/plugins/" + pluginName);
-            return true;
+            int i = 0;
+            for (Map.Entry<String, JsonElement> entry : jsonPlugin) {
+                if (i == 0)
+                    params.append("?");
+                else
+                    params.append("&");
+                params.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name()))
+                        .append("=")
+                        .append(URLEncoder.encode(entry.getValue().getAsString(), StandardCharsets.UTF_8.name()));
+                i++;
+            }
+
+            String response = readFrom(API_BASE_URL + "/plugins" + params.toString());
+            if (!response.contains("error")) {
+                JsonArray array = new JsonParser().parse(response).getAsJsonArray();
+                if (array.size() == 0)
+                    return null;
+                JsonObject elem = array.get(0).getAsJsonObject();
+                if (elem.get("id") == null)
+                    return null;
+                return UUID.fromString(elem.get("id").getAsString());
+            }
         } catch (IOException ex) {
-            //Print weird exceptions, FileNotFound is expected on 404.
             if (AutoUpdaterInternal.DEBUG && !(ex instanceof FileNotFoundException))
                 ex.printStackTrace();
-
-            return false;
         }
+
+        return null;
     }
 
     private static void sendRequest(String requestMethod, String urlString, String body) {
-        auth();
-
-        StringBuilder requestData = new StringBuilder();
-
         try {
+            auth();
+
+            StringBuilder requestData = new StringBuilder();
+
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod(requestMethod.toUpperCase());
@@ -84,22 +127,20 @@ public final class UtilMetrics {
 
                 int responseCode = conn.getResponseCode();
 
-                if (responseCode == 401) {
-                    try (InputStream is = conn.getInputStream()) {
-                        String responseBody = buildStringFromInputStream(is);
+                try (InputStream is = conn.getInputStream()) {
+                    String responseBody = buildStringFromInputStream(is);
 
-                        if (responseBody.contains("token has expired")) {
-                            token = null;
-                            sendRequest(requestMethod, urlString, body);
-                        }
-                    }
-                } else if (responseCode != 200 && AutoUpdaterInternal.DEBUG)
-                    System.out.println("Metrics request failed code = " + responseCode);
+                    if (responseCode == 401 && responseBody.contains("token has expired")) {
+                        token = null;
+                        sendRequest(requestMethod, urlString, body);
+                    } else if (responseCode != 200 && AutoUpdaterInternal.DEBUG)
+                        System.out.println("Metrics request failed code = " + responseCode);
+                }
             } finally {
                 conn.disconnect();
             }
         } catch (IOException ex) {
-            if (AutoUpdaterInternal.DEBUG && !(ex instanceof FileNotFoundException))
+            if (AutoUpdaterInternal.DEBUG)
                 ex.printStackTrace();
         }
     }
@@ -168,6 +209,7 @@ public final class UtilMetrics {
 
     @AllArgsConstructor @Getter @Setter
     static class Plugin {
+        private UUID id;
         private String name;
         private String description;
         @SerializedName("download_url")
@@ -176,8 +218,14 @@ public final class UtilMetrics {
 
         private Plugin() {}
 
+        Plugin(Plugin plugin) {
+            this(plugin.getName(), plugin.getDescription(), plugin.getDownloadUrl());
+            updates = plugin.getUpdates();
+            id = plugin.getId();
+        }
+
         Plugin(String name, String description, String downloadUrl) {
-            this(name, description, downloadUrl, null);
+            this(null, name, description, downloadUrl, null);
         }
     }
 
@@ -198,14 +246,20 @@ public final class UtilMetrics {
         private Double price;
         private String currency;
 
+        SpigotPlugin(SpigotPlugin plugin) {
+            this(plugin.getName(), plugin.getDescription(), plugin.getDownloadUrl(), plugin.getSpigotName(),
+                    plugin.getResourceId(), plugin.getCategory(), plugin.getAverageRating(), plugin.getUploadDate(),
+                    plugin.getSupportedVersions(), plugin.getPremium(), plugin.getPrice(), plugin.getCurrency());
+        }
+
         SpigotPlugin(String name, String description, String downloadUrl, String spigotName, int resourceId,
-                     String category, double averageRating, Date uploadDate, String[] supportedVersions) {
+                     String category, Double averageRating, Date uploadDate, String[] supportedVersions) {
             this(name, description, downloadUrl, spigotName, resourceId, category, averageRating, uploadDate,
                     supportedVersions, false, null, null);
         }
 
         SpigotPlugin(String name, String description, String downloadUrl, String spigotName, int resourceId,
-                     String category, double averageRating, Date uploadDate, String[] supportedVersions, boolean premium, Double price, String currency) {
+                     String category, Double averageRating, Date uploadDate, String[] supportedVersions, boolean premium, Double price, String currency) {
             super(name, description, downloadUrl);
 
             this.spigotName = spigotName;

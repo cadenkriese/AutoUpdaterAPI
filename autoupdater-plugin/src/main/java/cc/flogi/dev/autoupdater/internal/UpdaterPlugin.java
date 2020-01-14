@@ -2,6 +2,9 @@ package cc.flogi.dev.autoupdater.internal;
 
 import cc.flogi.dev.autoupdater.api.UpdateLocale;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.InvalidDescriptionException;
@@ -9,10 +12,6 @@ import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.net.URL;
@@ -20,7 +19,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public final class UpdaterPlugin extends JavaPlugin {
     private static UpdaterPlugin instance;
@@ -128,31 +129,34 @@ public final class UpdaterPlugin extends JavaPlugin {
 
             String spigetResponse = sb.toString();
 
-            JSONParser parser = new JSONParser();
-            JSONObject json = (JSONObject) parser.parse(spigetResponse);
+            JsonParser parser = new JsonParser();
+            JsonObject json = parser.parse(spigetResponse).getAsJsonObject();
 
-            String resourceName = (String) json.get("name");
-            Long categoryId = (Long) ((JSONObject) json.get("category")).get("id");
+            String resourceName = json.get("name").getAsString();
+            long categoryId = json.getAsJsonObject("category").get("id").getAsLong();
             String categoryInfo = UtilMetrics.readFrom(SPIGET_BASE_URL + "categories/" + categoryId);
-            String categoryName = (String) ((JSONObject) parser.parse(categoryInfo)).get("name");
-            JSONArray supportedVersionsObj = (JSONArray) json.get("testedVersions");
-            String[] supportedVersions = (String[]) supportedVersionsObj.toArray(new String[]{});
-            Date uploadDate = new Date(((long) json.get("releaseDate")) * 1000);
-            Double averageRating = (Double) ((JSONObject) json.get("rating")).get("average");
-            String downloadUrl = SPIGOT_BASE_URL + ((JSONObject) json.get("file")).get("url");
-            Boolean premium = (Boolean) json.get("premium");
+            String categoryName = parser.parse(categoryInfo).getAsJsonObject().get("name").getAsString();
+            JsonArray supportedVersionsObj = json.getAsJsonArray("testedVersions");
+            List<String> supportedVersions = new ArrayList<>();
+            supportedVersionsObj.iterator().forEachRemaining(element -> supportedVersions.add(element.getAsString()));
+            Date uploadDate = new Date(json.get("releaseDate").getAsLong() * 1000);
+            Double averageRating = json.getAsJsonObject("rating").get("average").getAsDouble();
+            String downloadUrl = SPIGOT_BASE_URL + json.getAsJsonObject("file").get("url").getAsString();
+            boolean premium = json.get("premium").getAsBoolean();
 
             if (premium) {
-                Double price = (Double) json.get("price");
-                String currency = (String) json.get("currency");
+                Double price = json.get("price").getAsDouble();
+                String currency = json.get("currency").getAsString();
                 return new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
-                        downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate, supportedVersions,
-                        premium, price, currency);
+                        downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate,
+                        supportedVersions.toArray(new String[]{}), premium, price, currency);
             }
 
             return new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
-                    downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate, supportedVersions);
-        } catch (IOException | ParseException ex) {
+                    downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate,
+                    supportedVersions.toArray(new String[]{}));
+
+        } catch (IOException ex) {
             if (AutoUpdaterInternal.DEBUG)
                 ex.printStackTrace();
             return null;

@@ -17,6 +17,9 @@ import cc.flogi.dev.autoupdater.api.exceptions.UserExitException;
 import com.gargoylesoftware.htmlunit.*;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.util.Cookie;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.md_5.bungee.api.ChatColor;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.apache.commons.logging.LogFactory;
@@ -26,14 +29,11 @@ import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +50,7 @@ import java.util.logging.Logger;
  */
 public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
     private static final String SPIGET_BASE_URL = "https://api.spiget.org/v2/resources/";
-    private static final JSONParser JSON_PARSER = new JSONParser();
+    private static final JsonParser JSON_PARSER = new JsonParser();
 
     private static User currentUser;
     private static SpigotSiteAPI siteAPI;
@@ -155,10 +155,12 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
      */
     @Override public String[] getSupportedVersions() {
         try {
-            JSONObject json = (JSONObject) JSON_PARSER.parse(UtilReader.readFrom(SPIGET_BASE_URL + "resources/" + resourceId));
-            JSONArray supportedVersionsObj = (JSONArray) json.get("testedVersions");
-            return (String[]) supportedVersionsObj.toArray(new String[]{});
-        } catch (ParseException | IOException ex) {
+            JsonObject json = JSON_PARSER.parse(UtilReader.readFrom(SPIGET_BASE_URL + "resources/" + resourceId)).getAsJsonObject();
+            JsonArray supportedVersionsObj = json.getAsJsonArray("testedVersions");
+            List<String> supportedVersions = new ArrayList<>();
+            supportedVersionsObj.forEach(e -> supportedVersions.add(e.getAsString()));
+            return supportedVersions.toArray(new String[]{});
+        } catch (IOException ex) {
             error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
             return null;
         }
@@ -517,7 +519,8 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
                 error(ex, "Error occurred while retrieving the download url of a premium resource.");
             }
         }
-        return null;
+
+        return resource;
     }
 
     /*

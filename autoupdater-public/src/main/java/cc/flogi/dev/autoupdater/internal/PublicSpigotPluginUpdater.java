@@ -4,15 +4,14 @@ import cc.flogi.dev.autoupdater.api.SpigotPluginUpdater;
 import cc.flogi.dev.autoupdater.api.UpdateLocale;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import cc.flogi.dev.autoupdater.api.exceptions.ResourceIsPremiumException;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,7 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Caden Kriese (flogic)
@@ -33,7 +34,7 @@ import java.util.Arrays;
  */
 public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements SpigotPluginUpdater {
     private static final String SPIGET_BASE_URL = "https://api.spiget.org/v2/resources/";
-    private static final JSONParser JSON_PARSER = new JSONParser();
+    private static final JsonParser JSON_PARSER = new JsonParser();
 
     private final String url;
     private final int resourceId;
@@ -55,12 +56,12 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
             try {
                 spigetResponse = UtilReader.readFrom(url);
 
-                JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
-                if ((Boolean) json.get("premium"))
+                JsonObject json = JSON_PARSER.parse(spigetResponse).getAsJsonObject();
+                if (json.get("premium").getAsBoolean())
                     error(new ResourceIsPremiumException("Error occurred while updating premium plugin."),
                             "Plugin is premium.", "PLUGIN IS PREMIUM");
 
-            } catch (IOException | ParseException ex) {
+            } catch (IOException ex) {
                 error(ex, "Error occurred while retrieving Spigot plugin info.");
             }
         });
@@ -70,21 +71,16 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
         if (downloadUrlString != null)
             return downloadUrlString;
 
-        try {
-            JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
+        JsonObject json = JSON_PARSER.parse(spigetResponse).getAsJsonObject();
 
-            String urlString;
-            if ((Boolean) json.get("external"))
-                urlString = "https://spigotmc.org/" + ((JSONObject) json.get("file")).get("url");
-            else
-                urlString = SPIGET_BASE_URL + resourceId + "/download";
+        String urlString;
+        if (json.get("external").getAsBoolean())
+            urlString = "https://spigotmc.org/" + json.getAsJsonObject("file").get("url").getAsString();
+        else
+            urlString = SPIGET_BASE_URL + resourceId + "/download";
 
-            downloadUrlString = urlString;
-            return urlString;
-        } catch (ParseException ex) {
-            error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
-            return null;
-        }
+        downloadUrlString = urlString;
+        return urlString;
     }
 
     @Override public String[] getSupportedVersions() {
@@ -92,11 +88,13 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
             return supportedVersions;
 
         try {
-            JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
-            JSONArray supportedVersionsObj = (JSONArray) json.get("testedVersions");
-            supportedVersions = (String[]) supportedVersionsObj.toArray(new String[]{});
+            JsonObject json = JSON_PARSER.parse(UtilReader.readFrom(SPIGET_BASE_URL + "resources/" + resourceId)).getAsJsonObject();
+            JsonArray supportedVersionsObj = json.getAsJsonArray("testedVersions");
+            List<String> supportedVersionsList = new ArrayList<>();
+            supportedVersionsObj.forEach(e -> supportedVersionsList.add(e.getAsString()));
+            this.supportedVersions = supportedVersionsList.toArray(new String[]{});
             return supportedVersions;
-        } catch (ParseException ex) {
+        } catch (IOException ex) {
             error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
             return null;
         }
@@ -110,15 +108,10 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
         if (averageRating != null)
             return averageRating;
 
-        try {
-            JSONObject json = (JSONObject) JSON_PARSER.parse(spigetResponse);
-            JSONObject supportedVersionsObj = (JSONObject) json.get("rating");
-            averageRating = (Double) json.get("average");
-            return averageRating;
-        } catch (ParseException ex) {
-            error(ex, "Error occurred while retrieving download URL of Spigot plugin.");
-            return null;
-        }
+        JsonObject json = JSON_PARSER.parse(spigetResponse).getAsJsonObject();
+        JsonObject supportedVersionsObj = json.getAsJsonObject("rating");
+        averageRating = json.get("average").getAsDouble();
+        return averageRating;
     }
 
     /**

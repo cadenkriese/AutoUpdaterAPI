@@ -1,7 +1,6 @@
 package cc.flogi.dev.autoupdater.internal;
 
 import cc.flogi.dev.autoupdater.api.SpigotPluginUpdater;
-import cc.flogi.dev.autoupdater.api.UpdateLocale;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import cc.flogi.dev.autoupdater.api.exceptions.ResourceIsPremiumException;
 import com.google.gson.JsonArray;
@@ -43,11 +42,11 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
     private String[] supportedVersions;
     private Double averageRating;
 
-    protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
+    protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, PluginUpdateLocale locale, boolean replace) {
         this(plugin, initiator, resourceId, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
-    protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, PluginUpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
         super(plugin, initiator, SPIGET_BASE_URL + resourceId + "/download", locale, replace);
         this.url = SPIGET_BASE_URL + resourceId;
         this.resourceId = resourceId;

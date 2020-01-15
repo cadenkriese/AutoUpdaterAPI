@@ -1,5 +1,7 @@
 package cc.flogi.dev.autoupdater.api;
 
+import cc.flogi.dev.autoupdater.internal.PluginUpdateLocale;
+
 /**
  * @author Caden Kriese (flogic)
  *
@@ -31,7 +33,7 @@ public interface PluginUpdater {
 
     /**
      * Downloads the resource to the plugins directory and initializes it.
-     * Uses the specified name from the relevant {@link UpdateLocale}.
+     * Uses the specified name from the relevant {@link PluginUpdateLocale}.
      *
      * @apiNote You probably want to call the {@link PluginUpdater#update()} method, this method is only here for special cases.
      * @implSpec Should involve calling {@link PluginUpdater#initializePlugin()}.

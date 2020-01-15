@@ -87,7 +87,7 @@ public class AutoUpdaterAPI {
      * @since 3.0.1
      */
     public static void promptLogin(Player player) {
-        new PremiumSpigotPluginUpdater(null, null, 1, new UpdateLocale(), false).authenticate(false);
+        new PremiumSpigotPluginUpdater(null, null, 1, PluginUpdateLocale.builder().build(), false).authenticate(false);
     }
 
     /**
@@ -103,7 +103,7 @@ public class AutoUpdaterAPI {
      * @since 3.0.1
      */
     public PluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion) {
-        return new PublicPluginUpdater(plugin, initiator, url, locale, replace, newVersion);
+        return new PublicPluginUpdater(plugin, initiator, url, (PluginUpdateLocale) locale, replace, newVersion);
     }
 
     /**
@@ -120,7 +120,7 @@ public class AutoUpdaterAPI {
      * @since 3.0.1
      */
     public PluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
-        return new PublicPluginUpdater(plugin, initiator, url, locale, replace, newVersion, endTask);
+        return new PublicPluginUpdater(plugin, initiator, url, (PluginUpdateLocale) locale, replace, newVersion, endTask);
     }
 
     /*
@@ -139,7 +139,7 @@ public class AutoUpdaterAPI {
      * @since 3.0.1
      */
     public PublicSpigotPluginUpdater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
-        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, locale, replace);
+        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, (PluginUpdateLocale) locale, replace);
     }
 
     /**
@@ -155,7 +155,7 @@ public class AutoUpdaterAPI {
      * @since 3.0.1
      */
     public PublicSpigotPluginUpdater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, locale, replace, endTask);
+        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, (PluginUpdateLocale) locale, replace, endTask);
     }
 
     /**
@@ -171,7 +171,7 @@ public class AutoUpdaterAPI {
      * @since 3.0.1
      */
     public PluginUpdater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
-        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, locale, replace);
+        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, (PluginUpdateLocale) locale, replace);
     }
 
     /**
@@ -188,6 +188,15 @@ public class AutoUpdaterAPI {
      * @since 3.0.1
      */
     public PluginUpdater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, locale, replace, endTask);
+        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, (PluginUpdateLocale) locale, replace, endTask);
+    }
+
+    /**
+     * Creates a builder for you to construct your locale from.
+     *
+     * @return Builder class for a locale file.
+     */
+    public UpdateLocale.LocaleBuilder createLocaleBuilder() {
+        return PluginUpdateLocale.builder();
     }
 }

@@ -1,6 +1,5 @@
 package cc.flogi.dev.autoupdater.internal;
 
-import cc.flogi.dev.autoupdater.api.UpdateLocale;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -37,13 +36,13 @@ public final class UpdaterPlugin extends JavaPlugin {
     }
 
     public void updatePlugin(Plugin plugin, Player initiator, boolean replace, String pluginName,
-                             String pluginFolderPath, UpdateLocale locale, long startingTime, String downloadUrl,
+                             String pluginFolderPath, PluginUpdateLocale locale, long startingTime, String downloadUrl,
                              Integer spigotResourceId, UpdaterRunnable endTask) {
         //Lot of messy variables due to transferring a whole class worth of information into one method call.
-        final File restoreFile = new File(getDataFolder().getParent() + "/" + locale.getFileName() + ".jar");
+        final File restoreFile = new File(getDataFolder().getParent() + "/" + locale.getFileName());
         File cachedPlugin = null;
 
-        UtilUI.sendActionBar(initiator, locale.getUpdating() + " &8[INITIALIZING]", 10);
+        UtilUI.sendActionBar(initiator, locale.getUpdatingMsg() + " &8[INITIALIZING]", 10);
 
         try {
             cachedPlugin = File.createTempFile("auapi-cached-plugin-", ".jar");
@@ -66,12 +65,13 @@ public final class UpdaterPlugin extends JavaPlugin {
             endTask.run(true, null, updated, pluginName);
 
             double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
-            UtilUI.sendActionBar(initiator, locale.getUpdateComplete().replace("%elapsed_time%", String.format("%.2f", elapsedTimeSeconds)));
+            UtilUI.sendActionBar(initiator, UtilUI.format(locale.getCompletionMsg(),
+                    "elapsed_time", String.format("%.2f", elapsedTimeSeconds)));
 
             //Update metrics
             new BukkitRunnable() {
                 @Override public void run() {
-                    long fileSize = new File(pluginFolderPath + "/" + locale.getFileName() + ".jar").length();
+                    long fileSize = new File(pluginFolderPath + "/" + locale.getFileName()).length();
                     String currentVersion = replace ? plugin.getDescription().getVersion() : null;
 
                     UtilMetrics.PluginUpdate updateMetrics = new UtilMetrics.PluginUpdate(new Date(), fileSize, elapsedTimeSeconds,
@@ -92,7 +92,7 @@ public final class UpdaterPlugin extends JavaPlugin {
             getLogger().severe("A critical exception occurred while initializing the plugin '" + pluginName + "'");
             getLogger().severe("Restoring previous state...");
 
-            new File(pluginFolderPath + "/" + locale.getFileName() + ".jar").delete();
+            new File(pluginFolderPath + "/" + locale.getFileName()).delete();
 
             if (AutoUpdaterInternal.DEBUG)
                 ex1.printStackTrace();
@@ -188,9 +188,9 @@ public final class UpdaterPlugin extends JavaPlugin {
         }
     }
 
-    private Plugin initializePlugin(String pluginName, String pluginFolderPath, UpdateLocale locale, UpdaterRunnable endTask)
+    private Plugin initializePlugin(String pluginName, String pluginFolderPath, PluginUpdateLocale locale, UpdaterRunnable endTask)
             throws InvalidDescriptionException, InvalidPluginException {
-        Plugin updated = getServer().getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName() + ".jar"));
+        Plugin updated = getServer().getPluginManager().loadPlugin(new File(pluginFolderPath + "/" + locale.getFileName()));
         updated.onLoad();
         Bukkit.getPluginManager().enablePlugin(updated);
         return updated;

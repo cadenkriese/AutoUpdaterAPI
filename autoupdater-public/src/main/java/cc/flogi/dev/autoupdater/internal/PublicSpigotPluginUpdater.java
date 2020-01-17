@@ -47,13 +47,13 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
     }
 
     protected PublicSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, PluginUpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        super(plugin, initiator, SPIGET_BASE_URL + resourceId + "/download", locale, replace);
+        super(plugin, initiator, SPIGET_BASE_URL + resourceId + "/download", locale, replace, initialize);
         this.url = SPIGET_BASE_URL + resourceId;
         this.resourceId = resourceId;
 
         UtilThreading.async(() -> {
             try {
-                spigetResponse = UtilReader.readFrom(url);
+                spigetResponse = UtilIO.readFromURL(url);
 
                 JsonObject json = JSON_PARSER.parse(spigetResponse).getAsJsonObject();
                 if (json.get("premium").getAsBoolean())
@@ -87,7 +87,7 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
             return supportedVersions;
 
         try {
-            JsonObject json = JSON_PARSER.parse(UtilReader.readFrom(SPIGET_BASE_URL + "resources/" + resourceId)).getAsJsonObject();
+            JsonObject json = JSON_PARSER.parse(UtilIO.readFromURL(SPIGET_BASE_URL + "resources/" + resourceId)).getAsJsonObject();
             JsonArray supportedVersionsObj = json.getAsJsonArray("testedVersions");
             List<String> supportedVersionsList = new ArrayList<>();
             supportedVersionsObj.forEach(e -> supportedVersionsList.add(e.getAsString()));
@@ -118,7 +118,7 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
      */
     @Override public String getLatestVersion() {
         try {
-            return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
+            return UtilIO.readFromURL("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (IOException ex) {
             error(ex, "Error occurred while retrieving the latest update.");
             return null;

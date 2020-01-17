@@ -162,7 +162,7 @@ public final class UtilMetrics {
     /**
      * Reads content from a URL.
      *
-     * Note has to be a duplicate of ${@link UtilReader#readFrom(String)} to maintain package-private scope.
+     * Note has to be a duplicate of ${@link UtilIO#readFromURL(String)} to maintain package-private scope.
      *
      * @param url The URL to read from.
      * @return The content from the page.

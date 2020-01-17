@@ -21,12 +21,16 @@ public final class AutoUpdaterInternal {
     private static AutoUpdaterInternal instance;
     @Getter private static Plugin plugin;
     @Getter private static File dataFolder;
+    @Getter private static File cacheFolder;
     @Getter private static Logger logger = Logger.getLogger("AutoUpdaterAPI");
 
     AutoUpdaterInternal(JavaPlugin javaPlugin) {
         instance = this;
         plugin = javaPlugin;
         dataFolder = new File(plugin.getDataFolder().getParent() + "/.auapi/");
+        cacheFolder = new File(dataFolder, "caches");
+
+        dataFolder.mkdirs();
 
         Properties properties = new Properties();
 
@@ -43,15 +47,7 @@ public final class AutoUpdaterInternal {
     }
 
     void printError(Exception ex) {
-        logger.warning("An error has occurred.");
-        logger.warning("If you cannot figure out this error on your own please copy and paste " +
-                "\neverything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
-        logger.warning("\n============== BEGIN ERROR ==============");
-        logger.warning("API VERSION: " + PROPERTIES.getTitle());
-        logger.warning("\nERROR MESSAGE: " + ex.getMessage());
-        logger.warning("\nSTACKTRACE: ");
-        ex.printStackTrace();
-        logger.warning("\n============== END ERROR ==============");
+        printError(ex, null);
     }
 
     void printError(Exception ex, String extraInfo) {
@@ -60,7 +56,8 @@ public final class AutoUpdaterInternal {
                 "\neverything from here to END ERROR and post it at " + PROPERTIES.REPO_URL + "issues.");
         logger.warning("\n============== BEGIN ERROR ==============");
         logger.warning("API VERSION: " + PROPERTIES.getTitle());
-        logger.warning("\nAPI MESSAGE: " + extraInfo);
+        if (extraInfo != null)
+            logger.warning("\nAPI MESSAGE: " + extraInfo);
         logger.warning("\nERROR MESSAGE: " + ex.getMessage());
         logger.warning("\nSTACKTRACE: ");
         ex.printStackTrace();

@@ -139,7 +139,7 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
 
     @Override public String getLatestVersion() {
         try {
-            return UtilReader.readFrom("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
+            return UtilIO.readFromURL("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
         } catch (Exception ex) {
             error(ex, "Error occurred while retrieving the latest version of a premium resource.");
             return null;
@@ -155,7 +155,7 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
      */
     @Override public String[] getSupportedVersions() {
         try {
-            JsonObject json = JSON_PARSER.parse(UtilReader.readFrom(SPIGET_BASE_URL + "resources/" + resourceId)).getAsJsonObject();
+            JsonObject json = JSON_PARSER.parse(UtilIO.readFromURL(SPIGET_BASE_URL + "resources/" + resourceId)).getAsJsonObject();
             JsonArray supportedVersionsObj = json.getAsJsonArray("testedVersions");
             List<String> supportedVersions = new ArrayList<>();
             supportedVersionsObj.forEach(e -> supportedVersions.add(e.getAsString()));

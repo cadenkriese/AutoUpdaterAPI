@@ -3,6 +3,7 @@ package cc.flogi.dev.autoupdater.internal;
 import cc.flogi.dev.autoupdater.api.PluginUpdater;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import cc.flogi.dev.autoupdater.api.exceptions.NoUpdateFoundException;
+import com.google.gson.Gson;
 import lombok.Getter;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
@@ -13,9 +14,11 @@ import org.bukkit.plugin.Plugin;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 
 /**
  * @author Caden Kriese (flogic)
@@ -34,26 +37,27 @@ public class PublicPluginUpdater implements PluginUpdater {
     protected final String currentVersion;
     protected final String pluginName;
     protected final boolean replace;
+    protected final boolean initialize;
 
     protected long startingTime;
     protected String downloadUrlString;
-    protected String newVersion;
+    protected String latestVersion;
 
-    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, String newVersion) {
-        this(plugin, initiator, downloadUrlString, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
-        this.newVersion = newVersion;
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, boolean initialize, String latestVersion) {
+        this(plugin, initiator, downloadUrlString, locale, replace, initialize, (successful, ex, updatedPlugin, pluginName) -> {});
+        this.latestVersion = latestVersion;
     }
 
-    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
-        this(plugin, initiator, downloadUrlString, locale, replace, endTask);
-        this.newVersion = newVersion;
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean initialize, boolean replace, String latestVersion, UpdaterRunnable endTask) {
+        this(plugin, initiator, downloadUrlString, locale, replace, initialize, endTask);
+        this.latestVersion = latestVersion;
     }
 
-    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace) {
-        this(plugin, initiator, downloadUrlString, locale, replace, (successful, ex, updatedPlugin, pluginName) -> {});
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, boolean initialize) {
+        this(plugin, initiator, downloadUrlString, locale, replace, initialize, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
-    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, boolean initialize, UpdaterRunnable endTask) {
         pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
         this.plugin = plugin;
@@ -63,11 +67,7 @@ public class PublicPluginUpdater implements PluginUpdater {
         this.replace = replace;
         this.endTask = endTask;
         this.pluginName = locale.getBukkitPluginName();
-    }
-
-    @Override
-    public String getLatestVersion() {
-        return newVersion;
+        this.initialize = initialize;
     }
 
     @Override
@@ -77,11 +77,11 @@ public class PublicPluginUpdater implements PluginUpdater {
         UtilUI.sendActionBar(initiator, locale.getUpdatingMsgNoVar() + " &8[RETRIEVING PLUGIN INFO]");
         UtilThreading.async(() -> {
             try {
-                newVersion = getLatestVersion();
+                latestVersion = getLatestVersion();
                 downloadUrlString = getDownloadUrlString();
-                locale.updateVariables(plugin.getName(), currentVersion, newVersion);
+                locale.updateVariables(plugin.getName(), currentVersion, latestVersion);
 
-                if (newVersion.equalsIgnoreCase(currentVersion)) {
+                if (latestVersion.equalsIgnoreCase(currentVersion)) {
                     error(new NoUpdateFoundException("Error occurred while updating plugin."), "Plugin is up to date!", "PLUGIN IS UP TO DATE");
                     return;
                 }
@@ -107,8 +107,10 @@ public class PublicPluginUpdater implements PluginUpdater {
             long completeFileSize = httpConnection.getContentLength();
             int grabSize = 2048;
 
+            final File destinationFile = new File(pluginFolderPath + "/" + locale.getFileName());
+
             BufferedInputStream in = new BufferedInputStream(httpConnection.getInputStream());
-            FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName()));
+            FileOutputStream fos = new FileOutputStream(destinationFile);
             BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
 
             byte[] data = new byte[grabSize];
@@ -130,8 +132,25 @@ public class PublicPluginUpdater implements PluginUpdater {
             in.close();
             fos.close();
 
-            initializePlugin();
-        } catch (IOException ex) {
+            if (initialize)
+                initializePlugin();
+            else {
+                File cacheFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName());
+                File metaFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName()+".meta");
+
+                AutoUpdaterInternal.getCacheFolder().mkdirs();
+                Files.move(destinationFile.toPath(), cacheFile.toPath());
+                HashMap<String, Object> updateMeta = new HashMap<>();
+                updateMeta.put("replace", String.valueOf(replace));
+                updateMeta.put("destination", destinationFile.getAbsolutePath());
+                if (replace)
+                    updateMeta.put("old-file", plugin.getClass()
+                            .getProtectionDomain().getCodeSource()
+                            .getLocation().toURI().getPath());
+
+                UtilIO.writeToFile(metaFile, new Gson().toJson(updateMeta));
+            }
+        } catch (IOException | URISyntaxException ex) {
             error(ex, "Error occurred while updating " + pluginName + ".", "PLUGIN NOT FOUND");
         }
     }

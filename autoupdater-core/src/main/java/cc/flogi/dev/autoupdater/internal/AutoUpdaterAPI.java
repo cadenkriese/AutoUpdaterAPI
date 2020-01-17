@@ -1,14 +1,22 @@
 package cc.flogi.dev.autoupdater.internal;
 
-import cc.flogi.dev.autoupdater.api.UpdateLocale;
 import cc.flogi.dev.autoupdater.api.PluginUpdater;
+import cc.flogi.dev.autoupdater.api.UpdateLocale;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +49,33 @@ public class AutoUpdaterAPI {
                     AutoUpdaterInternal.get().printError(ex, "Error occurred while setting up support for premium resources.");
                 }
             });
+        }
+    }
+
+    /**
+     * Performs
+     */
+    public static void applyCachedUpdates() throws IOException {
+        if (!AutoUpdaterInternal.getCacheFolder().exists())
+            return;
+
+        File cacheFolder = AutoUpdaterInternal.getCacheFolder();
+
+        HashMap<File, File> updates = new HashMap<>();
+
+        Arrays.stream(cacheFolder.listFiles())
+                .filter(f -> !f.getName().endsWith(".meta"))
+                .forEach(f -> updates.put(f, new File(cacheFolder, f.getName() + ".meta")));
+
+        for (File file : updates.keySet()) {
+            File meta = updates.get(file);
+
+            Type type = new TypeToken<Map<String, String>>(){}.getType();
+            Map<String, String> map = new Gson().fromJson(UtilIO.readFromFile(meta), type);
+            if (Boolean.parseBoolean(map.get("replace")))
+                new File(map.get("old-file")).delete();
+
+            Files.move(file.toPath(), Paths.get(map.get("destination")));
         }
     }
 
@@ -96,14 +131,15 @@ public class AutoUpdaterAPI {
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param url        The URL where the jar can be downloaded from.
+     * @param initialize Should the plugin be initialized now or after a server restart?
      * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param newVersion The latest version of the resource.
      * @return An instantiated {@link cc.flogi.dev.autoupdater.internal.PublicPluginUpdater}.
      * @since 3.0.1
      */
-    public PluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion) {
-        return new PublicPluginUpdater(plugin, initiator, url, (PluginUpdateLocale) locale, replace, newVersion);
+    public PluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean initialize, boolean replace, String newVersion) {
+        return new PublicPluginUpdater(plugin, initiator, url, (PluginUpdateLocale) locale, initialize, replace, newVersion);
     }
 
     /**
@@ -112,15 +148,17 @@ public class AutoUpdaterAPI {
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param url        The URL where the jar can be downloaded from.
-     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param locale     The locale file you want containing custom messages.
+     *                   Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param initialize Should the plugin be initialized now or after a server restart?
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      * @param newVersion The latest version of the resource.
      * @return An instantiated {@link cc.flogi.dev.autoupdater.internal.PublicPluginUpdater}.
      * @since 3.0.1
      */
-    public PluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean replace, String newVersion, UpdaterRunnable endTask) {
-        return new PublicPluginUpdater(plugin, initiator, url, (PluginUpdateLocale) locale, replace, newVersion, endTask);
+    public PluginUpdater createPublicPluginUpdater(Plugin plugin, Player initiator, String url, UpdateLocale locale, boolean initialize, boolean replace, String newVersion, UpdaterRunnable endTask) {
+        return new PublicPluginUpdater(plugin, initiator, url, (PluginUpdateLocale) locale, initialize, replace, newVersion, endTask);
     }
 
     /*

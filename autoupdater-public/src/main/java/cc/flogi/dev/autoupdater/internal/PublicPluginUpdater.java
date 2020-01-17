@@ -3,6 +3,7 @@ package cc.flogi.dev.autoupdater.internal;
 import cc.flogi.dev.autoupdater.api.PluginUpdater;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import cc.flogi.dev.autoupdater.api.exceptions.NoUpdateFoundException;
+import cc.flogi.dev.autoupdater.plugin.UpdaterPlugin;
 import com.google.gson.Gson;
 import lombok.Getter;
 import net.md_5.bungee.api.ChatColor;
@@ -18,6 +19,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Date;
 import java.util.HashMap;
 
 /**
@@ -43,21 +45,21 @@ public class PublicPluginUpdater implements PluginUpdater {
     protected String downloadUrlString;
     protected String latestVersion;
 
-    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, boolean initialize, String latestVersion) {
-        this(plugin, initiator, downloadUrlString, locale, replace, initialize, (successful, ex, updatedPlugin, pluginName) -> {});
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean initialize, boolean replace, String latestVersion) {
+        this(plugin, initiator, downloadUrlString, locale, initialize, replace, (successful, ex, updatedPlugin, pluginName) -> {});
         this.latestVersion = latestVersion;
     }
 
     protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean initialize, boolean replace, String latestVersion, UpdaterRunnable endTask) {
-        this(plugin, initiator, downloadUrlString, locale, replace, initialize, endTask);
+        this(plugin, initiator, downloadUrlString, locale, initialize, replace, endTask);
         this.latestVersion = latestVersion;
     }
 
-    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, boolean initialize) {
-        this(plugin, initiator, downloadUrlString, locale, replace, initialize, (successful, ex, updatedPlugin, pluginName) -> {});
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean initialize, boolean replace) {
+        this(plugin, initiator, downloadUrlString, locale, initialize, replace, (successful, ex, updatedPlugin, pluginName) -> {});
     }
 
-    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean replace, boolean initialize, UpdaterRunnable endTask) {
+    protected PublicPluginUpdater(Plugin plugin, Player initiator, String downloadUrlString, PluginUpdateLocale locale, boolean initialize, boolean replace, UpdaterRunnable endTask) {
         pluginFolderPath = plugin.getDataFolder().getParent();
         currentVersion = plugin.getDescription().getVersion();
         this.plugin = plugin;
@@ -74,7 +76,7 @@ public class PublicPluginUpdater implements PluginUpdater {
     public void update() {
         startingTime = System.currentTimeMillis();
 
-        UtilUI.sendActionBar(initiator, locale.getUpdatingMsgNoVar() + " &8[RETRIEVING PLUGIN INFO]");
+        UtilUI.sendActionBar(initiator, locale.getUpdatingMsgNoVar(), "status", "RETRIEVING PLUGIN INFO");
         UtilThreading.async(() -> {
             try {
                 latestVersion = getLatestVersion();
@@ -95,7 +97,7 @@ public class PublicPluginUpdater implements PluginUpdater {
 
     @Override
     public void downloadResource() {
-        UtilUI.sendActionBar(initiator, locale.getUpdatingMsg() + " &8[RETRIEVING FILES]", 20);
+        UtilUI.sendActionBar(initiator, locale.getUpdatingMsg(), 20, "status", " RETRIEVING FILES");
         try {
             URL downloadUrl = new URL(downloadUrlString);
             HttpURLConnection httpConnection = (HttpURLConnection) downloadUrl.openConnection();
@@ -121,9 +123,10 @@ public class PublicPluginUpdater implements PluginUpdater {
                 if (downloadedFileSize % (grabSize * 5) == 0) {
                     String bar = UtilUI.progressBar(15, downloadedFileSize, completeFileSize, ':', ChatColor.GREEN, ChatColor.RED);
                     final String currentPercent = String.format("%.2f", (((double) downloadedFileSize) / ((double) completeFileSize)) * 100);
-                    UtilUI.sendActionBar(initiator, UtilUI.format(locale.getDownloadingMsg() + " &8[DOWNLOADING]",
+                    UtilUI.sendActionBar(initiator, locale.getDownloadingMsg(),
+                            "status", " DOWNLOADING",
                             "download_bar", bar,
-                            "download_percent", currentPercent + "%"));
+                            "download_percent", currentPercent + "%");
                 }
                 bout.write(data, 0, grab);
             }
@@ -135,11 +138,12 @@ public class PublicPluginUpdater implements PluginUpdater {
             if (initialize)
                 initializePlugin();
             else {
+                //TODO fix duplicated code.
                 File cacheFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName());
-                File metaFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName()+".meta");
+                File metaFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName() + ".meta");
 
                 AutoUpdaterInternal.getCacheFolder().mkdirs();
-                Files.move(destinationFile.toPath(), cacheFile.toPath());
+                Files.move(destinationFile.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 HashMap<String, Object> updateMeta = new HashMap<>();
                 updateMeta.put("replace", String.valueOf(replace));
                 updateMeta.put("destination", destinationFile.getAbsolutePath());
@@ -149,8 +153,25 @@ public class PublicPluginUpdater implements PluginUpdater {
                             .getLocation().toURI().getPath());
 
                 UtilIO.writeToFile(metaFile, new Gson().toJson(updateMeta));
+
+                double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
+                UtilUI.sendActionBar(initiator, locale.getCompletionMsg(),
+                        "elapsed_time", String.format("%.2f", elapsedTimeSeconds),
+                        "status", "INSTALLATION UPON RESTART");
+
+                Plugin updated = Bukkit.getPluginManager().loadPlugin(cacheFile);
+
+                UtilThreading.async(() -> UtilMetrics.sendUpdateInfo(new UtilMetrics.Plugin(updated.getName(),
+                                updated.getDescription().getDescription(),
+                                downloadUrlString),
+                        new UtilMetrics.PluginUpdate(new Date(),
+                                cacheFile.length(),
+                                elapsedTimeSeconds,
+                                new UtilMetrics.PluginUpdateVersion(currentVersion, latestVersion))));
+
+                UtilPlugin.unload(updated);
             }
-        } catch (IOException | URISyntaxException ex) {
+        } catch (IOException | URISyntaxException | InvalidPluginException | InvalidDescriptionException ex) {
             error(ex, "Error occurred while updating " + pluginName + ".", "PLUGIN NOT FOUND");
         }
     }
@@ -171,12 +192,12 @@ public class PublicPluginUpdater implements PluginUpdater {
         UtilThreading.sync(() -> {
             //Enable plugin and perform update task.
             try {
-                UtilPlugin.loadPlugin(targetFile);
-                if (Bukkit.getPluginManager().getPlugin("autoupdater-plugin") == null)
+                if (UtilPlugin.loadAndEnable(targetFile) == null)
                     throw new FileNotFoundException("Unable to locate updater plugin.");
 
-                UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, pluginName,
-                        pluginFolderPath, locale, startingTime, downloadUrlString, null, endTask);
+                UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, AutoUpdaterInternal.DEBUG, AutoUpdaterInternal.METRICS,
+                        pluginName, pluginFolderPath, new cc.flogi.dev.autoupdater.plugin.PluginUpdateLocale(locale),
+                        startingTime, downloadUrlString, null, endTask);
             } catch (FileNotFoundException | InvalidPluginException | InvalidDescriptionException ex) {
                 error(ex, ex.getMessage());
             }
@@ -187,7 +208,7 @@ public class PublicPluginUpdater implements PluginUpdater {
         if (AutoUpdaterInternal.DEBUG)
             AutoUpdaterInternal.get().printError(ex, errorMessage);
 
-        UtilUI.sendActionBar(initiator, locale.getFailureMsg() + " &8[" + shortErrorMessage + "&8]", 10);
+        UtilUI.sendActionBar(initiator, locale.getFailureMsg(), 10, "status", shortErrorMessage);
         endTask.run(false, ex, null, pluginName);
     }
 
@@ -195,7 +216,7 @@ public class PublicPluginUpdater implements PluginUpdater {
         if (AutoUpdaterInternal.DEBUG)
             AutoUpdaterInternal.get().printError(ex, message);
 
-        UtilUI.sendActionBar(initiator, locale.getFailureMsg() + " &8[CHECK CONSOLE]");
+        UtilUI.sendActionBar(initiator, locale.getFailureMsg(), "status", " CHECK CONSOLE");
         endTask.run(false, ex, null, pluginName);
     }
 }

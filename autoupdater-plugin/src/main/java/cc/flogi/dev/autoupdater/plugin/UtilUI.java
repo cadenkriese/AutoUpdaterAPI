@@ -1,4 +1,4 @@
-package cc.flogi.dev.autoupdater.internal;
+package cc.flogi.dev.autoupdater.plugin;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
@@ -76,7 +76,7 @@ import java.util.HashMap;
         };
 
         currentTasks.put(player.getUniqueId().toString(), actionBarRunnable);
-        actionBarRunnable.runTaskTimer(AutoUpdaterInternal.getPlugin(), 0L, ACTIONBAR_DEFAULT_DURATION);
+        actionBarRunnable.runTaskTimer(UpdaterPlugin.get(), 0L, ACTIONBAR_DEFAULT_DURATION);
     }
 
     /**

@@ -17,7 +17,6 @@
     <description>Briefly used utility for automatically updating plugins. If this plugin does not disappear quickly,
         please delete it from your plugins folder.
     </description>
-    <url>flogi.cc</url>
 
     <build>
         <defaultGoal>clean package</defaultGoal>
@@ -80,6 +79,7 @@
             <groupId>cc.flogi.dev</groupId>
             <artifactId>autoupdater-internal</artifactId>
             <version>${currentversion}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

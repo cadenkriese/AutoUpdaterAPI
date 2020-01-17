@@ -1,9 +1,7 @@
-package cc.flogi.dev.autoupdater.internal;
+package cc.flogi.dev.autoupdater.plugin;
 
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.InvalidDescriptionException;
@@ -12,18 +10,20 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.*;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+import java.util.logging.Logger;
 
 public final class UpdaterPlugin extends JavaPlugin {
     private static UpdaterPlugin instance;
+    private static Logger logger;
+
+    @Getter private boolean metrics = true;
+    @Getter private boolean debug = false;
 
     public static UpdaterPlugin get() {
         return instance;
@@ -32,13 +32,16 @@ public final class UpdaterPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        logger = getLogger();
         getLogger().info("AutoUpdaterAPI utility enabled.");
     }
 
-    public void updatePlugin(Plugin plugin, Player initiator, boolean replace, String pluginName,
+    public void updatePlugin(Plugin plugin, Player initiator, boolean replace, boolean debug, boolean metrics, String pluginName,
                              String pluginFolderPath, PluginUpdateLocale locale, long startingTime, String downloadUrl,
                              Integer spigotResourceId, UpdaterRunnable endTask) {
         //Lot of messy variables due to transferring a whole class worth of information into one method call.
+        this.metrics = metrics;
+        this.debug = debug;
         final File restoreFile = new File(getDataFolder().getParent() + "/" + locale.getFileName());
         File cachedPlugin = null;
 
@@ -52,7 +55,7 @@ public final class UpdaterPlugin extends JavaPlugin {
                 Files.copy(pluginFile.toPath(), cachedPlugin.toPath());
                 UtilPlugin.unload(plugin);
                 if (!pluginFile.delete())
-                    AutoUpdaterInternal.get().printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
+                    printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
             }
 
             Plugin updated = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
@@ -65,8 +68,9 @@ public final class UpdaterPlugin extends JavaPlugin {
             endTask.run(true, null, updated, pluginName);
 
             double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
-            UtilUI.sendActionBar(initiator, UtilUI.format(locale.getCompletionMsg(),
-                    "elapsed_time", String.format("%.2f", elapsedTimeSeconds)));
+            UtilUI.sendActionBar(initiator, locale.getCompletionMsg(),
+                    "elapsed_time", String.format("%.2f", elapsedTimeSeconds),
+                    "status", "DOWNLOADED AND INSTALLED");
 
             //Update metrics
             new BukkitRunnable() {
@@ -82,7 +86,7 @@ public final class UpdaterPlugin extends JavaPlugin {
                         pluginMetrics = new UtilMetrics.Plugin(updated.getName(),
                                 updated.getDescription().getDescription(), downloadUrl);
                     else
-                        pluginMetrics = getSpigotPlugin(updated, spigotResourceId);
+                        pluginMetrics = UtilMetrics.getSpigotPlugin(updated, spigotResourceId);
 
                     UtilMetrics.sendUpdateInfo(pluginMetrics, updateMetrics);
                 }
@@ -94,7 +98,7 @@ public final class UpdaterPlugin extends JavaPlugin {
 
             new File(pluginFolderPath + "/" + locale.getFileName()).delete();
 
-            if (AutoUpdaterInternal.DEBUG)
+            if (debug)
                 ex1.printStackTrace();
 
             if (replace) {
@@ -104,62 +108,13 @@ public final class UpdaterPlugin extends JavaPlugin {
                     Plugin oldVersion = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
                     endTask.run(false, ex1, oldVersion, pluginName);
                 } catch (Exception ex2) {
-                    if (AutoUpdaterInternal.DEBUG)
+                    if (debug)
                         ex2.printStackTrace();
                 }
             }
         } finally {
             cachedPlugin.delete();
             selfDestruct();
-        }
-    }
-
-    private UtilMetrics.SpigotPlugin getSpigotPlugin(Plugin plugin, int resourceId) {
-        final String SPIGET_BASE_URL = "https://api.spiget.org/v2/";
-        final String SPIGOT_BASE_URL = "https://spigotmc.org/";
-
-        try (InputStream is = new URL(SPIGET_BASE_URL + "resources/" + resourceId).openStream()) {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-
-            int cp;
-            while ((cp = rd.read()) != -1) {
-                sb.append((char) cp);
-            }
-
-            String spigetResponse = sb.toString();
-
-            JsonParser parser = new JsonParser();
-            JsonObject json = parser.parse(spigetResponse).getAsJsonObject();
-
-            String resourceName = json.get("name").getAsString();
-            long categoryId = json.getAsJsonObject("category").get("id").getAsLong();
-            String categoryInfo = UtilMetrics.readFrom(SPIGET_BASE_URL + "categories/" + categoryId);
-            String categoryName = parser.parse(categoryInfo).getAsJsonObject().get("name").getAsString();
-            JsonArray supportedVersionsObj = json.getAsJsonArray("testedVersions");
-            List<String> supportedVersions = new ArrayList<>();
-            supportedVersionsObj.iterator().forEachRemaining(element -> supportedVersions.add(element.getAsString()));
-            Date uploadDate = new Date(json.get("releaseDate").getAsLong() * 1000);
-            Double averageRating = json.getAsJsonObject("rating").get("average").getAsDouble();
-            String downloadUrl = SPIGOT_BASE_URL + json.getAsJsonObject("file").get("url").getAsString();
-            boolean premium = json.get("premium").getAsBoolean();
-
-            if (premium) {
-                Double price = json.get("price").getAsDouble();
-                String currency = json.get("currency").getAsString();
-                return new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
-                        downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate,
-                        supportedVersions.toArray(new String[]{}), premium, price, currency);
-            }
-
-            return new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
-                    downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate,
-                    supportedVersions.toArray(new String[]{}));
-
-        } catch (IOException ex) {
-            if (AutoUpdaterInternal.DEBUG)
-                ex.printStackTrace();
-            return null;
         }
     }
 
@@ -172,7 +127,7 @@ public final class UpdaterPlugin extends JavaPlugin {
         } catch (Exception ex) {
             if (ex instanceof NoSuchFileException) {
                 try {
-                    Path pluginFile = Files.find(AutoUpdaterInternal.getDataFolder().getParentFile().toPath(), 2,
+                    Path pluginFile = Files.find(getDataFolder().getParentFile().toPath(), 2,
                             ((path, basicFileAttributes) -> path.getFileName().toString().contains("autoupdater-plugin"))).findFirst()
                             .orElseThrow(IOException::new);
                     Files.delete(pluginFile);
@@ -194,5 +149,31 @@ public final class UpdaterPlugin extends JavaPlugin {
         updated.onLoad();
         Bukkit.getPluginManager().enablePlugin(updated);
         return updated;
+    }
+
+    void printError(Exception ex) {
+        printError(ex, null);
+    }
+
+    void printError(Exception ex, String extraInfo) {
+        logger.warning("An error has occurred.");
+        logger.warning("If you cannot figure out this error on your own please copy and paste " +
+                "\neverything from here to END ERROR and post it at " + getDescription().getWebsite());
+        logger.warning("\n============== BEGIN ERROR ==============");
+        logger.warning("API VERSION: " + getDescription().getVersion());
+        if (extraInfo != null)
+            logger.warning("\nAPI MESSAGE: " + extraInfo);
+        logger.warning("\nERROR MESSAGE: " + ex.getMessage());
+        logger.warning("\nSTACKTRACE: ");
+        ex.printStackTrace();
+        logger.warning("\n============== END ERROR ==============");
+    }
+
+    void printPluginError(String header, String message) {
+        logger.warning("============== BEGIN ERROR ==============");
+        logger.warning(header);
+        logger.warning("\nAPI VERSION: " + getDescription().getVersion());
+        logger.warning("\nAPI MESSAGE: " + message);
+        logger.warning("\n============== END ERROR ==============");
     }
 }

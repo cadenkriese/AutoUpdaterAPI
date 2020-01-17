@@ -53,7 +53,10 @@ public class AutoUpdaterAPI {
     }
 
     /**
-     * Performs
+     * Places cached plugins in the plugins' folder but does not enable them
+     *
+     * @throws IOException If files are corrupt.
+     * @apiNote You likely want to call this on your ${@link JavaPlugin#onDisable()}
      */
     public static void applyCachedUpdates() throws IOException {
         if (!AutoUpdaterInternal.getCacheFolder().exists())
@@ -70,13 +73,16 @@ public class AutoUpdaterAPI {
         for (File file : updates.keySet()) {
             File meta = updates.get(file);
 
-            Type type = new TypeToken<Map<String, String>>(){}.getType();
+            Type type = new TypeToken<Map<String, String>>() {}.getType();
             Map<String, String> map = new Gson().fromJson(UtilIO.readFromFile(meta), type);
             if (Boolean.parseBoolean(map.get("replace")))
                 new File(map.get("old-file")).delete();
 
             Files.move(file.toPath(), Paths.get(map.get("destination")));
+            meta.delete();
         }
+
+        Files.deleteIfExists(cacheFolder.toPath());
     }
 
     /**
@@ -118,11 +124,12 @@ public class AutoUpdaterAPI {
      *
      * @param player The player to prompt for their login info.
      * @apiNote Requires premiumSupport to be set to true on startup.
-     * @apiNote This method will make minecraft version sensitive calls, please ensure that the version you're working on is supported by {@link net.wesjd.anvilgui.AnvilGUI}.
+     * @apiNote This method will make minecraft version sensitive calls,
+     * please ensure that the version you're working on is supported by {@link net.wesjd.anvilgui.AnvilGUI}.
      * @since 3.0.1
      */
     public static void promptLogin(Player player) {
-        new PremiumSpigotPluginUpdater(null, null, 1, PluginUpdateLocale.builder().build(), false).authenticate(false);
+        new PremiumSpigotPluginUpdater(null, null, 1, PluginUpdateLocale.builder().build(), false, false).authenticate(false);
     }
 
     /**
@@ -131,8 +138,9 @@ public class AutoUpdaterAPI {
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param url        The URL where the jar can be downloaded from.
-     * @param initialize Should the plugin be initialized now or after a server restart?
-     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param initialize Should the plugin be initialized now or after a server restart.
+     * @param locale     The locale file you want containing custom messages.
+     *                   Note most messages will be followed with a progress indicator like [DOWNLOADING].
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param newVersion The latest version of the resource.
      * @return An instantiated {@link cc.flogi.dev.autoupdater.internal.PublicPluginUpdater}.
@@ -150,7 +158,7 @@ public class AutoUpdaterAPI {
      * @param url        The URL where the jar can be downloaded from.
      * @param locale     The locale file you want containing custom messages.
      *                   Note most messages will be followed with a progress indicator like [DOWNLOADING].
-     * @param initialize Should the plugin be initialized now or after a server restart?
+     * @param initialize Should the plugin be initialized now or after a server restart.
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      * @param newVersion The latest version of the resource.
@@ -171,13 +179,15 @@ public class AutoUpdaterAPI {
      * @param plugin     The plugin that should be updated.
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
-     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param locale     The locale file you want containing custom messages.
+     *                   Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param initialize Should the plugin be initialized now or after a server restart.
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @return An instantiated {@link PublicSpigotPluginUpdater}.
      * @since 3.0.1
      */
-    public PublicSpigotPluginUpdater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
-        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, (PluginUpdateLocale) locale, replace);
+    public PublicSpigotPluginUpdater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean initialize, boolean replace) {
+        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, (PluginUpdateLocale) locale, initialize, replace);
     }
 
     /**
@@ -186,14 +196,16 @@ public class AutoUpdaterAPI {
      * @param plugin     The plugin that should be updated (If updating yourself).
      * @param initiator  The player that initiated the update (set to null if there is none).
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
-     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param locale     The locale file you want containing custom messages.
+     *                   Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param initialize Should the plugin be initialized now or after a server restart.
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      * @return An instantiated {@link PublicSpigotPluginUpdater}.
      * @since 3.0.1
      */
-    public PublicSpigotPluginUpdater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, (PluginUpdateLocale) locale, replace, endTask);
+    public PublicSpigotPluginUpdater createSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean initialize, boolean replace, UpdaterRunnable endTask) {
+        return new PublicSpigotPluginUpdater(plugin, initiator, resourceId, (PluginUpdateLocale) locale, replace, initialize, endTask);
     }
 
     /**
@@ -202,14 +214,16 @@ public class AutoUpdaterAPI {
      * @param initiator  The player that started this action (if there is none set to null).
      * @param plugin     The instance of the outdated plugin.
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
-     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param locale     The locale file you want containing custom messages.
+     *                   Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param initialize Should the plugin be initialized now or after a server restart.
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @return An instantiated {@link PremiumSpigotPluginUpdater}.
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
-    public PluginUpdater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace) {
-        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, (PluginUpdateLocale) locale, replace);
+    public PluginUpdater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean initialize, boolean replace) {
+        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, (PluginUpdateLocale) locale, initialize, replace);
     }
 
     /**
@@ -218,15 +232,17 @@ public class AutoUpdaterAPI {
      * @param initiator  The player that started this action (if there is none set to null).
      * @param plugin     The instance of the outdated plugin.
      * @param resourceId The ID of the plugin on Spigot found in the url after the name.
-     * @param locale     The locale file you want containing custom messages. Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param locale     The locale file you want containing custom messages.
+     *                   Note most messages will be followed with a progress indicator like [DOWNLOADING].
+     * @param initialize Should the plugin be initialized now or after a server restart.
      * @param replace    Should the old version of the plugin be deleted and disabled.
      * @param endTask    Runnable that will run once the update has completed.
      * @return An instantiated {@link PremiumSpigotPluginUpdater}.
      * @apiNote Requires premiumSupport to be set to true on startup.
      * @since 3.0.1
      */
-    public PluginUpdater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean replace, UpdaterRunnable endTask) {
-        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, (PluginUpdateLocale) locale, replace, endTask);
+    public PluginUpdater createPremiumSpigotPluginUpdater(Plugin plugin, Player initiator, int resourceId, UpdateLocale locale, boolean initialize, boolean replace, UpdaterRunnable endTask) {
+        return new PremiumSpigotPluginUpdater(initiator, plugin, resourceId, (PluginUpdateLocale) locale, initialize, replace, endTask);
     }
 
     /**

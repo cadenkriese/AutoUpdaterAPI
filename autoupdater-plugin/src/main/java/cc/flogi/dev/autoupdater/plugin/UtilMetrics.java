@@ -1,4 +1,4 @@
-package cc.flogi.dev.autoupdater.internal;
+package cc.flogi.dev.autoupdater.plugin;
 
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
@@ -19,7 +19,7 @@ import java.util.*;
  *
  * Created on 01/01/2020
  */
-public final class UtilMetrics {
+final class UtilMetrics {
     private static final String API_BASE_URL = "https://api.flogi.cc/updater-metrics/v1";
     private static final Gson GSON = new GsonBuilder()
             .setDateFormat("yyyy-MM-dd HH:mm:ss")
@@ -28,8 +28,8 @@ public final class UtilMetrics {
     private static String token;
     private static LocalDateTime expirationDate;
 
-    public static void sendUpdateInfo(Plugin plugin, PluginUpdate update) {
-        if (AutoUpdaterInternal.METRICS) {
+    static void sendUpdateInfo(Plugin plugin, PluginUpdate update) {
+        if (UpdaterPlugin.get().isMetrics()) {
             String type = plugin instanceof SpigotPlugin ? "spigot" : "public";
 
             if (plugin.getId() == null)
@@ -43,6 +43,55 @@ public final class UtilMetrics {
                 plugin.setUpdates(Collections.singletonList(update));
                 sendRequest("POST", API_BASE_URL + "/plugins?type=" + type, GSON.toJson(plugin));
             }
+        }
+    }
+
+    static UtilMetrics.SpigotPlugin getSpigotPlugin(org.bukkit.plugin.Plugin plugin, int resourceId) {
+        final String SPIGET_BASE_URL = "https://api.spiget.org/v2/";
+        final String SPIGOT_BASE_URL = "https://spigotmc.org/";
+
+        try (InputStream is = new URL(SPIGET_BASE_URL + "resources/" + resourceId).openStream()) {
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+
+            int cp;
+            while ((cp = rd.read()) != -1) {
+                sb.append((char) cp);
+            }
+
+            String spigetResponse = sb.toString();
+
+            JsonParser parser = new JsonParser();
+            JsonObject json = parser.parse(spigetResponse).getAsJsonObject();
+
+            String resourceName = json.get("name").getAsString();
+            long categoryId = json.getAsJsonObject("category").get("id").getAsLong();
+            String categoryInfo = UtilMetrics.readFrom(SPIGET_BASE_URL + "categories/" + categoryId);
+            String categoryName = parser.parse(categoryInfo).getAsJsonObject().get("name").getAsString();
+            JsonArray supportedVersionsObj = json.getAsJsonArray("testedVersions");
+            List<String> supportedVersions = new ArrayList<>();
+            supportedVersionsObj.iterator().forEachRemaining(element -> supportedVersions.add(element.getAsString()));
+            Date uploadDate = new Date(json.get("releaseDate").getAsLong() * 1000);
+            Double averageRating = json.getAsJsonObject("rating").get("average").getAsDouble();
+            String downloadUrl = SPIGOT_BASE_URL + json.getAsJsonObject("file").get("url").getAsString();
+            boolean premium = json.get("premium").getAsBoolean();
+
+            if (premium) {
+                Double price = json.get("price").getAsDouble();
+                String currency = json.get("currency").getAsString();
+                return new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
+                        downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate,
+                        supportedVersions.toArray(new String[]{}), premium, price, currency);
+            }
+
+            return new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
+                    downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate,
+                    supportedVersions.toArray(new String[]{}));
+
+        } catch (IOException ex) {
+            if (UpdaterPlugin.get().isDebug())
+                ex.printStackTrace();
+            return null;
         }
     }
 
@@ -96,7 +145,7 @@ public final class UtilMetrics {
                 return UUID.fromString(elem.get("id").getAsString());
             }
         } catch (IOException ex) {
-            if (AutoUpdaterInternal.DEBUG && !(ex instanceof FileNotFoundException))
+            if (UpdaterPlugin.get().isDebug() && !(ex instanceof FileNotFoundException))
                 ex.printStackTrace();
         }
 
@@ -133,14 +182,14 @@ public final class UtilMetrics {
                     if (responseCode == 401 && responseBody.contains("token has expired")) {
                         token = null;
                         sendRequest(requestMethod, urlString, body);
-                    } else if (responseCode != 200 && AutoUpdaterInternal.DEBUG)
+                    } else if (responseCode != 200 && UpdaterPlugin.get().isDebug())
                         System.out.println("Metrics request failed code = " + responseCode);
                 }
             } finally {
                 conn.disconnect();
             }
         } catch (IOException ex) {
-            if (AutoUpdaterInternal.DEBUG)
+            if (UpdaterPlugin.get().isDebug())
                 ex.printStackTrace();
         }
     }
@@ -153,7 +202,7 @@ public final class UtilMetrics {
                 token = obj.get("token").getAsString();
                 expirationDate = LocalDateTime.now().plusDays(7);
             } catch (IOException ex) {
-                if (AutoUpdaterInternal.DEBUG)
+                if (UpdaterPlugin.get().isDebug())
                     ex.printStackTrace();
             }
         }

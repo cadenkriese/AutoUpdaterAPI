@@ -1,13 +1,14 @@
-package cc.flogi.dev.autoupdater.internal;
+package cc.flogi.dev.autoupdater.plugin;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.SimpleCommandMap;
-import org.bukkit.plugin.*;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.RegisteredListener;
 
 import java.awt.*;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URLClassLoader;
@@ -64,7 +65,7 @@ final class UtilPlugin {
                 knownCommandsField.setAccessible(true);
                 commands = (Map<String, Command>) knownCommandsField.get(commandMap);
             } catch (NoSuchFieldException | IllegalAccessException ex) {
-                AutoUpdaterInternal.get().printError(ex);
+                UpdaterPlugin.get().printError(ex);
             }
         }
 
@@ -106,7 +107,7 @@ final class UtilPlugin {
                 pluginInitField.setAccessible(true);
                 pluginInitField.set(loader, null);
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
-                AutoUpdaterInternal.get().printError(ex);
+                UpdaterPlugin.get().printError(ex);
             }
 
             try {
@@ -117,19 +118,12 @@ final class UtilPlugin {
                 if (!plugin.getName().equalsIgnoreCase("autoupdater-plugin"))
                     ((URLClassLoader) loader).close();
             } catch (IOException ex) {
-                AutoUpdaterInternal.get().printError(ex);
+                UpdaterPlugin.get().printError(ex);
             }
         }
 
         // Will not work on processes started with the -XX:+DisableExplicitGC flag, but let's try it anyway.
         // This tries to get around the issue where Windows refuses to unlock jar files that were previously loaded into the JVM.
         System.gc();
-    }
-
-    static Plugin loadAndEnable(File file) throws InvalidDescriptionException, InvalidPluginException {
-        Plugin plugin = AutoUpdaterInternal.getPlugin().getServer().getPluginManager().loadPlugin(file);
-        plugin.onLoad();
-        AutoUpdaterInternal.getPlugin().getServer().getPluginManager().enablePlugin(plugin);
-        return plugin;
     }
 }

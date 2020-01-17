@@ -1,4 +1,4 @@
-package cc.flogi.dev.autoupdater.internal;
+package cc.flogi.dev.autoupdater.plugin;
 
 import java.io.*;
 import java.net.URL;
@@ -41,18 +41,11 @@ final class UtilIO {
      */
     static void writeToFile(File destination, String content) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(destination));
-        writer.write(content);
+        writer.append(content);
 
         writer.close();
     }
 
-    /**
-     * Reads content from file.
-     *
-     * @param source The file to read from.
-     * @return The contents of the source file.
-     * @throws IOException If file is invalid.
-     */
     static String readFromFile(File source) throws IOException {
         StringBuilder contentBuilder = new StringBuilder();
         try (Stream<String> stream = Files.lines( source.toPath(), StandardCharsets.UTF_8))

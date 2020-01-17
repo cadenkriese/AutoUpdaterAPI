@@ -1,8 +1,8 @@
 name: ${project.name}
 version: ${project.version}
 description: ${project.description}
-main: cc.flogi.dev.autoupdater.internal.UpdaterPlugin
+main: cc.flogi.dev.autoupdater.plugin.UpdaterPlugin
 api-version: 1.13
 prefix: AutoUpdaterAPI
 authors: [flogic]
-website: flogi.cc
+website: ${project.url}

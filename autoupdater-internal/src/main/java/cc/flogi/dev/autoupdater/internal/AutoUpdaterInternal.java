@@ -1,5 +1,6 @@
 package cc.flogi.dev.autoupdater.internal;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -13,16 +14,20 @@ import java.util.logging.Logger;
 /**
  * Class holding internal API information.
  */
-public final class AutoUpdaterInternal {
-    public final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
-    public static boolean DEBUG = false;
-    public static boolean METRICS = true;
+final class AutoUpdaterInternal {
+    final static ProjectProperties PROPERTIES = ProjectProperties.from("autoupdater.properties");
+    static boolean DEBUG = false;
+    static boolean METRICS = true;
 
     private static AutoUpdaterInternal instance;
-    @Getter private static Plugin plugin;
-    @Getter private static File dataFolder;
-    @Getter private static File cacheFolder;
-    @Getter private static Logger logger = Logger.getLogger("AutoUpdaterAPI");
+    @Getter(AccessLevel.PACKAGE)
+    private static Plugin plugin;
+    @Getter(AccessLevel.PACKAGE)
+    private static File dataFolder;
+    @Getter(AccessLevel.PACKAGE)
+    private static File cacheFolder;
+    @Getter(AccessLevel.PACKAGE)
+    private static Logger logger = Logger.getLogger("AutoUpdaterAPI");
 
     AutoUpdaterInternal(JavaPlugin javaPlugin) {
         instance = this;

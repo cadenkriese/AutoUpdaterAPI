@@ -18,6 +18,20 @@ package cc.flogi.dev.autoupdater.api;
 public interface UpdateLocale {
 
     /**
+     * Disable/enable additional status information sent to players.
+     *
+     * @param statusMessages Should status messages be enabled or not.
+     */
+    void setStatusMessages(Boolean statusMessages);
+
+    /**
+     * Disable/enable additional status information sent to players.
+     *
+     * @return Boolean value.
+     */
+    Boolean getStatusMessages();
+
+    /**
      * What the downloaded plugin jar in the download's folder should be named.
      *
      * @return String value.
@@ -27,12 +41,11 @@ public interface UpdateLocale {
     /**
      * Sets of the plugin AutoUpdater will try to enable after the download is complete.
      *
+     * @param fileName File name value.
      * @apiNote Supported variables:
      * - %plugin% - The name of the plugin in Bukkit.
      * - %old_version% - The old/current version of the plugin.
      * - %new_version% - The new version of the plugin that is being downloaded.
-     *
-     * @param fileName File name value.
      */
     void setFileName(String fileName);
 
@@ -60,12 +73,12 @@ public interface UpdateLocale {
     /**
      * Sets the message sent to an update initiator while an update is ongoing.
      *
+     * @param updatingMsg The message value.
      * @apiNote Supported variables:
+     * - %status% - Detailed status message.
      * - %plugin% - The name of the plugin in Bukkit.
      * - %old_version% - The old/current version of the plugin.
      * - %new_version% - The new version of the plugin that is being downloaded.
-     *
-     * @param updatingMsg The message value.
      */
     void setUpdatingMsg(String updatingMsg);
 
@@ -80,6 +93,8 @@ public interface UpdateLocale {
      * Gets the updating message to be sent before variables have been updated.
      *
      * @param updatingMsgNoVar The message value.
+     * @apiNote Supported variables (despite name):
+     * - %status% - Detailed status message.
      */
     void setUpdatingMsgNoVar(String updatingMsgNoVar);
 
@@ -93,11 +108,14 @@ public interface UpdateLocale {
     /**
      * Sets the message sent to players while a download is occurring.
      *
+     * @param downloadingMsg The message value.
      * @apiNote Supported variables:
+     * - %status% - Detailed status message.
+     * - %plugin% - The name of the plugin in Bukkit.
+     * - %old_version% - The old/current version of the plugin.
+     * - %new_version% - The new version of the plugin that is being downloaded.
      * - %download_bar% - A progress bar of the download.
      * - %download_percent% - A percentage of the download.
-     *
-     * @param downloadingMsg The message value.
      */
     void setDownloadingMsg(String downloadingMsg);
 
@@ -111,13 +129,13 @@ public interface UpdateLocale {
     /**
      * Sets the message sent to players upon update completion.
      *
+     * @param completionMsg The message value.
      * @apiNote Supported variables:
+     * - %status% - Detailed status message.
      * - %plugin% - The name of the plugin in Bukkit.
      * - %old_version% - The old/current version of the plugin.
      * - %new_version% - The new version of the plugin that was downloaded.
      * - %elapsed_time% - The elapsed time of the update in seconds.
-     *
-     * @param completionMsg The message value.
      */
     void setCompletionMsg(String completionMsg);
 
@@ -132,6 +150,8 @@ public interface UpdateLocale {
      * Sets the message sent to players upon update failure.
      *
      * @param failureMsg The message value.
+     * @apiNote Supported variables:
+     * - %status% - Detailed status message.
      */
     void setFailureMsg(String failureMsg);
 
@@ -140,12 +160,19 @@ public interface UpdateLocale {
      */
     interface LocaleBuilder {
         LocaleBuilder fileName(String fileName);
+
         LocaleBuilder bukkitPluginName(String bukkitPluginName);
+
         LocaleBuilder updatingMsg(String updatingMsg);
+
         LocaleBuilder updatingMsgNoVar(String updatingMsgNoVar);
+
         LocaleBuilder downloadingMsg(String downloadingMsg);
+
         LocaleBuilder completionMsg(String completionMsg);
+
         LocaleBuilder failureMsg(String failureMsg);
+
         UpdateLocale build();
     }
 }

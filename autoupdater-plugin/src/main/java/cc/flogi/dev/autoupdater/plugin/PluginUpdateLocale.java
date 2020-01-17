@@ -1,4 +1,4 @@
-package cc.flogi.dev.autoupdater.internal;
+package cc.flogi.dev.autoupdater.plugin;
 
 import cc.flogi.dev.autoupdater.api.UpdateLocale;
 import lombok.AllArgsConstructor;
@@ -24,6 +24,17 @@ public final class PluginUpdateLocale implements UpdateLocale {
     private String downloadingMsg;
     private String completionMsg;
     private String failureMsg;
+
+    public PluginUpdateLocale(cc.flogi.dev.autoupdater.internal.PluginUpdateLocale locale) {
+        this(locale.getStatusMessages(),
+                locale.getFileName(),
+                locale.getBukkitPluginName(),
+                locale.getUpdatingMsg(),
+                locale.getUpdatingMsgNoVar(),
+                locale.getDownloadingMsg(),
+                locale.getCompletionMsg(),
+                locale.getFailureMsg());
+    }
 
     public static UpdateLocaleBuilder builder() {return new UpdateLocaleBuilder();}
 
@@ -66,7 +77,7 @@ public final class PluginUpdateLocale implements UpdateLocale {
         private String updatingMsg = "&f&lUPDATING &1&l%plugin% &b&l%old_version% &a&l» &b&l%new_version% &8[%status%]";
         private String updatingMsgNoVar = "&f&lUPDATING PLUGIN... &8[%status%]";
         private String downloadingMsg = "&f&lDOWNLOADING &1&l%plugin% &b&l%new_version% &8| %download_bar% &8| &a%download_percent% &8[%status%]";
-        private String completionMsg = "&f&lUPDATED &1&l%plugin% &f&lTO &b&l%new_version% &7&o(%elapsed_time%s) &8[%status%]";
+        private String completionMsg = "&f&lUPDATED &1&l%plugin% &f&lTO &b&l%new_version% &7&o(%elapsed_time%s)";
         private String failureMsg = "&c&lUPDATE FAILED &8[%status%]";
 
         UpdateLocaleBuilder() {}

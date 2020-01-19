@@ -4,7 +4,6 @@ import cc.flogi.dev.autoupdater.api.PluginUpdater;
 import cc.flogi.dev.autoupdater.api.UpdaterRunnable;
 import cc.flogi.dev.autoupdater.api.exceptions.NoUpdateFoundException;
 import cc.flogi.dev.autoupdater.plugin.UpdaterPlugin;
-import com.google.gson.Gson;
 import lombok.Getter;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
@@ -20,7 +19,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Date;
-import java.util.HashMap;
 
 /**
  * @author Caden Kriese (flogic)
@@ -135,24 +133,19 @@ public class PublicPluginUpdater implements PluginUpdater {
             in.close();
             fos.close();
 
-            if (initialize)
-                initializePlugin();
-            else {
-                //TODO fix duplicated code.
-                File cacheFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName());
-                File metaFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName() + ".meta");
+            initializePlugin();
+        } catch (IOException ex) {
+            error(ex, "Error occurred while updating " + pluginName + ".", "PLUGIN NOT FOUND");
+        }
+    }
 
-                AutoUpdaterInternal.getCacheFolder().mkdirs();
-                Files.move(destinationFile.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                HashMap<String, Object> updateMeta = new HashMap<>();
-                updateMeta.put("replace", String.valueOf(replace));
-                updateMeta.put("destination", destinationFile.getAbsolutePath());
-                if (replace)
-                    updateMeta.put("old-file", plugin.getClass()
-                            .getProtectionDomain().getCodeSource()
-                            .getLocation().toURI().getPath());
-
-                UtilIO.writeToFile(metaFile, new Gson().toJson(updateMeta));
+    @Override
+    public void initializePlugin() {
+        //Copy plugin utility from src/main/resources
+        if (!initialize) {
+            try {
+                File cacheFile = UtilPlugin.cachePlugin(new File(pluginFolderPath + "/" + locale.getFileName()),
+                        replace, plugin);
 
                 double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
                 UtilUI.sendActionBar(initiator, locale.getCompletionMsg(),
@@ -161,24 +154,20 @@ public class PublicPluginUpdater implements PluginUpdater {
 
                 Plugin updated = Bukkit.getPluginManager().loadPlugin(cacheFile);
 
-                UtilThreading.async(() -> UtilMetrics.sendUpdateInfo(new UtilMetrics.Plugin(updated.getName(),
-                                updated.getDescription().getDescription(),
-                                downloadUrlString),
+                UtilThreading.async(() -> UtilMetrics.sendUpdateInfo(getMetricsPlugin(updated),
                         new UtilMetrics.PluginUpdate(new Date(),
                                 cacheFile.length(),
                                 elapsedTimeSeconds,
                                 new UtilMetrics.PluginUpdateVersion(currentVersion, latestVersion))));
 
                 UtilPlugin.unload(updated);
+            } catch (InvalidPluginException | InvalidDescriptionException | IOException | URISyntaxException ex) {
+                error(ex, "Error occurred while caching plugin.", "CACHING FAILED.");
             }
-        } catch (IOException | URISyntaxException | InvalidPluginException | InvalidDescriptionException ex) {
-            error(ex, "Error occurred while updating " + pluginName + ".", "PLUGIN NOT FOUND");
-        }
-    }
 
-    @Override
-    public void initializePlugin() {
-        //Copy plugin utility from src/main/resources
+            return;
+        }
+
         String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterInternal.PROPERTIES.VERSION + ".jar";
         File targetFile = new File(AutoUpdaterInternal.getDataFolder().getParent() + corePluginFile);
         targetFile.getParentFile().mkdirs();
@@ -197,11 +186,29 @@ public class PublicPluginUpdater implements PluginUpdater {
 
                 UpdaterPlugin.get().updatePlugin(plugin, initiator, replace, AutoUpdaterInternal.DEBUG, AutoUpdaterInternal.METRICS,
                         pluginName, pluginFolderPath, new cc.flogi.dev.autoupdater.plugin.PluginUpdateLocale(locale),
-                        startingTime, downloadUrlString, null, endTask);
+                        startingTime, downloadUrlString, getSpigotResourceID(downloadUrlString), endTask);
             } catch (FileNotFoundException | InvalidPluginException | InvalidDescriptionException ex) {
                 error(ex, ex.getMessage());
             }
         });
+    }
+
+    protected Integer getSpigotResourceID(String downloadUrlString) {
+        if (downloadUrlString.contains("spigotmc.org")) {
+            try {
+                return Integer.valueOf(downloadUrlString.substring(
+                        downloadUrlString.lastIndexOf('.'),
+                        downloadUrlString.lastIndexOf('/')));
+            } catch (Exception ignored) {}
+        }
+
+        return null;
+    }
+
+    protected UtilMetrics.Plugin getMetricsPlugin(Plugin plugin) {
+        return new UtilMetrics.Plugin(plugin.getName(),
+                plugin.getDescription().getDescription(),
+                getDownloadUrlString());
     }
 
     protected void error(Exception ex, String errorMessage, String shortErrorMessage) {

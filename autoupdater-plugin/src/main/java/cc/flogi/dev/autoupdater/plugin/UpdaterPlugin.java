@@ -8,7 +8,6 @@ import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +17,12 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.logging.Logger;
 
+/**
+ * This is an internal utility class used for initializing plugins in runtime.
+ * it acts as a separate plugin to manage the transition from old to new version.
+ * As such, there is significant duplicated internal code, since it requires these
+ * classes to be loaded the entire duration of the update.
+ */
 public final class UpdaterPlugin extends JavaPlugin {
     private static UpdaterPlugin instance;
     private static Logger logger;
@@ -73,26 +78,25 @@ public final class UpdaterPlugin extends JavaPlugin {
                     "status", "DOWNLOADED AND INSTALLED");
 
             //Update metrics
-            new BukkitRunnable() {
-                @Override public void run() {
-                    long fileSize = new File(pluginFolderPath + "/" + locale.getFileName()).length();
-                    String currentVersion = replace ? plugin.getDescription().getVersion() : null;
+            UtilThreading.async(() -> {
+                long fileSize = new File(pluginFolderPath + "/" + locale.getFileName()).length();
+                String currentVersion = replace ? plugin.getDescription().getVersion() : null;
 
-                    UtilMetrics.PluginUpdate updateMetrics = new UtilMetrics.PluginUpdate(new Date(), fileSize, elapsedTimeSeconds,
-                            new UtilMetrics.PluginUpdateVersion(currentVersion, updated.getDescription().getVersion()));
-                    UtilMetrics.Plugin pluginMetrics;
+                UtilMetrics.PluginUpdate updateMetrics = new UtilMetrics.PluginUpdate(new Date(), fileSize, elapsedTimeSeconds,
+                        new UtilMetrics.PluginUpdateVersion(currentVersion, updated.getDescription().getVersion()));
+                UtilMetrics.Plugin pluginMetrics;
 
-                    if (spigotResourceId == null)
-                        pluginMetrics = new UtilMetrics.Plugin(updated.getName(),
-                                updated.getDescription().getDescription(), downloadUrl);
-                    else
-                        pluginMetrics = UtilMetrics.getSpigotPlugin(updated, spigotResourceId);
+                if (spigotResourceId == null)
+                    pluginMetrics = new UtilMetrics.Plugin(updated.getName(),
+                            updated.getDescription().getDescription(), downloadUrl);
+                else
+                    pluginMetrics = UtilMetrics.getSpigotPlugin(updated, spigotResourceId);
 
-                    UtilMetrics.sendUpdateInfo(pluginMetrics, updateMetrics);
-                }
-            }.runTaskAsynchronously(updated);
+                UtilMetrics.sendUpdateInfo(pluginMetrics, updateMetrics);
+            });
             //Run async with new plugin to avoid task being cancelled by self shutdown.
         } catch (Exception ex1) {
+            //Attempt to restore old version of plugin if an error occurs.
             getLogger().severe("A critical exception occurred while initializing the plugin '" + pluginName + "'");
             getLogger().severe("Restoring previous state...");
 

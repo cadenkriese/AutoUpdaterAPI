@@ -1,5 +1,6 @@
 package cc.flogi.dev.autoupdater.internal;
 
+import com.google.gson.Gson;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
@@ -10,13 +11,16 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URISyntaxException;
 import java.net.URLClassLoader;
-import java.util.Iterator;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
 
 final class UtilPlugin {
+    private static final Gson GSON = new Gson();
+
     /**
      * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
      *
@@ -131,5 +135,24 @@ final class UtilPlugin {
         plugin.onLoad();
         AutoUpdaterInternal.getPlugin().getServer().getPluginManager().enablePlugin(plugin);
         return plugin;
+    }
+
+    static File cachePlugin(File downloadLocation, boolean replace, Plugin oldVersion) throws IOException, URISyntaxException {
+        File cacheFile = new File(AutoUpdaterInternal.getCacheFolder(), downloadLocation.getName());
+        File metaFile = new File(AutoUpdaterInternal.getCacheFolder(), downloadLocation.getName() + ".meta");
+
+        AutoUpdaterInternal.getCacheFolder().mkdirs();
+        Files.move(downloadLocation.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        HashMap<String, Object> updateMeta = new HashMap<>();
+        updateMeta.put("replace", String.valueOf(replace));
+        updateMeta.put("destination", downloadLocation.getAbsolutePath());
+        if (replace)
+            updateMeta.put("old-file", oldVersion.getClass()
+                    .getProtectionDomain().getCodeSource()
+                    .getLocation().toURI().getPath());
+
+        UtilIO.writeToFile(metaFile, GSON.toJson(updateMeta));
+
+        return cacheFile;
     }
 }

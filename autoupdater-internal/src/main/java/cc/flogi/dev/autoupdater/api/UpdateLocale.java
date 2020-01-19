@@ -18,20 +18,6 @@ package cc.flogi.dev.autoupdater.api;
 public interface UpdateLocale {
 
     /**
-     * Disable/enable additional status information sent to players.
-     *
-     * @param statusMessages Should status messages be enabled or not.
-     */
-    void setStatusMessages(Boolean statusMessages);
-
-    /**
-     * Disable/enable additional status information sent to players.
-     *
-     * @return Boolean value.
-     */
-    Boolean getStatusMessages();
-
-    /**
      * What the downloaded plugin jar in the download's folder should be named.
      *
      * @return String value.

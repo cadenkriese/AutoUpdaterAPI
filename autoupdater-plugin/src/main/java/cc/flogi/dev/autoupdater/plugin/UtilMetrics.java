@@ -19,7 +19,7 @@ import java.util.*;
  *
  * Created on 01/01/2020
  */
-final class UtilMetrics {
+@SuppressWarnings("DuplicatedCode") final class UtilMetrics {
     private static final String API_BASE_URL = "https://api.flogi.cc/updater-metrics/v1";
     private static final Gson GSON = new GsonBuilder()
             .setDateFormat("yyyy-MM-dd HH:mm:ss")

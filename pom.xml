@@ -46,7 +46,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -64,7 +64,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.2.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -87,10 +87,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!-- add license notice -->
-                    <bottom>
-                        <![CDATA[This documentation was released into the public domain.]]>
-                    </bottom>
                     <tags>
                         <tag>
                             <name>apiNote</name>
@@ -145,7 +141,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>17.0.0</version>
+            <version>18.0.0</version>
             <scope>provided</scope>
         </dependency>
         <!--TestNG - for unit tests.-->
@@ -153,12 +149,6 @@
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>7.0.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <version>3.13.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

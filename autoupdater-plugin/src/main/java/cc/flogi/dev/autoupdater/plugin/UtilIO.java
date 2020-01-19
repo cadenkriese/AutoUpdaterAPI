@@ -11,7 +11,7 @@ import java.util.stream.Stream;
  *
  * Created on 8/12/17
  */
-final class UtilIO {
+@SuppressWarnings("DuplicatedCode") final class UtilIO {
     /**
      * Reads content from a URL.
      *

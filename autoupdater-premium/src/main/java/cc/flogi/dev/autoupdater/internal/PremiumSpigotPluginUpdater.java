@@ -33,7 +33,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
@@ -287,20 +286,7 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
                 initializePlugin();
             else {
                 //Complete update now.
-                File cacheFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName());
-                File metaFile = new File(AutoUpdaterInternal.getCacheFolder(), destinationFile.getName() + ".meta");
-
-                AutoUpdaterInternal.getCacheFolder().mkdirs();
-                Files.move(destinationFile.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                HashMap<String, Object> updateMeta = new HashMap<>();
-                updateMeta.put("replace", String.valueOf(replace));
-                updateMeta.put("destination", destinationFile.getAbsolutePath());
-                if (replace)
-                    updateMeta.put("old-file", plugin.getClass()
-                            .getProtectionDomain().getCodeSource()
-                            .getLocation().toURI().getPath());
-
-                UtilIO.writeToFile(metaFile, new Gson().toJson(updateMeta));
+                File cacheFile = UtilPlugin.cachePlugin(destinationFile, replace, plugin);
 
                 double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
                 UtilUI.sendActionBar(initiator, locale.getCompletionMsg(),

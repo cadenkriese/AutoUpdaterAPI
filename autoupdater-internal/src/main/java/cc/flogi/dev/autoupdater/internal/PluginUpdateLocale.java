@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
  */
 @Getter @Setter @AllArgsConstructor
 public final class PluginUpdateLocale implements UpdateLocale {
-    private Boolean statusMessages;
     private String fileName;
     private String bukkitPluginName;
     private String updatingMsg;
@@ -51,8 +50,6 @@ public final class PluginUpdateLocale implements UpdateLocale {
                     value = value.replace("%old_version%", oldVersion);
                 if (newVersion != null)
                     value = value.replace("%new_version%", newVersion);
-                if (!statusMessages)
-                    value = value.replace("%status%", "");
 
                 field.set(this, value);
             }
@@ -60,7 +57,6 @@ public final class PluginUpdateLocale implements UpdateLocale {
     }
 
     public static class UpdateLocaleBuilder implements LocaleBuilder {
-        private Boolean statusMessages = true;
         private String fileName = "plugin";
         private String bukkitPluginName = "plugin";
         private String updatingMsg = "&f&lUPDATING &1&l%plugin% &b&l%old_version% &a&l» &b&l%new_version% &8[%status%]";
@@ -70,11 +66,6 @@ public final class PluginUpdateLocale implements UpdateLocale {
         private String failureMsg = "&c&lUPDATE FAILED &8[%status%]";
 
         UpdateLocaleBuilder() {}
-
-        public UpdateLocaleBuilder statusMessages(boolean statusMessages) {
-            this.statusMessages = statusMessages;
-            return this;
-        }
 
         public UpdateLocaleBuilder fileName(String fileName) {
             this.fileName = fileName;
@@ -112,7 +103,7 @@ public final class PluginUpdateLocale implements UpdateLocale {
         }
 
         public PluginUpdateLocale build() {
-            return new PluginUpdateLocale(statusMessages, fileName, bukkitPluginName, updatingMsg, updatingMsgNoVar, downloadingMsg, completionMsg, failureMsg);
+            return new PluginUpdateLocale(fileName, bukkitPluginName, updatingMsg, updatingMsgNoVar, downloadingMsg, completionMsg, failureMsg);
         }
     }
 }

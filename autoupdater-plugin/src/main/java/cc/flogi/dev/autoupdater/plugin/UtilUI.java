@@ -48,7 +48,7 @@ import java.util.HashMap;
      * @param player   The player to send the message to.
      * @param message  The message to be sent.
      * @param duration The duration of the message in seconds.
-     * @param vars    The variables to be replaced in the message.
+     * @param vars     The variables to be replaced in the message.
      * @see #format(String, String...)
      */
     static void sendActionBar(Player player, String message, long duration, String... vars) {

@@ -8,12 +8,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.Plugin;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Caden Kriese (flogic)
@@ -118,8 +121,23 @@ public class PublicSpigotPluginUpdater extends PublicPluginUpdater implements Sp
         }
     }
 
-    @Override protected UtilMetrics.Plugin getMetricsPlugin(Plugin plugin) {
-        return UtilMetrics.getSpigotPlugin(plugin, spigotResourceID);
+    @Override protected UtilMetrics.Plugin getMetricsPlugin(File pluginFile) {
+        try {
+            Map<?, ?> pluginInfo = UtilPlugin.getPluginInfo(pluginFile);
+
+            String description = "";
+            Object descriptionObj = pluginInfo.get("description");
+            if (descriptionObj != null)
+                description = descriptionObj.toString();
+
+            return UtilMetrics.getSpigotPlugin(pluginInfo.get("name").toString(), description, spigotResourceID);
+        } catch (IOException | InvalidDescriptionException ex) {
+            if (AutoUpdaterInternal.DEBUG) {
+                AutoUpdaterInternal.get().printError(ex, "Error occurred while retrieving cached plugin info.");
+            }
+        }
+
+        return null;
     }
 
     @Override protected Integer getSpigotResourceID(String downloadUrlString) {

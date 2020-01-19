@@ -6,20 +6,24 @@ import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.plugin.*;
+import org.yaml.snakeyaml.Yaml;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
 import java.util.List;
+import java.util.*;
+import java.util.jar.JarFile;
 
 final class UtilPlugin {
     private static final Gson GSON = new Gson();
+    private static final Yaml YAML = new Yaml();
 
     /**
      * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
@@ -137,22 +141,45 @@ final class UtilPlugin {
         return plugin;
     }
 
-    static File cachePlugin(File downloadLocation, boolean replace, Plugin oldVersion) throws IOException, URISyntaxException {
+    static File cachePlugin(File downloadLocation, boolean replace, Plugin oldVersion) throws IOException, URISyntaxException, InvalidDescriptionException {
         File cacheFile = new File(AutoUpdaterInternal.getCacheFolder(), downloadLocation.getName());
         File metaFile = new File(AutoUpdaterInternal.getCacheFolder(), downloadLocation.getName() + ".meta");
 
-        AutoUpdaterInternal.getCacheFolder().mkdirs();
-        Files.move(downloadLocation.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        HashMap<String, Object> updateMeta = new HashMap<>();
-        updateMeta.put("replace", String.valueOf(replace));
-        updateMeta.put("destination", downloadLocation.getAbsolutePath());
-        if (replace)
-            updateMeta.put("old-file", oldVersion.getClass()
-                    .getProtectionDomain().getCodeSource()
-                    .getLocation().toURI().getPath());
+        try {
+            AutoUpdaterInternal.getCacheFolder().mkdirs();
+            Files.move(downloadLocation.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        UtilIO.writeToFile(metaFile, GSON.toJson(updateMeta));
+            //Ensure plugin is valid
+            if (getPluginInfo(cacheFile).get("name") == null)
+                throw new InvalidDescriptionException("Plugin has malformed description file.");
 
-        return cacheFile;
+            HashMap<String, Object> updateMeta = new HashMap<>();
+            updateMeta.put("replace", String.valueOf(replace));
+            updateMeta.put("destination", downloadLocation.getAbsolutePath());
+            if (replace)
+                updateMeta.put("old-file", oldVersion.getClass()
+                        .getProtectionDomain().getCodeSource()
+                        .getLocation().toURI().getPath());
+
+            UtilIO.writeToFile(metaFile, GSON.toJson(updateMeta));
+
+            return cacheFile;
+        } catch (IOException | URISyntaxException | InvalidDescriptionException ex) {
+            Files.delete(cacheFile.toPath());
+            Files.delete(metaFile.toPath());
+
+            throw ex;
+        }
+    }
+
+    static Map<?, ?> getPluginInfo(File pluginFile) throws IOException, InvalidDescriptionException {
+        JarFile file = new JarFile(pluginFile);
+        InputStream is = file.getInputStream(file.getJarEntry("plugin.yml"));
+
+        Object obj = YAML.load(is);
+        if (obj instanceof Map)
+            return (Map<?, ?>) obj;
+        else
+            throw new InvalidDescriptionException("Invalid plugin.yml");
     }
 }

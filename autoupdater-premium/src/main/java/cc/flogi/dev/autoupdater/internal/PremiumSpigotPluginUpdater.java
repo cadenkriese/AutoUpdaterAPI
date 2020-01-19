@@ -17,7 +17,6 @@ import cc.flogi.dev.autoupdater.plugin.UpdaterPlugin;
 import com.gargoylesoftware.htmlunit.*;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.util.Cookie;
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -142,7 +141,7 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
 
     @Override public String getLatestVersion() {
         try {
-            if (latestVersion != null)
+            if (latestVersion == null)
                 latestVersion = UtilIO.readFromURL("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
             return latestVersion;
         } catch (Exception ex) {
@@ -214,12 +213,12 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
             if (locale.getBukkitPluginName() != null)
                 pluginName = locale.getBukkitPluginName();
 
-            UtilUI.sendActionBar(initiator, locale.getUpdatingMsg(), 20, "status", "ATTEMPTING DOWNLOAD");
             downloadResource();
         });
     }
 
     @Override public void downloadResource() {
+        UtilUI.sendActionBar(initiator, locale.getUpdatingMsg(), 20, "status", "PINGING SPIGOT");
         try {
             printDebug();
             Map<String, String> cookies = ((SpigotUser) currentUser).getCookies();
@@ -251,10 +250,8 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
 
             printDebug1(page, response, webClient);
 
-            final File destinationFile = new File(pluginFolderPath + "/" + locale.getFileName());
-
             BufferedInputStream in = new BufferedInputStream(response.getContentAsStream());
-            FileOutputStream fos = new FileOutputStream(destinationFile);
+            FileOutputStream fos = new FileOutputStream(new File(pluginFolderPath + "/" + locale.getFileName()));
             BufferedOutputStream bout = new BufferedOutputStream(fos, grabSize);
 
             byte[] data = new byte[grabSize];
@@ -282,29 +279,47 @@ public class PremiumSpigotPluginUpdater implements SpigotPluginUpdater {
 
             printDebug3(downloadedFileSize, completeFileSize);
 
-            if (initialize)
-                initializePlugin();
-            else {
-                //Complete update now.
-                File cacheFile = UtilPlugin.cachePlugin(destinationFile, replace, plugin);
+            initializePlugin();
+        } catch (IOException ex) {
+            error(ex, "Error occurred while updating premium resource.");
+        }
+    }
+
+    @Override public void initializePlugin() {
+        if (!initialize) {
+            //Complete update now.
+            try {
+                File cacheFile = UtilPlugin.cachePlugin(new File(pluginFolderPath + "/" + locale.getFileName()), replace, plugin);
 
                 double elapsedTimeSeconds = (double) (System.currentTimeMillis() - startingTime) / 1000;
                 UtilUI.sendActionBar(initiator, locale.getCompletionMsg(),
                         "elapsed_time", String.format("%.2f", elapsedTimeSeconds),
                         "status", "INSTALLATION UPON RESTART");
 
-                UtilThreading.async(() -> UtilMetrics.sendUpdateInfo(UtilMetrics.getSpigotPlugin(plugin, resourceId),
-                        new UtilMetrics.PluginUpdate(new Date(),
-                                cacheFile.length(),
-                                elapsedTimeSeconds,
-                                new UtilMetrics.PluginUpdateVersion(currentVersion, latestVersion))));
-            }
-        } catch (IOException | URISyntaxException ex) {
-            error(ex, "Error occurred while updating premium resource.");
-        }
-    }
+                if (AutoUpdaterInternal.METRICS) {
+                    Map<?, ?> pluginInfo = UtilPlugin.getPluginInfo(cacheFile);
 
-    @Override public void initializePlugin() {
+                    String description = "";
+                    Object descriptionObj = pluginInfo.get("description");
+                    if (descriptionObj != null)
+                        description = descriptionObj.toString();
+
+                    String oldVersion = replace ? currentVersion : null;
+
+                    String finalDescription = description;
+                    UtilThreading.async(() -> UtilMetrics.sendUpdateInfo(
+                            UtilMetrics.getSpigotPlugin(pluginInfo.get("name").toString(), finalDescription, resourceId),
+                            new UtilMetrics.PluginUpdate(new Date(),
+                                    cacheFile.length(),
+                                    elapsedTimeSeconds,
+                                    new UtilMetrics.PluginUpdateVersion(oldVersion, latestVersion))));
+                }
+            } catch (IOException | URISyntaxException | InvalidDescriptionException ex) {
+                error(ex, "Error occurred while caching plugin.", "CACHING FAILED");
+            }
+            return;
+        }
+
         //Copy plugin utility from src/main/resources
         String corePluginFile = "/autoupdater-plugin-" + AutoUpdaterInternal.PROPERTIES.VERSION + ".jar";
         File targetFile = new File(AutoUpdaterInternal.getDataFolder().getParent() + corePluginFile);

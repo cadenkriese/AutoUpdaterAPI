@@ -145,18 +145,93 @@ public interface UpdateLocale {
      * Builder for this class.
      */
     interface LocaleBuilder {
+        /**
+         * Sets of the plugin AutoUpdater will try to enable after the download is complete.
+         *
+         * @param fileName File name value.
+         * @apiNote Supported variables:
+         * - %plugin% - The name of the plugin in Bukkit.
+         * - %old_version% - The old/current version of the plugin.
+         * - %new_version% - The new version of the plugin that is being downloaded.
+         *
+         * @return Builder instance.
+         */
         LocaleBuilder fileName(String fileName);
 
+        /**
+         * Sets of the plugin AutoUpdater will try to enable after the download is complete.
+         *
+         * @param bukkitPluginName Name of the Bukkit plugin.
+         *
+         * @return Builder instance.
+         */
         LocaleBuilder bukkitPluginName(String bukkitPluginName);
 
+        /**
+         * Sets the message sent to an update initiator while an update is ongoing.
+         *
+         * @param updatingMsg The message value.
+         * @apiNote Supported variables:
+         * - %status% - Detailed status message.
+         * - %plugin% - The name of the plugin in Bukkit.
+         * - %old_version% - The old/current version of the plugin.
+         * - %new_version% - The new version of the plugin that is being downloaded.
+         *
+         * @return Builder instance.
+         */
         LocaleBuilder updatingMsg(String updatingMsg);
 
+        /**
+         * Gets the updating message to be sent before variables have been updated.
+         *
+         * @param updatingMsgNoVar The message value.
+         * @apiNote Supported variables (despite name):
+         * - %status% - Detailed status message.
+         *
+         * @return Builder instance.
+         */
         LocaleBuilder updatingMsgNoVar(String updatingMsgNoVar);
 
+        /**
+         * Sets the message sent to players while a download is occurring.
+         *
+         * @param downloadingMsg The message value.
+         * @apiNote Supported variables:
+         * - %status% - Detailed status message.
+         * - %plugin% - The name of the plugin in Bukkit.
+         * - %old_version% - The old/current version of the plugin.
+         * - %new_version% - The new version of the plugin that is being downloaded.
+         * - %download_bar% - A progress bar of the download.
+         * - %download_percent% - A percentage of the download.
+         *
+         * @return Builder instance.
+         */
         LocaleBuilder downloadingMsg(String downloadingMsg);
 
+        /**
+         * Sets the message sent to players upon update completion.
+         *
+         * @param completionMsg The message value.
+         * @apiNote Supported variables:
+         * - %status% - Detailed status message.
+         * - %plugin% - The name of the plugin in Bukkit.
+         * - %old_version% - The old/current version of the plugin.
+         * - %new_version% - The new version of the plugin that was downloaded.
+         * - %elapsed_time% - The elapsed time of the update in seconds.
+         *
+         * @return Builder instance.
+         */
         LocaleBuilder completionMsg(String completionMsg);
 
+        /**
+         * Sets the message sent to players upon update failure.
+         *
+         * @param failureMsg The message value.
+         * @apiNote Supported variables:
+         * - %status% - Detailed status message.
+         *
+         * @return Builder instance.
+         */
         LocaleBuilder failureMsg(String failureMsg);
 
         UpdateLocale build();

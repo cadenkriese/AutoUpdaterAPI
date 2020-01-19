@@ -19,7 +19,7 @@ import java.util.*;
  *
  * Created on 01/01/2020
  */
-final class UtilMetrics {
+@SuppressWarnings("DuplicatedCode") final class UtilMetrics {
     private static final String API_BASE_URL = "https://api.flogi.cc/updater-metrics/v1";
     private static final Gson GSON = new GsonBuilder()
             .setDateFormat("yyyy-MM-dd HH:mm:ss")
@@ -46,7 +46,7 @@ final class UtilMetrics {
         }
     }
 
-    static UtilMetrics.SpigotPlugin getSpigotPlugin(org.bukkit.plugin.Plugin plugin, int resourceId) {
+    static UtilMetrics.SpigotPlugin getSpigotPlugin(String name, String description, int resourceId) {
         final String SPIGET_BASE_URL = "https://api.spiget.org/v2/";
         final String SPIGOT_BASE_URL = "https://spigotmc.org/";
 
@@ -79,14 +79,13 @@ final class UtilMetrics {
             if (premium) {
                 Double price = json.get("price").getAsDouble();
                 String currency = json.get("currency").getAsString();
-                return new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
-                        downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate,
-                        supportedVersions.toArray(new String[]{}), premium, price, currency);
+                return new UtilMetrics.SpigotPlugin(name, description, downloadUrl, resourceName, resourceId,
+                        categoryName, averageRating, uploadDate, supportedVersions.toArray(new String[]{}), premium,
+                        price, currency);
             }
 
-            return new UtilMetrics.SpigotPlugin(plugin.getName(), plugin.getDescription().getDescription(),
-                    downloadUrl, resourceName, resourceId, categoryName, averageRating, uploadDate,
-                    supportedVersions.toArray(new String[]{}));
+            return new UtilMetrics.SpigotPlugin(name, description, downloadUrl, resourceName, resourceId,
+                    categoryName, averageRating, uploadDate, supportedVersions.toArray(new String[]{}));
 
         } catch (IOException ex) {
             if (AutoUpdaterInternal.DEBUG)

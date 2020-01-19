@@ -6,7 +6,6 @@ import cc.flogi.dev.autoupdater.api.exceptions.NoUpdateFoundException;
 import cc.flogi.dev.autoupdater.plugin.UpdaterPlugin;
 import lombok.Getter;
 import net.md_5.bungee.api.ChatColor;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.InvalidPluginException;
@@ -19,6 +18,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * @author Caden Kriese (flogic)
@@ -152,17 +152,19 @@ public class PublicPluginUpdater implements PluginUpdater {
                         "elapsed_time", String.format("%.2f", elapsedTimeSeconds),
                         "status", "INSTALLATION UPON RESTART");
 
-                Plugin updated = Bukkit.getPluginManager().loadPlugin(cacheFile);
+                if (AutoUpdaterInternal.METRICS) {
 
-                UtilThreading.async(() -> UtilMetrics.sendUpdateInfo(getMetricsPlugin(updated),
-                        new UtilMetrics.PluginUpdate(new Date(),
-                                cacheFile.length(),
-                                elapsedTimeSeconds,
-                                new UtilMetrics.PluginUpdateVersion(currentVersion, latestVersion))));
+                    UtilMetrics.Plugin metricsPlugin = getMetricsPlugin(cacheFile);
+                    String oldVersion = replace ? currentVersion : null;
 
-                UtilPlugin.unload(updated);
-            } catch (InvalidPluginException | InvalidDescriptionException | IOException | URISyntaxException ex) {
-                error(ex, "Error occurred while caching plugin.", "CACHING FAILED.");
+                    UtilThreading.async(() -> UtilMetrics.sendUpdateInfo(metricsPlugin,
+                            new UtilMetrics.PluginUpdate(new Date(),
+                                    cacheFile.length(),
+                                    elapsedTimeSeconds,
+                                    new UtilMetrics.PluginUpdateVersion(oldVersion, latestVersion))));
+                }
+            } catch (InvalidDescriptionException | IOException | URISyntaxException ex) {
+                error(ex, "Error occurred while caching plugin.", "CACHING FAILED");
             }
 
             return;
@@ -205,10 +207,15 @@ public class PublicPluginUpdater implements PluginUpdater {
         return null;
     }
 
-    protected UtilMetrics.Plugin getMetricsPlugin(Plugin plugin) {
-        return new UtilMetrics.Plugin(plugin.getName(),
-                plugin.getDescription().getDescription(),
-                getDownloadUrlString());
+    protected UtilMetrics.Plugin getMetricsPlugin(File pluginFile) throws IOException, InvalidDescriptionException {
+        Map<?, ?> pluginInfo = UtilPlugin.getPluginInfo(pluginFile);
+
+        String description = "";
+        Object descriptionObj = pluginInfo.get("description");
+        if (descriptionObj != null)
+            description = descriptionObj.toString();
+
+        return new UtilMetrics.Plugin(pluginInfo.get("name").toString(), description, getDownloadUrlString());
     }
 
     protected void error(Exception ex, String errorMessage, String shortErrorMessage) {

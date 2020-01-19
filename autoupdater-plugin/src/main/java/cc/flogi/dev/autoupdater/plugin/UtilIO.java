@@ -36,7 +36,7 @@ import java.util.stream.Stream;
      * Writes string to specified file.
      *
      * @param destination The file to be written to.
-     * @param content The content to be written to the file.
+     * @param content     The content to be written to the file.
      * @throws IOException Upon error finding or writing to the file.
      */
     static void writeToFile(File destination, String content) throws IOException {
@@ -48,8 +48,7 @@ import java.util.stream.Stream;
 
     static String readFromFile(File source) throws IOException {
         StringBuilder contentBuilder = new StringBuilder();
-        try (Stream<String> stream = Files.lines( source.toPath(), StandardCharsets.UTF_8))
-        {
+        try (Stream<String> stream = Files.lines(source.toPath(), StandardCharsets.UTF_8)) {
             stream.forEach(s -> contentBuilder.append(s).append("\n"));
         }
         return contentBuilder.toString();

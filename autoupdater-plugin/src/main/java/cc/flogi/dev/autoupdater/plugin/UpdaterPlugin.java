@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Date;
 import java.util.logging.Logger;
 
@@ -53,14 +54,13 @@ public final class UpdaterPlugin extends JavaPlugin {
         UtilUI.sendActionBar(initiator, locale.getUpdatingMsg() + " &8[INITIALIZING]", 10);
 
         try {
-            cachedPlugin = File.createTempFile("auapi-cached-plugin-", ".jar");
+            cachedPlugin = File.createTempFile("auapi-cached-update-", ".jar");
 
             if (replace) {
                 File pluginFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
-                Files.copy(pluginFile.toPath(), cachedPlugin.toPath());
+                Files.copy(pluginFile.toPath(), cachedPlugin.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 UtilPlugin.unload(plugin);
-                if (!pluginFile.delete())
-                    printPluginError("Error occurred while updating " + pluginName + ".", "Could not delete old plugin jar.");
+                Files.delete(pluginFile.toPath());
             }
 
             Plugin updated = initializePlugin(pluginName, pluginFolderPath, locale, endTask);
@@ -156,17 +156,11 @@ public final class UpdaterPlugin extends JavaPlugin {
     }
 
     void printError(Exception ex) {
-        printError(ex, null);
-    }
-
-    void printError(Exception ex, String extraInfo) {
         logger.warning("An error has occurred.");
         logger.warning("If you cannot figure out this error on your own please copy and paste " +
                 "\neverything from here to END ERROR and post it at " + getDescription().getWebsite());
         logger.warning("\n============== BEGIN ERROR ==============");
         logger.warning("API VERSION: " + getDescription().getVersion());
-        if (extraInfo != null)
-            logger.warning("\nAPI MESSAGE: " + extraInfo);
         logger.warning("\nERROR MESSAGE: " + ex.getMessage());
         logger.warning("\nSTACKTRACE: ");
         ex.printStackTrace();

@@ -10,39 +10,12 @@ import org.bukkit.plugin.Plugin;
 public interface UpdaterRunnable {
     /**
      * Runs the runnable.
-     */
-    void run();
-
-    /**
-     * @return Was the update successful. (or null if the update has not yet completed)
-     */
-    Boolean getSuccessful();
-
-    /**
-     * @return Any exception that occurred during the update.
-     */
-    Exception getException();
-
-    /**
-     * @return The updated instance of the plugin.
-     */
-    Plugin getPlugin();
-
-    /**
-     * @return The name of the updated plugin.
-     */
-    String getPluginName();
-
-    /**
-     * @return The runnable to be run on update completion or failure.
-     */
-    Runnable getRunnable();
-
-    /**
-     * Sets the runnable.
      *
-     * @param runnable The runnable that will be run on completion.
+     * @param successful Was the update a success (true) or failure (false).
+     * @param exception  If the update was a failure, the exception that was created.
+     * @param plugin     The plugin that was updated, this will be null if the update failed.
+     * @param pluginName The name of the plugin updated, this should never be null.
      * @implSpec Should handle a null pluginName and plugin if ${@code successful == false}.
      */
-    void setRunnable(Runnable runnable);
+    void run(boolean successful, Exception exception, Plugin plugin, String pluginName);
 }

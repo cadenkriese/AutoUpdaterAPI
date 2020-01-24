@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
-@SuppressWarnings("DuplicatedCode") final class UtilPlugin {
+@SuppressWarnings({"DuplicatedCode", "unchecked"}) final class UtilPlugin {
     /**
      * Method is from PlugMan, developed by Ryan Clancy "rylinaux"
      *
